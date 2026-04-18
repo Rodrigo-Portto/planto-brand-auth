@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // Permite chamadas do ChatGPT (CORS)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -26,28 +25,37 @@ export default async function handler(req, res) {
   }
 
   try {
-    const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/brand_documents`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_SERVICE_KEY,
-        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-        'Prefer': 'resolution=merge-duplicates',
-      },
-      body: JSON.stringify({
-        user_id,
-        document_type,
-        content,
-        updated_at: new Date().toISOString(),
-      }),
-    });
+    // Upsert: insere ou atualiza baseado no UNIQUE (user_id, type)
+    const supabaseRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/brand_documents?on_conflict=user_id,type`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_SERVICE_KEY,
+          'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+          'Prefer': 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify({
+          user_id,
+          type: document_type,
+          content,
+          updated_at: new Date().toISOString(),
+        }),
+      }
+    );
 
     if (!supabaseRes.ok) {
-      const err = await supabaseRes.json();
-      return res.status(500).json({ error: err.message || 'Erro ao salvar' });
+      const errText = await supabaseRes.text();
+      let errMsg = 'Erro ao salvar';
+      try { errMsg = JSON.parse(errText).message || errMsg; } catch {}
+      return res.status(500).json({ error: errMsg });
     }
 
-    return res.status(200).json({ success: true, message: `Documento '${document_type}' salvo com sucesso.` });
+    return res.status(200).json({
+      success: true,
+      message: `Documento '${document_type}' salvo com sucesso para o usuario ${user_id}.`,
+    });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
