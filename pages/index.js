@@ -1,7 +1,5 @@
 import { useState } from 'react';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
 export default function Home() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,26 +16,20 @@ export default function Home() {
 
     try {
       // Tenta login primeiro
-      let res = await fetch(
-        `${SUPABASE_URL}/functions/v1/auth-handler?action=login`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      let res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', email, password }),
+      });
       let data = await res.json();
 
-      // Se login falhou por usuario inexistente, cria a conta
+      // Se login falhou, tenta criar a conta
       if (!res.ok) {
-        res = await fetch(
-          `${SUPABASE_URL}/functions/v1/auth-handler?action=signup`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-          }
-        );
+        res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'signup', email, password }),
+        });
         data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Erro ao autenticar');
       }
