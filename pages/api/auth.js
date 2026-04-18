@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { action, email, password } = req.body;
+  const { email, password } = req.body;
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
@@ -11,33 +11,51 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Variaveis de ambiente ausentes' });
   }
 
-  const endpoint = action === 'signup'
-    ? `${SUPABASE_URL}/auth/v1/signup`
-    : `${SUPABASE_URL}/auth/v1/token?grant_type=password`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+  };
 
   try {
-    const supabaseRes = await fetch(endpoint, {
+    // Tenta login primeiro
+    const loginRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
+      headers,
       body: JSON.stringify({ email, password }),
     });
+    const loginData = await loginRes.json();
+    const loginUserId = loginData?.user?.id || null;
 
-    const data = await supabaseRes.json();
-
-    // UID: data.user.id (login) or data.id (signup)
-    const user_id = data?.user?.id || data?.id || null;
-
-    if (!user_id) {
-      return res.status(400).json({
-        error: data.error_description || data.msg || data.message || data.error || 'Erro ao autenticar',
-      });
+    if (loginUserId) {
+      return res.status(200).json({ user_id: loginUserId });
     }
 
-    return res.status(200).json({ user_id });
+    // Login falhou - tenta signup
+    const signupRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ email, password }),
+    });
+    const signupData = await signupRes.json();
+    const signupUserId = signupData?.id || signupData?.user?.id || null;
+
+    if (signupUserId) {
+      return res.status(200).json({ user_id: signupUserId });
+    }
+
+    // Ambos falharam
+    const errorMsg =
+      signupData?.error_description ||
+      signupData?.msg ||
+      signupData?.message ||
+      signupData?.error ||
+      loginData?.error_description ||
+      loginData?.msg ||
+      loginData?.error ||
+      'Erro ao autenticar';
+
+    return res.status(400).json({ error: errorMsg });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
