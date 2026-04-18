@@ -3,9 +3,8 @@ import { useState } from 'react';
 export default function Home() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [token, setToken] = useState('');
+  const [userId, setUserId] = useState('');
   const [message, setMessage] = useState('');
-  const [debugInfo, setDebugInfo] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -13,37 +12,21 @@ export default function Home() {
     e.preventDefault();
     setLoading(true);
     setMessage('');
-    setToken('');
-    setDebugInfo('');
+    setUserId('');
 
     try {
-      // Tenta login primeiro
-      let res = await fetch('/api/auth', {
+      const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'login', email, password }),
+        body: JSON.stringify({ email, password }),
       });
-      let data = await res.json();
+      const data = await res.json();
 
-      // Se login falhou, tenta criar a conta
-      if (!res.ok) {
-        res = await fetch('/api/auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'signup', email, password }),
-        });
-        data = await res.json();
-      }
-
-      if (data.access_token) {
-        setToken(data.access_token);
-        setMessage('Token gerado! Copie e cole no chat do GPT.');
+      if (data.user_id) {
+        setUserId(data.user_id);
+        setMessage('Seu ID foi gerado! Copie e cole no chat do GPT.');
       } else {
-        const errMsg = data.error || 'Token nao retornado';
-        setMessage('Erro: ' + errMsg);
-        if (data.debug) {
-          setDebugInfo(JSON.stringify(data.debug, null, 2));
-        }
+        setMessage('Erro: ' + (data.error || 'Tente novamente'));
       }
     } catch (err) {
       setMessage('Erro: ' + err.message);
@@ -52,8 +35,8 @@ export default function Home() {
     }
   }
 
-  function copyToken() {
-    navigator.clipboard.writeText(token);
+  function copyId() {
+    navigator.clipboard.writeText(userId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -61,29 +44,42 @@ export default function Home() {
   return (
     <main style={styles.main}>
       <div style={styles.card}>
-        <div style={styles.logo}>Plantô Brand</div>
-        <p style={styles.subtitle}>Digite seu e-mail e senha para gerar seu token de acesso</p>
-
+        <div style={styles.logo}>Planto Brand</div>
+        <p style={styles.subtitle}>Digite seu e-mail e senha para gerar seu ID de acesso</p>
         <form onSubmit={handleSubmit} style={styles.form}>
-          <input style={styles.input} type="email" placeholder="Seu e-mail" value={email} onChange={e => setEmail(e.target.value)} required />
-          <input style={styles.input} type="password" placeholder="Sua senha (mínimo 6 caracteres)" value={password} onChange={e => setPassword(e.target.value)} required />
+          <input
+            style={styles.input}
+            type="email"
+            placeholder="Seu e-mail"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+          />
+          <input
+            style={styles.input}
+            type="password"
+            placeholder="Sua senha (mínimo 6 caracteres)"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+          />
           <button style={styles.button} type="submit" disabled={loading}>
-            {loading ? 'Aguarde...' : 'Gerar token de acesso'}
+            {loading ? 'Aguarde...' : 'Gerar meu ID de acesso'}
           </button>
         </form>
 
-        {message && <p style={token ? styles.success : styles.error}>{message}</p>}
-
-        {debugInfo && (
-          <pre style={styles.debug}>{debugInfo}</pre>
+        {message && (
+          <p style={userId ? styles.success : styles.error}>{message}</p>
         )}
 
-        {token && (
+        {userId && (
           <div style={styles.tokenBox}>
-            <p style={styles.tokenLabel}>Cole este token no chat do GPT:</p>
+            <p style={styles.tokenLabel}>Cole este ID no chat do GPT:</p>
             <div style={styles.tokenRow}>
-              <code style={styles.tokenCode}>{token.slice(0, 50)}...</code>
-              <button style={styles.copyBtn} onClick={copyToken}>{copied ? 'Copiado!' : 'Copiar'}</button>
+              <code style={styles.tokenCode}>{userId}</code>
+              <button style={styles.copyBtn} onClick={copyId}>
+                {copied ? 'Copiado!' : 'Copiar'}
+              </button>
             </div>
           </div>
         )}
@@ -102,10 +98,9 @@ const styles = {
   button: { padding: '13px 0', background: '#fff', color: '#000', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: 'pointer', marginTop: 4 },
   success: { color: '#4ade80', marginTop: 16, fontSize: 14 },
   error: { color: '#f87171', marginTop: 16, fontSize: 14 },
-  debug: { marginTop: 12, background: '#0a0a0a', border: '1px solid #333', borderRadius: 8, padding: 12, fontSize: 11, color: '#f87171', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' },
   tokenBox: { marginTop: 20, background: '#111', border: '1px solid #2a2a2a', borderRadius: 10, padding: 16 },
   tokenLabel: { fontSize: 13, color: '#aaa', marginBottom: 10 },
   tokenRow: { display: 'flex', alignItems: 'center', gap: 10 },
-  tokenCode: { flex: 1, fontSize: 12, color: '#4ade80', wordBreak: 'break-all' },
+  tokenCode: { flex: 1, fontSize: 13, color: '#4ade80', wordBreak: 'break-all', letterSpacing: '0.5px' },
   copyBtn: { padding: '6px 14px', background: '#4ade80', color: '#000', border: 'none', borderRadius: 6, fontWeight: 700, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' },
 };
