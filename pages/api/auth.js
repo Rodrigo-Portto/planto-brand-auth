@@ -27,18 +27,18 @@ export default async function handler(req, res) {
     });
 
     const data = await supabaseRes.json();
-    const token = data.access_token || null;
-    // O UID fica em data.user.id (login) ou data.id (signup)
+
+    // UID: data.user.id (login) or data.id (signup)
     const user_id = data?.user?.id || data?.id || null;
 
-    if (!token || !user_id) {
+    if (!user_id) {
       return res.status(400).json({
         error: data.error_description || data.msg || data.message || data.error || 'Erro ao autenticar',
       });
     }
 
-    // Retorna o user_id (curto) para o usuario e o access_token para uso interno
-    return res.status(200).json({ user_id, access_token: token });
+    return res.status(200).json({ user_id });
+
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
