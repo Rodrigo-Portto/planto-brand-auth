@@ -5,6 +5,7 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [token, setToken] = useState('');
   const [message, setMessage] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -13,6 +14,7 @@ export default function Home() {
     setLoading(true);
     setMessage('');
     setToken('');
+    setDebugInfo('');
 
     try {
       // Tenta login primeiro
@@ -31,11 +33,18 @@ export default function Home() {
           body: JSON.stringify({ action: 'signup', email, password }),
         });
         data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Erro ao autenticar');
       }
 
-      setToken(data.access_token);
-      setMessage('Token gerado! Copie e cole no chat do GPT.');
+      if (data.access_token) {
+        setToken(data.access_token);
+        setMessage('Token gerado! Copie e cole no chat do GPT.');
+      } else {
+        const errMsg = data.error || 'Token nao retornado';
+        setMessage('Erro: ' + errMsg);
+        if (data.debug) {
+          setDebugInfo(JSON.stringify(data.debug, null, 2));
+        }
+      }
     } catch (err) {
       setMessage('Erro: ' + err.message);
     } finally {
@@ -65,6 +74,10 @@ export default function Home() {
 
         {message && <p style={token ? styles.success : styles.error}>{message}</p>}
 
+        {debugInfo && (
+          <pre style={styles.debug}>{debugInfo}</pre>
+        )}
+
         {token && (
           <div style={styles.tokenBox}>
             <p style={styles.tokenLabel}>Cole este token no chat do GPT:</p>
@@ -81,7 +94,7 @@ export default function Home() {
 
 const styles = {
   main: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f0f', fontFamily: 'sans-serif' },
-  card: { background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 16, padding: 40, width: '100%', maxWidth: 420, color: '#fff' },
+  card: { background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 16, padding: 40, width: '100%', maxWidth: 460, color: '#fff' },
   logo: { fontSize: 26, fontWeight: 700, marginBottom: 4, color: '#fff' },
   subtitle: { color: '#888', fontSize: 14, marginBottom: 28, lineHeight: 1.5 },
   form: { display: 'flex', flexDirection: 'column', gap: 12 },
@@ -89,6 +102,7 @@ const styles = {
   button: { padding: '13px 0', background: '#fff', color: '#000', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: 'pointer', marginTop: 4 },
   success: { color: '#4ade80', marginTop: 16, fontSize: 14 },
   error: { color: '#f87171', marginTop: 16, fontSize: 14 },
+  debug: { marginTop: 12, background: '#0a0a0a', border: '1px solid #333', borderRadius: 8, padding: 12, fontSize: 11, color: '#f87171', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' },
   tokenBox: { marginTop: 20, background: '#111', border: '1px solid #2a2a2a', borderRadius: 10, padding: 16 },
   tokenLabel: { fontSize: 13, color: '#aaa', marginBottom: 10 },
   tokenRow: { display: 'flex', alignItems: 'center', gap: 10 },
