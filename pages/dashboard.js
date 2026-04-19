@@ -1,27 +1,31 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
+
+const MAX_ATTACHMENTS = 10;
+const THEME_STORAGE_KEY = 'planto_theme_mode';
+const PANEL_STORAGE_KEY = 'planto_form_panels';
 
 const profileFields = [
   { key: 'name', label: 'Nome' },
   { key: 'email', label: 'E-mail' },
   { key: 'phone', label: 'Telefone' },
-  { key: 'address', label: 'EndereÃ§o' },
+  { key: 'address', label: 'Endere\u00e7o' },
   { key: 'website', label: 'Site' },
   { key: 'instagram', label: 'Instagram' },
   { key: 'market_niche', label: 'Mercado/Nicho' },
-  { key: 'education', label: 'FormaÃ§Ã£o' },
+  { key: 'education', label: 'Forma\u00e7\u00e3o' },
   { key: 'specialties', label: 'Especialidades' },
 ];
 
 const brandCoreFields = [
-  { key: 'proposito', label: 'PropÃ³sito' },
+  { key: 'proposito', label: 'Prop\u00f3sito' },
   { key: 'origem', label: 'Origem' },
-  { key: 'metodo', label: 'MÃ©todo' },
+  { key: 'metodo', label: 'M\u00e9todo' },
   { key: 'impacto', label: 'Impacto' },
-  { key: 'publico', label: 'PÃºblico' },
+  { key: 'publico', label: 'P\u00fablico' },
   { key: 'dores', label: 'Dores' },
   { key: 'desejos', label: 'Desejos' },
-  { key: 'objecoes', label: 'ObjeÃ§Ãµes' },
+  { key: 'objecoes', label: 'Obje\u00e7\u00f5es' },
   { key: 'diferenciais', label: 'Diferenciais' },
   { key: 'valores', label: 'Valores' },
   { key: 'personalidade', label: 'Personalidade' },
@@ -31,23 +35,86 @@ const brandCoreFields = [
 ];
 
 const humanCoreFields = [
-  { key: 'trajetoria', label: 'TrajetÃ³ria' },
-  { key: 'formacao', label: 'FormaÃ§Ã£o' },
+  { key: 'trajetoria', label: 'Trajet\u00f3ria' },
+  { key: 'formacao', label: 'Forma\u00e7\u00e3o' },
   { key: 'abordagem', label: 'Abordagem' },
-  { key: 'especializacoes', label: 'EspecializaÃ§Ãµes' },
-  { key: 'publico_atendido', label: 'PÃºblico atendido' },
-  { key: 'contexto_clinico', label: 'Contexto clÃ­nico' },
-  { key: 'etica', label: 'Ãtica' },
+  { key: 'especializacoes', label: 'Especializa\u00e7\u00f5es' },
+  { key: 'publico_atendido', label: 'P\u00fablico atendido' },
+  { key: 'contexto_clinico', label: 'Contexto cl\u00ednico' },
+  { key: 'etica', label: '\u00c9tica' },
   { key: 'limites', label: 'Limites' },
-  { key: 'motivacao', label: 'MotivaÃ§Ã£o' },
+  { key: 'motivacao', label: 'Motiva\u00e7\u00e3o' },
   { key: 'estilo_relacional', label: 'Estilo relacional' },
-  { key: 'comunicacao', label: 'ComunicaÃ§Ã£o' },
-  { key: 'presenca_digital', label: 'PresenÃ§a digital' },
-  { key: 'referencias', label: 'ReferÃªncias' },
+  { key: 'comunicacao', label: 'Comunica\u00e7\u00e3o' },
+  { key: 'presenca_digital', label: 'Presen\u00e7a digital' },
+  { key: 'referencias', label: 'Refer\u00eancias' },
   { key: 'diferenciais_humanos', label: 'Diferenciais humanos' },
   { key: 'medos', label: 'Medos' },
   { key: 'sonhos', label: 'Sonhos' },
 ];
+
+const EMPTY_ENTRY_EDITOR = {
+  entry_type: 'note',
+  title: '',
+  content_text: '',
+};
+
+const themeTokens = {
+  dark: {
+    name: 'dark',
+    pageBackground: 'linear-gradient(160deg, #09111f 0%, #0c1628 45%, #101b31 100%)',
+    shell: '#0b1220',
+    shellMuted: '#0a1020',
+    shellRaised: '#101b31',
+    border: '#24334f',
+    borderStrong: '#31415f',
+    borderAccent: '#38bdf8',
+    text: '#e2e8f0',
+    textMuted: '#94a3b8',
+    textStrong: '#f8fafc',
+    accent: '#38bdf8',
+    accentText: '#082f49',
+    accentSoft: '#0c1c33',
+    accentMuted: '#bfdbfe',
+    danger: '#7f1d1d',
+    dangerBg: '#3f0d0d',
+    dangerText: '#fecaca',
+    successBg: 'rgba(56, 189, 248, 0.14)',
+    successText: '#d7f4ff',
+    errorBg: 'rgba(185, 28, 28, 0.18)',
+    errorText: '#fecaca',
+    overlay: 'rgba(7, 15, 27, 0.62)',
+    inputBg: '#0b1223',
+    tokenBg: '#082f49',
+  },
+  light: {
+    name: 'light',
+    pageBackground: 'linear-gradient(160deg, #f6f7fb 0%, #eef4ff 45%, #f9fbfd 100%)',
+    shell: '#ffffff',
+    shellMuted: '#f8fafc',
+    shellRaised: '#f1f5f9',
+    border: '#d8e1ee',
+    borderStrong: '#c5d2e5',
+    borderAccent: '#2563eb',
+    text: '#0f172a',
+    textMuted: '#475569',
+    textStrong: '#020617',
+    accent: '#2563eb',
+    accentText: '#eff6ff',
+    accentSoft: '#dbeafe',
+    accentMuted: '#1d4ed8',
+    danger: '#b91c1c',
+    dangerBg: '#fee2e2',
+    dangerText: '#991b1b',
+    successBg: '#dbeafe',
+    successText: '#1d4ed8',
+    errorBg: '#fee2e2',
+    errorText: '#991b1b',
+    overlay: 'rgba(15, 23, 42, 0.12)',
+    inputBg: '#f8fafc',
+    tokenBg: '#eff6ff',
+  },
+};
 
 function bytesToReadable(value) {
   if (!value) return '0 B';
@@ -60,18 +127,14 @@ function toBase64(buffer) {
   let binary = '';
   const bytes = new Uint8Array(buffer);
   const chunkSize = 0x8000;
+
   for (let i = 0; i < bytes.length; i += chunkSize) {
     const chunk = bytes.subarray(i, i + chunkSize);
     binary += String.fromCharCode(...chunk);
   }
+
   return btoa(binary);
 }
-
-const EMPTY_ENTRY_EDITOR = {
-  entry_type: 'note',
-  title: '',
-  content_text: '',
-};
 
 function getEntryText(entry) {
   const content = entry?.content_json;
@@ -85,9 +148,7 @@ function getEntryText(entry) {
 }
 
 function mapEntryToEditor(entry) {
-  if (!entry) {
-    return EMPTY_ENTRY_EDITOR;
-  }
+  if (!entry) return EMPTY_ENTRY_EDITOR;
 
   return {
     entry_type: entry.entry_type || 'note',
@@ -96,40 +157,487 @@ function mapEntryToEditor(entry) {
   };
 }
 
+function CameraIcon({ color }) {
+  return (
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" aria-hidden="true">
+      <path
+        d="M8.5 6.5h7l1 1.5H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h2.5l1-1.5Z"
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="13.5" r="3.6" stroke={color} strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ collapsed, color }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      aria-hidden="true"
+      style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 160ms ease' }}
+    >
+      <path d="m6 9 6 6 6-6" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function SunIcon({ color }) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" stroke={color} strokeWidth="1.7" />
+      <path d="M12 2.5v2.3M12 19.2v2.3M4.8 4.8l1.6 1.6M17.6 17.6l1.6 1.6M2.5 12h2.3M19.2 12h2.3M4.8 19.2l1.6-1.6M17.6 6.4l1.6-1.6" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function MoonIcon({ color }) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path d="M20 15.2A7.8 7.8 0 1 1 8.8 4a8.8 8.8 0 1 0 11.2 11.2Z" stroke={color} strokeWidth="1.7" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function createStyles(colors, isCompact) {
+  return {
+    page: {
+      minHeight: '100vh',
+      background: colors.pageBackground,
+      color: colors.text,
+      padding: isCompact ? '16px' : '20px',
+      fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    },
+    pageShell: {
+      maxWidth: '1440px',
+      margin: '0 auto',
+      display: 'grid',
+      gap: '14px',
+    },
+    header: {
+      display: 'flex',
+      alignItems: isCompact ? 'flex-start' : 'center',
+      justifyContent: 'space-between',
+      flexDirection: isCompact ? 'column' : 'row',
+      gap: '14px',
+    },
+    title: { margin: 0, fontSize: isCompact ? '2rem' : '2.4rem', color: colors.textStrong },
+    subtitle: { margin: '6px 0 0', color: colors.textMuted, fontSize: '0.96rem' },
+    headerActions: {
+      display: 'flex',
+      gap: '10px',
+      alignItems: 'center',
+      width: isCompact ? '100%' : 'auto',
+      justifyContent: isCompact ? 'space-between' : 'flex-end',
+    },
+    notice: {
+      justifySelf: 'end',
+      borderRadius: '999px',
+      padding: '6px 12px',
+      background: colors.successBg,
+      color: colors.successText,
+      fontSize: '0.8rem',
+      fontWeight: 600,
+      border: `1px solid ${colors.borderAccent}`,
+    },
+    errorBanner: {
+      borderRadius: '12px',
+      padding: '10px 12px',
+      background: colors.errorBg,
+      color: colors.errorText,
+      border: `1px solid ${colors.danger}`,
+      fontSize: '0.9rem',
+    },
+    loader: {
+      padding: '18px 0',
+      color: colors.textMuted,
+      fontSize: '0.95rem',
+    },
+    grid: {
+      display: 'grid',
+      gap: '14px',
+      gridTemplateColumns: isCompact ? '1fr' : '300px minmax(420px, 1fr) 360px',
+      alignItems: 'start',
+    },
+    leftPanel: {
+      background: colors.shell,
+      border: `1px solid ${colors.border}`,
+      borderRadius: '18px',
+      padding: '14px',
+      display: 'grid',
+      gap: '12px',
+    },
+    centerPanel: {
+      background: colors.shell,
+      border: `1px solid ${colors.border}`,
+      borderRadius: '18px',
+      padding: '14px',
+      display: 'grid',
+      gap: '14px',
+    },
+    rightColumn: {
+      display: 'grid',
+      gap: '14px',
+      alignSelf: 'start',
+    },
+    rightPanel: {
+      background: colors.shell,
+      border: `1px solid ${colors.border}`,
+      borderRadius: '18px',
+      padding: '14px',
+      display: 'grid',
+      gap: '12px',
+    },
+    panelTitle: {
+      margin: 0,
+      color: colors.textStrong,
+      fontSize: '1.06rem',
+    },
+    cardBlock: {
+      border: `1px solid ${colors.border}`,
+      borderRadius: '14px',
+      padding: '12px',
+      background: colors.shellMuted,
+      display: 'grid',
+      gap: '12px',
+    },
+    formCard: {
+      border: `1px solid ${colors.border}`,
+      borderRadius: '14px',
+      background: colors.shellMuted,
+      overflow: 'hidden',
+    },
+    formCardHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '10px',
+      padding: '12px',
+      borderBottom: `1px solid ${colors.border}`,
+    },
+    formCardBody: {
+      display: 'grid',
+      gap: '12px',
+      padding: '12px',
+    },
+    cardTitle: { margin: 0, fontSize: '0.96rem', color: colors.textStrong },
+    collapseButton: {
+      width: '34px',
+      height: '34px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: '10px',
+      border: `1px solid ${colors.borderStrong}`,
+      background: colors.shell,
+      cursor: 'pointer',
+      padding: 0,
+    },
+    formGrid: {
+      display: 'grid',
+      gap: '10px',
+    },
+    label: {
+      display: 'grid',
+      gap: '6px',
+      fontSize: '0.82rem',
+      color: colors.textMuted,
+    },
+    input: {
+      border: `1px solid ${colors.borderStrong}`,
+      borderRadius: '10px',
+      background: colors.inputBg,
+      color: colors.text,
+      padding: '10px 12px',
+      fontSize: '0.92rem',
+      width: '100%',
+      outline: 'none',
+      boxSizing: 'border-box',
+    },
+    textarea: {
+      border: `1px solid ${colors.borderStrong}`,
+      borderRadius: '10px',
+      background: colors.inputBg,
+      color: colors.text,
+      padding: '10px 12px',
+      fontSize: '0.9rem',
+      width: '100%',
+      resize: 'vertical',
+      outline: 'none',
+      boxSizing: 'border-box',
+      minHeight: '92px',
+    },
+    primaryButton: {
+      border: 'none',
+      borderRadius: '10px',
+      padding: '10px 12px',
+      background: colors.accent,
+      color: colors.accentText,
+      cursor: 'pointer',
+      fontWeight: 700,
+      fontSize: '0.86rem',
+    },
+    secondaryButton: {
+      border: `1px solid ${colors.borderStrong}`,
+      borderRadius: '10px',
+      padding: '9px 12px',
+      background: colors.shell,
+      color: colors.text,
+      cursor: 'pointer',
+      fontWeight: 600,
+      fontSize: '0.84rem',
+    },
+    ghostButton: {
+      border: `1px solid ${colors.borderStrong}`,
+      borderRadius: '10px',
+      padding: '9px 12px',
+      background: 'transparent',
+      color: colors.text,
+      cursor: 'pointer',
+      fontSize: '0.84rem',
+    },
+    iconButton: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      border: `1px solid ${colors.borderStrong}`,
+      borderRadius: '10px',
+      padding: '9px 12px',
+      background: colors.shell,
+      color: colors.text,
+      cursor: 'pointer',
+      fontSize: '0.84rem',
+      fontWeight: 600,
+    },
+    dangerButton: {
+      border: `1px solid ${colors.danger}`,
+      borderRadius: '10px',
+      padding: '9px 12px',
+      background: colors.dangerBg,
+      color: colors.dangerText,
+      cursor: 'pointer',
+      fontSize: '0.82rem',
+      fontWeight: 700,
+    },
+    list: {
+      display: 'grid',
+      gap: '8px',
+    },
+    listItem: {
+      border: `1px solid ${colors.border}`,
+      borderRadius: '10px',
+      padding: '10px',
+      background: colors.shellMuted,
+      display: 'grid',
+      gap: '4px',
+    },
+    listItemInline: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: '8px',
+      flexWrap: 'wrap',
+    },
+    listTitle: {
+      margin: 0,
+      fontSize: '0.9rem',
+      color: colors.textStrong,
+      fontWeight: 700,
+    },
+    smallText: {
+      margin: 0,
+      fontSize: '0.78rem',
+      color: colors.textMuted,
+      wordBreak: 'break-word',
+    },
+    tokenBox: {
+      border: `1px dashed ${colors.borderAccent}`,
+      borderRadius: '12px',
+      padding: '10px',
+      background: colors.tokenBg,
+    },
+    code: {
+      display: 'block',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+      fontSize: '0.8rem',
+      color: colors.textStrong,
+      wordBreak: 'break-all',
+      marginTop: '4px',
+    },
+    avatarArea: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '14px',
+      flexWrap: 'wrap',
+    },
+    avatarButton: {
+      width: '104px',
+      height: '104px',
+      borderRadius: '999px',
+      overflow: 'hidden',
+      border: `1px solid ${colors.borderAccent}`,
+      background: colors.shellRaised,
+      position: 'relative',
+      cursor: 'pointer',
+      padding: 0,
+      appearance: 'none',
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
+      display: 'block',
+    },
+    avatarOverlay: {
+      position: 'absolute',
+      inset: 0,
+      background: colors.overlay,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarMeta: {
+      display: 'grid',
+      gap: '6px',
+      minWidth: '180px',
+    },
+    hiddenInput: {
+      display: 'none',
+    },
+    countBadge: {
+      justifySelf: 'start',
+      borderRadius: '999px',
+      padding: '4px 10px',
+      fontSize: '0.78rem',
+      background: colors.shellRaised,
+      color: colors.textStrong,
+      border: `1px solid ${colors.border}`,
+      fontWeight: 700,
+    },
+    entryButton: {
+      border: `1px solid ${colors.border}`,
+      borderRadius: '10px',
+      padding: '10px',
+      background: colors.shellMuted,
+      color: colors.text,
+      display: 'grid',
+      gap: '4px',
+      cursor: 'pointer',
+      textAlign: 'left',
+    },
+    entryButtonActive: {
+      border: `1px solid ${colors.borderAccent}`,
+      borderRadius: '10px',
+      padding: '10px',
+      background: colors.accentSoft,
+      color: colors.text,
+      display: 'grid',
+      gap: '4px',
+      cursor: 'pointer',
+      textAlign: 'left',
+    },
+    entryBadge: {
+      border: `1px solid ${colors.borderAccent}`,
+      borderRadius: '999px',
+      padding: '1px 8px',
+      fontSize: '0.7rem',
+      color: colors.accentMuted,
+      background: colors.shell,
+    },
+  };
+}
+
 export default function Dashboard() {
   const router = useRouter();
+  const avatarInputRef = useRef(null);
+  const knowledgeInputRef = useRef(null);
+
   const [token, setToken] = useState('');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [notice, setNotice] = useState('');
+  const [themeMode, setThemeMode] = useState('dark');
+  const [viewportWidth, setViewportWidth] = useState(1440);
 
   const [profile, setProfile] = useState({});
   const [brandCore, setBrandCore] = useState({});
   const [humanCore, setHumanCore] = useState({});
+  const [collapsedPanels, setCollapsedPanels] = useState({
+    brandCore: false,
+    humanCore: false,
+  });
 
   const [attachments, setAttachments] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
 
   const [entries, setEntries] = useState([]);
   const [selectedEntryId, setSelectedEntryId] = useState('');
   const [entryEditor, setEntryEditor] = useState(EMPTY_ENTRY_EDITOR);
 
-  const [tokens, setTokens] = useState([]);
-  const [tokenLabel, setTokenLabel] = useState('Token GPT');
   const [createdToken, setCreatedToken] = useState('');
   const [tokenCopied, setTokenCopied] = useState(false);
 
+  const isCompact = viewportWidth < 1180;
+  const theme = themeTokens[themeMode] || themeTokens.dark;
+  const styles = useMemo(() => createStyles(theme, isCompact), [theme, isCompact]);
+
   useEffect(() => {
     const accessToken = localStorage.getItem('planto_access_token');
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    const savedPanels = localStorage.getItem(PANEL_STORAGE_KEY);
+
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setThemeMode(savedTheme);
+    }
+
+    if (savedPanels) {
+      try {
+        const parsed = JSON.parse(savedPanels);
+        setCollapsedPanels((current) => ({
+          ...current,
+          ...parsed,
+        }));
+      } catch {
+        // Ignore malformed local storage.
+      }
+    }
+
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
     if (!accessToken) {
       router.replace('/');
-      return;
+      return () => window.removeEventListener('resize', handleResize);
     }
+
     setToken(accessToken);
     fetchAll(accessToken);
+
+    return () => window.removeEventListener('resize', handleResize);
   }, [router]);
+
+  useEffect(() => {
+    localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+  }, [themeMode]);
+
+  useEffect(() => {
+    localStorage.setItem(PANEL_STORAGE_KEY, JSON.stringify(collapsedPanels));
+  }, [collapsedPanels]);
+
+  useEffect(() => {
+    if (!notice) return undefined;
+    const timer = setTimeout(() => setNotice(''), 1800);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   useEffect(() => {
     if (entries.length === 0) {
@@ -155,6 +663,16 @@ export default function Dashboard() {
     });
   }, [entries, selectedEntryId]);
 
+  function showError(message) {
+    setNotice('');
+    setErrorMessage(message);
+  }
+
+  function showSavedNotice(message = 'Salvo') {
+    setErrorMessage('');
+    setNotice(message);
+  }
+
   async function authFetch(path, options = {}) {
     const headers = {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
@@ -166,8 +684,7 @@ export default function Dashboard() {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const message = data?.error || 'Erro na requisiÃ§Ã£o';
-      throw new Error(message);
+      throw new Error(data?.error || 'Erro na requisição.');
     }
 
     return data;
@@ -175,12 +692,13 @@ export default function Dashboard() {
 
   async function fetchAll(activeToken) {
     setLoading(true);
-    setStatus('Carregando biblioteca...');
+    setErrorMessage('');
+
     try {
       const response = await fetch('/api/get', {
         headers: { Authorization: `Bearer ${activeToken}` },
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         throw new Error(data?.error || 'Falha ao carregar dados.');
@@ -192,24 +710,25 @@ export default function Dashboard() {
       setHumanCore(data.forms?.human_core || {});
       setAttachments(data.attachments || []);
       setEntries(data.gpt_entries || []);
+
       const fetchedTokens = data.gpt_tokens || [];
-      setTokens(fetchedTokens);
       const visibleToken =
         fetchedTokens.find((item) => item.status === 'active' && item.token_value)?.token_value ||
         fetchedTokens.find((item) => item.token_value)?.token_value ||
         '';
+
       setCreatedToken(visibleToken);
       setTokenCopied(false);
-      setStatus('');
     } catch (error) {
-      if (error.message.toLowerCase().includes('token')) {
+      if (String(error.message || '').toLowerCase().includes('token')) {
         localStorage.removeItem('planto_access_token');
         localStorage.removeItem('planto_user');
         localStorage.removeItem('planto_user_id');
         router.replace('/');
         return;
       }
-      setStatus(error.message);
+
+      showError(error.message || 'Erro ao carregar dados.');
     } finally {
       setLoading(false);
     }
@@ -217,16 +736,24 @@ export default function Dashboard() {
 
   async function saveResource(resource, payload) {
     setSaving(true);
-    setStatus('Salvando...');
+
     try {
-      await authFetch('/api/save', {
+      const data = await authFetch('/api/save', {
         method: 'POST',
         body: JSON.stringify({ resource, payload }),
       });
-      setStatus('Salvo com sucesso.');
-      await fetchAll(token);
+
+      if (resource === 'profile') {
+        setProfile(data.profile || payload);
+      } else if (resource === 'brand_core') {
+        setBrandCore(data.brand_core || payload);
+      } else if (resource === 'human_core') {
+        setHumanCore(data.human_core || payload);
+      }
+
+      showSavedNotice();
     } catch (error) {
-      setStatus(error.message);
+      showError(error.message || 'Erro ao salvar.');
     } finally {
       setSaving(false);
     }
@@ -239,19 +766,19 @@ export default function Dashboard() {
 
   async function saveEntryChanges() {
     if (!selectedEntryId) {
-      setStatus('Selecione uma entrada para editar.');
+      showError('Selecione uma entrada para editar.');
       return;
     }
 
     if (!entryEditor.title.trim() || !entryEditor.content_text.trim()) {
-      setStatus('Preencha titulo e conteudo da entrada.');
+      showError('Preencha t\u00edtulo e conte\u00fado da entrada.');
       return;
     }
 
     setSaving(true);
-    setStatus('Salvando entrada...');
+
     try {
-      await authFetch('/api/save', {
+      const data = await authFetch('/api/save', {
         method: 'POST',
         body: JSON.stringify({
           resource: 'gpt_entry',
@@ -267,10 +794,18 @@ export default function Dashboard() {
           },
         }),
       });
-      setStatus('Entrada atualizada.');
-      await fetchAll(token);
+
+      const updatedEntry = data.entry || null;
+      if (updatedEntry) {
+        setEntries((current) =>
+          current.map((item) => (item.id === updatedEntry.id ? updatedEntry : item))
+        );
+        setEntryEditor(mapEntryToEditor(updatedEntry));
+      }
+
+      showSavedNotice();
     } catch (error) {
-      setStatus(error.message);
+      showError(error.message || 'Erro ao salvar entrada.');
     } finally {
       setSaving(false);
     }
@@ -278,16 +813,21 @@ export default function Dashboard() {
 
   async function deleteEntry(id) {
     setSaving(true);
-    setStatus('Removendo entrada...');
+
     try {
       await authFetch('/api/save', {
         method: 'POST',
-        body: JSON.stringify({ resource: 'gpt_entry', action: 'delete', payload: { id } }),
+        body: JSON.stringify({
+          resource: 'gpt_entry',
+          action: 'delete',
+          payload: { id },
+        }),
       });
-      setStatus('Entrada removida.');
-      await fetchAll(token);
+
+      setEntries((current) => current.filter((item) => item.id !== id));
+      showSavedNotice();
     } catch (error) {
-      setStatus(error.message);
+      showError(error.message || 'Erro ao remover entrada.');
     } finally {
       setSaving(false);
     }
@@ -295,91 +835,133 @@ export default function Dashboard() {
 
   async function handleUpload() {
     if (!selectedFile) {
-      setStatus('Selecione um arquivo para anexar.');
+      showError('Selecione um arquivo para anexar.');
+      return;
+    }
+
+    if (attachments.length >= MAX_ATTACHMENTS) {
+      showError('Limite de 10 arquivos atingido.');
       return;
     }
 
     setUploading(true);
-    setStatus('Enviando arquivo...');
 
     try {
       const buffer = await selectedFile.arrayBuffer();
-      const base64 = toBase64(buffer);
-
-      await authFetch('/api/upload', {
+      const data = await authFetch('/api/upload', {
         method: 'POST',
         body: JSON.stringify({
           filename: selectedFile.name,
           mime_type: selectedFile.type || 'application/octet-stream',
           file_size: selectedFile.size,
           source_kind: 'dashboard-upload',
-          base64,
+          base64: toBase64(buffer),
         }),
       });
 
+      if (data.attachment) {
+        setAttachments((current) => [data.attachment, ...current].slice(0, MAX_ATTACHMENTS));
+      }
+
       setSelectedFile(null);
-      setStatus('Arquivo enviado com sucesso.');
-      await fetchAll(token);
+      if (knowledgeInputRef.current) {
+        knowledgeInputRef.current.value = '';
+      }
+      showSavedNotice();
     } catch (error) {
-      setStatus(error.message);
+      showError(error.message || 'Erro ao enviar arquivo.');
     } finally {
       setUploading(false);
     }
   }
 
-  async function createToken() {
-    setSaving(true);
-    setStatus('Gerando token...');
-    setCreatedToken('');
-    try {
-      const data = await authFetch('/api/token', {
-        method: 'POST',
-        body: JSON.stringify({ label: tokenLabel }),
-      });
-      setCreatedToken(data?.token || '');
-      setStatus('Token gerado e disponivel nesta conta.');
-      await fetchAll(token);
-    } catch (error) {
-      setStatus(error.message);
-    } finally {
-      setSaving(false);
-    }
-  }
+  async function handleAvatarUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  function copyCurrentToken() {
-    if (!createdToken) {
-      setStatus('Nenhum token disponÃ­vel para copiar.');
+    if (!String(file.type || '').startsWith('image/')) {
+      showError('Selecione uma imagem v\u00e1lida para o avatar.');
+      event.target.value = '';
       return;
     }
 
-    navigator.clipboard.writeText(createdToken);
-    setTokenCopied(true);
-    setStatus('Token copiado para a Ã¡rea de transferÃªncia.');
-    setTimeout(() => setTokenCopied(false), 1600);
+    setAvatarUploading(true);
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const data = await authFetch('/api/avatar', {
+        method: 'POST',
+        body: JSON.stringify({
+          filename: file.name,
+          mime_type: file.type || 'application/octet-stream',
+          base64: toBase64(buffer),
+        }),
+      });
+
+      const nextUrl = data.profile?.avatar_url || data.avatar_url || '';
+      setProfile((current) => ({ ...current, avatar_url: nextUrl }));
+      showSavedNotice();
+    } catch (error) {
+      showError(error.message || 'Erro ao enviar avatar.');
+    } finally {
+      event.target.value = '';
+      setAvatarUploading(false);
+    }
   }
 
-  async function revokeToken(id) {
+  async function createToken() {
     setSaving(true);
-    setStatus('Revogando token...');
+
     try {
-      await authFetch('/api/token', {
-        method: 'DELETE',
-        body: JSON.stringify({ id }),
+      const data = await authFetch('/api/token', {
+        method: 'POST',
+        body: JSON.stringify({}),
       });
-      setStatus('Token revogado.');
-      await fetchAll(token);
+
+      setCreatedToken(data?.token || '');
+      setTokenCopied(false);
+      showSavedNotice();
     } catch (error) {
-      setStatus(error.message);
+      showError(error.message || 'Erro ao gerar token.');
     } finally {
       setSaving(false);
     }
   }
 
-  const userLabel = useMemo(() => {
+  async function copyCurrentToken() {
+    if (!createdToken) {
+      showError('Nenhum token dispon\u00edvel para copiar.');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(createdToken);
+      setTokenCopied(true);
+      showSavedNotice('Copiado');
+      setTimeout(() => setTokenCopied(false), 1600);
+    } catch {
+      showError('Falha ao copiar o token.');
+    }
+  }
+
+  function toggleTheme() {
+    setThemeMode((current) => (current === 'dark' ? 'light' : 'dark'));
+  }
+
+  function togglePanel(key) {
+    setCollapsedPanels((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
+  }
+
+  const greetingName = useMemo(() => {
     if (profile?.name) return profile.name;
     if (user?.email) return user.email;
-    return 'Conta';
+    return 'por aqui';
   }, [profile?.name, user?.email]);
+
+  const attachmentLimitReached = attachments.length >= MAX_ATTACHMENTS;
 
   function logout() {
     localStorage.removeItem('planto_access_token');
@@ -390,453 +972,317 @@ export default function Dashboard() {
 
   return (
     <main style={styles.page}>
-      <header style={styles.header}>
-        <div>
-          <h1 style={styles.title}>Biblioteca da Marca</h1>
-          <p style={styles.subtitle}>Conta: {userLabel}</p>
-        </div>
-        <button onClick={logout} style={styles.ghostButton}>Sair</button>
-      </header>
+      <div style={styles.pageShell}>
+        <header style={styles.header}>
+          <div>
+            <h1 style={styles.title}>Plant\u00f4</h1>
+            <p style={styles.subtitle}>Ol\u00e1, {greetingName}!</p>
+          </div>
 
-      {status && <p style={styles.status}>{status}</p>}
+          <div style={styles.headerActions}>
+            <button onClick={toggleTheme} style={styles.iconButton} type="button">
+              {themeMode === 'dark' ? <SunIcon color={theme.text} /> : <MoonIcon color={theme.text} />}
+              {themeMode === 'dark' ? 'Modo claro' : 'Modo escuro'}
+            </button>
+            <button onClick={logout} style={styles.ghostButton} type="button">Sair</button>
+          </div>
+        </header>
 
-      {loading ? (
-        <p style={styles.status}>Carregando...</p>
-      ) : (
-        <section style={styles.grid}>
-          <aside style={styles.leftPanel}>
-            <div style={styles.cardBlock}>
-              <h2 style={styles.panelTitle}>Perfil</h2>
-              <div style={styles.formGrid}>
-                {profileFields.map((field) => (
-                  <label key={field.key} style={styles.label}>
-                    {field.label}
-                    <input
-                      style={styles.input}
-                      value={profile[field.key] || ''}
-                      onChange={(e) => setProfile((old) => ({ ...old, [field.key]: e.target.value }))}
-                    />
-                  </label>
-                ))}
-              </div>
-              <button disabled={saving} style={styles.primaryButton} onClick={() => saveResource('profile', profile)}>
-                Salvar perfil
-              </button>
-            </div>
+        {notice ? <div style={styles.notice}>{notice}</div> : null}
+        {errorMessage ? <div style={styles.errorBanner}>{errorMessage}</div> : null}
 
-            <div style={styles.cardBlock}>
-              <h3 style={styles.cardTitle}>Token de acesso GPT</h3>
-              <p style={styles.smallText}>O token fica visÃ­vel enquanto vocÃª estiver logado nesta conta.</p>
+        {loading ? (
+          <p style={styles.loader}>Carregando...</p>
+        ) : (
+          <section style={styles.grid}>
+            <aside style={styles.leftPanel}>
+              <div style={styles.cardBlock}>
+                <h2 style={styles.panelTitle}>Perfil</h2>
 
-              <label style={styles.label}>
-                RÃ³tulo do token
-                <input style={styles.input} value={tokenLabel} onChange={(e) => setTokenLabel(e.target.value)} />
-              </label>
+                <div style={styles.avatarArea}>
+                  <button
+                    type="button"
+                    style={styles.avatarButton}
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={avatarUploading}
+                  >
+                    {profile.avatar_url ? (
+                      <img src={profile.avatar_url} alt="Avatar do perfil" style={styles.avatarImage} />
+                    ) : null}
+                    <div style={styles.avatarOverlay}>
+                      <CameraIcon color={theme.textStrong} />
+                    </div>
+                  </button>
 
-              <div style={styles.tokenBox}>
-                <p style={styles.smallText}>Token atual</p>
-                <code style={styles.code}>{createdToken || 'Nenhum token gerado ainda.'}</code>
-              </div>
+                  <div style={styles.avatarMeta}>
+                    <p style={styles.listTitle}>Foto do perfil</p>
+                    <p style={styles.smallText}>
+                      Clique no avatar para selecionar uma imagem.
+                    </p>
+                    <button
+                      type="button"
+                      style={styles.secondaryButton}
+                      onClick={() => avatarInputRef.current?.click()}
+                      disabled={avatarUploading}
+                    >
+                      {avatarUploading ? 'Enviando...' : 'Alterar foto'}
+                    </button>
+                  </div>
+                </div>
 
-              <div style={styles.listItemInline}>
-                <button disabled={saving} style={styles.primaryButton} onClick={createToken}>
-                  Gerar Token
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  onChange={handleAvatarUpload}
+                  style={styles.hiddenInput}
+                />
+
+                <div style={styles.formGrid}>
+                  {profileFields.map((field) => (
+                    <label key={field.key} style={styles.label}>
+                      {field.label}
+                      <input
+                        style={styles.input}
+                        value={profile[field.key] || ''}
+                        onChange={(event) => setProfile((current) => ({ ...current, [field.key]: event.target.value }))}
+                      />
+                    </label>
+                  ))}
+                </div>
+
+                <button
+                  disabled={saving || avatarUploading}
+                  style={styles.primaryButton}
+                  onClick={() => saveResource('profile', profile)}
+                  type="button"
+                >
+                  Salvar perfil
                 </button>
-                <button style={styles.ghostButton} onClick={copyCurrentToken} disabled={!createdToken}>
-                  {tokenCopied ? 'Copiado' : 'Copiar Token'}
-                </button>
               </div>
 
-              {tokens.length > 0 && (
+              <div style={styles.cardBlock}>
+                <h3 style={styles.cardTitle}>Token GPT Plant\u00f4</h3>
+
+                <div style={styles.tokenBox}>
+                  <p style={styles.smallText}>Token atual</p>
+                  <code style={styles.code}>{createdToken || 'Nenhum token gerado ainda.'}</code>
+                </div>
+
+                <div style={styles.listItemInline}>
+                  <button disabled={saving} style={styles.primaryButton} onClick={createToken} type="button">
+                    Gerar Token
+                  </button>
+                  <button style={styles.secondaryButton} onClick={copyCurrentToken} disabled={!createdToken} type="button">
+                    {tokenCopied ? 'Copiado' : 'Copiar Token'}
+                  </button>
+                </div>
+              </div>
+            </aside>
+
+            <section style={styles.centerPanel}>
+              <h2 style={styles.panelTitle}>Formul\u00e1rios</h2>
+
+              <div style={styles.formCard}>
+                <div style={styles.formCardHeader}>
+                  <h3 style={styles.cardTitle}>Brand-Core</h3>
+                  <button
+                    type="button"
+                    style={styles.collapseButton}
+                    onClick={() => togglePanel('brandCore')}
+                    aria-label={collapsedPanels.brandCore ? 'Expandir Brand-Core' : 'Recolher Brand-Core'}
+                  >
+                    <ChevronIcon collapsed={collapsedPanels.brandCore} color={theme.textStrong} />
+                  </button>
+                </div>
+
+                {!collapsedPanels.brandCore && (
+                  <div style={styles.formCardBody}>
+                    <div style={styles.formGrid}>
+                      {brandCoreFields.map((field) => (
+                        <label key={field.key} style={styles.label}>
+                          {field.label}
+                          <textarea
+                            style={styles.textarea}
+                            rows={3}
+                            value={brandCore[field.key] || ''}
+                            onChange={(event) => setBrandCore((current) => ({ ...current, [field.key]: event.target.value }))}
+                          />
+                        </label>
+                      ))}
+                    </div>
+
+                    <button
+                      disabled={saving}
+                      style={styles.primaryButton}
+                      onClick={() => saveResource('brand_core', brandCore)}
+                      type="button"
+                    >
+                      Salvar Brand-Core
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div style={styles.formCard}>
+                <div style={styles.formCardHeader}>
+                  <h3 style={styles.cardTitle}>Human-Core</h3>
+                  <button
+                    type="button"
+                    style={styles.collapseButton}
+                    onClick={() => togglePanel('humanCore')}
+                    aria-label={collapsedPanels.humanCore ? 'Expandir Human-Core' : 'Recolher Human-Core'}
+                  >
+                    <ChevronIcon collapsed={collapsedPanels.humanCore} color={theme.textStrong} />
+                  </button>
+                </div>
+
+                {!collapsedPanels.humanCore && (
+                  <div style={styles.formCardBody}>
+                    <div style={styles.formGrid}>
+                      {humanCoreFields.map((field) => (
+                        <label key={field.key} style={styles.label}>
+                          {field.label}
+                          <textarea
+                            style={styles.textarea}
+                            rows={3}
+                            value={humanCore[field.key] || ''}
+                            onChange={(event) => setHumanCore((current) => ({ ...current, [field.key]: event.target.value }))}
+                          />
+                        </label>
+                      ))}
+                    </div>
+
+                    <button
+                      disabled={saving}
+                      style={styles.primaryButton}
+                      onClick={() => saveResource('human_core', humanCore)}
+                      type="button"
+                    >
+                      Salvar Human-Core
+                    </button>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <aside style={styles.rightColumn}>
+              <div style={styles.rightPanel}>
+                <h2 style={styles.panelTitle}>Conhecimento</h2>
+                <p style={styles.smallText}>Formatos suportados: DOC, DOCX, PDF, MD e TXT.</p>
+                <div style={styles.countBadge}>{attachments.length}/{MAX_ATTACHMENTS} arquivos</div>
+                <p style={styles.smallText}>Limite de 10 arquivos por usu\u00e1rio.</p>
+
+                <input
+                  ref={knowledgeInputRef}
+                  type="file"
+                  accept=".doc,.docx,.pdf,.md,.txt"
+                  onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
+                  style={styles.input}
+                  disabled={attachmentLimitReached}
+                />
+
+                <button
+                  disabled={uploading || attachmentLimitReached}
+                  style={styles.primaryButton}
+                  onClick={handleUpload}
+                  type="button"
+                >
+                  {uploading ? 'Enviando...' : 'Anexar arquivo'}
+                </button>
+
                 <div style={styles.list}>
-                  {tokens.slice(0, 3).map((tk) => (
-                    <div key={tk.id} style={styles.listItemInline}>
-                      <div>
-                        <p style={styles.listTitle}>{tk.label || 'Token GPT'}</p>
-                        <p style={styles.smallText}>{tk.token_prefix} Â· {tk.status}</p>
-                      </div>
-                      {tk.status !== 'revoked' && (
-                        <button style={styles.dangerButton} onClick={() => revokeToken(tk.id)}>Revogar</button>
-                      )}
+                  {attachments.length === 0 && <p style={styles.smallText}>Sem anexos ainda.</p>}
+                  {attachments.map((item) => (
+                    <div key={item.id} style={styles.listItem}>
+                      <p style={styles.listTitle}>{item.filename}</p>
+                      <p style={styles.smallText}>
+                        {bytesToReadable(item.file_size)} {'\u00b7'} {new Date(item.created_at).toLocaleString('pt-BR')}
+                      </p>
+                      <p style={styles.smallText}>{item.storage_path}</p>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-          </aside>
-
-          <section style={styles.centerPanel}>
-            <h2 style={styles.panelTitle}>FormulÃ¡rios</h2>
-
-            <div style={styles.cardBlock}>
-              <h3 style={styles.cardTitle}>Brand-Core</h3>
-              <div style={styles.formGrid}>
-                {brandCoreFields.map((field) => (
-                  <label key={field.key} style={styles.label}>
-                    {field.label}
-                    <textarea
-                      style={styles.textarea}
-                      rows={3}
-                      value={brandCore[field.key] || ''}
-                      onChange={(e) => setBrandCore((old) => ({ ...old, [field.key]: e.target.value }))}
-                    />
-                  </label>
-                ))}
               </div>
-              <button disabled={saving} style={styles.primaryButton} onClick={() => saveResource('brand_core', brandCore)}>
-                Salvar Brand-Core
-              </button>
-            </div>
 
-            <div style={styles.cardBlock}>
-              <h3 style={styles.cardTitle}>Human-Core</h3>
-              <div style={styles.formGrid}>
-                {humanCoreFields.map((field) => (
-                  <label key={field.key} style={styles.label}>
-                    {field.label}
-                    <textarea
-                      style={styles.textarea}
-                      rows={3}
-                      value={humanCore[field.key] || ''}
-                      onChange={(e) => setHumanCore((old) => ({ ...old, [field.key]: e.target.value }))}
-                    />
-                  </label>
-                ))}
-              </div>
-              <button disabled={saving} style={styles.primaryButton} onClick={() => saveResource('human_core', humanCore)}>
-                Salvar Human-Core
-              </button>
-            </div>
-          </section>
+              <div style={styles.rightPanel}>
+                <h2 style={styles.panelTitle}>Entradas GPT</h2>
+                <p style={styles.smallText}>
+                  Entradas salvas pelo GPT para esta conta. Selecione uma entrada para abrir e editar.
+                </p>
 
-          <aside style={styles.rightTopPanel}>
-            <h2 style={styles.panelTitle}>Fontes / Anexos</h2>
-            <p style={styles.smallText}>Formatos suportados: DOC, DOCX, PDF e MD.</p>
-
-            <input
-              type="file"
-              accept=".doc,.docx,.pdf,.md,.txt"
-              onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
-              style={styles.input}
-            />
-
-            <button disabled={uploading} style={styles.primaryButton} onClick={handleUpload}>
-              {uploading ? 'Enviando...' : 'Anexar arquivo'}
-            </button>
-
-            <div style={styles.list}>
-              {attachments.length === 0 && <p style={styles.smallText}>Sem anexos ainda.</p>}
-              {attachments.map((item) => (
-                <div key={item.id} style={styles.listItem}>
-                  <p style={styles.listTitle}>{item.filename}</p>
-                  <p style={styles.smallText}>{bytesToReadable(item.file_size)} Â· {new Date(item.created_at).toLocaleString('pt-BR')}</p>
-                  <p style={styles.smallText}>{item.storage_path}</p>
+                <div style={styles.list}>
+                  {entries.length === 0 && <p style={styles.smallText}>Nenhuma entrada salva.</p>}
+                  {entries.map((item) => {
+                    const isSelected = item.id === selectedEntryId;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        style={isSelected ? styles.entryButtonActive : styles.entryButton}
+                        onClick={() => openEntry(item)}
+                      >
+                        <div style={styles.listItemInline}>
+                          <p style={styles.listTitle}>{item.title || 'Sem t\u00edtulo'}</p>
+                          <span style={styles.entryBadge}>{item.entry_type || 'note'}</span>
+                        </div>
+                        <p style={styles.smallText}>{new Date(item.created_at).toLocaleString('pt-BR')}</p>
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          </aside>
 
-          <aside style={styles.rightBottomPanel}>
-            <h2 style={styles.panelTitle}>Entradas GPT</h2>
-            <p style={styles.smallText}>
-              Entradas salvas pelo GPT para esta conta. Selecione uma entrada para abrir e editar.
-            </p>
+                {selectedEntryId && (
+                  <div style={styles.cardBlock}>
+                    <h3 style={styles.cardTitle}>Editar entrada</h3>
 
-            <div style={styles.list}>
-              {entries.length === 0 && <p style={styles.smallText}>Nenhuma entrada salva.</p>}
-              {entries.map((item) => {
-                const isSelected = item.id === selectedEntryId;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    style={isSelected ? styles.entryButtonActive : styles.entryButton}
-                    onClick={() => openEntry(item)}
-                  >
+                    <label style={styles.label}>
+                      Tipo
+                      <select
+                        style={styles.input}
+                        value={entryEditor.entry_type}
+                        onChange={(event) => setEntryEditor((current) => ({ ...current, entry_type: event.target.value }))}
+                      >
+                        <option value="note">note</option>
+                        <option value="insight">insight</option>
+                        <option value="strategy">strategy</option>
+                      </select>
+                    </label>
+
+                    <label style={styles.label}>
+                      T\u00edtulo
+                      <input
+                        style={styles.input}
+                        value={entryEditor.title}
+                        onChange={(event) => setEntryEditor((current) => ({ ...current, title: event.target.value }))}
+                      />
+                    </label>
+
+                    <label style={styles.label}>
+                      Conte\u00fado
+                      <textarea
+                        rows={8}
+                        style={styles.textarea}
+                        value={entryEditor.content_text}
+                        onChange={(event) => setEntryEditor((current) => ({ ...current, content_text: event.target.value }))}
+                      />
+                    </label>
+
                     <div style={styles.listItemInline}>
-                      <p style={styles.listTitle}>{item.title || 'Sem titulo'}</p>
-                      <span style={styles.entryBadge}>{item.entry_type || 'note'}</span>
+                      <button disabled={saving} style={styles.primaryButton} onClick={saveEntryChanges} type="button">
+                        Salvar altera\u00e7\u00f5es
+                      </button>
+                      <button disabled={saving} style={styles.dangerButton} onClick={() => deleteEntry(selectedEntryId)} type="button">
+                        Excluir entrada
+                      </button>
                     </div>
-                    <p style={styles.smallText}>{item.entry_type} · {new Date(item.created_at).toLocaleString('pt-BR')}</p>
-                  </button>
-                );
-              })}
-            </div>
-
-            {selectedEntryId && (
-              <div style={styles.cardBlock}>
-                <h3 style={styles.cardTitle}>Editar entrada</h3>
-
-                <label style={styles.label}>
-                  Tipo
-                  <select
-                    style={styles.input}
-                    value={entryEditor.entry_type}
-                    onChange={(e) => setEntryEditor((old) => ({ ...old, entry_type: e.target.value }))}
-                  >
-                    <option value="note">note</option>
-                    <option value="insight">insight</option>
-                    <option value="strategy">strategy</option>
-                  </select>
-                </label>
-
-                <label style={styles.label}>
-                  Titulo
-                  <input
-                    style={styles.input}
-                    value={entryEditor.title}
-                    onChange={(e) => setEntryEditor((old) => ({ ...old, title: e.target.value }))}
-                  />
-                </label>
-
-                <label style={styles.label}>
-                  Conteudo
-                  <textarea
-                    rows={8}
-                    style={styles.textarea}
-                    value={entryEditor.content_text}
-                    onChange={(e) => setEntryEditor((old) => ({ ...old, content_text: e.target.value }))}
-                  />
-                </label>
-
-                <div style={styles.listItemInline}>
-                  <button disabled={saving} style={styles.primaryButton} onClick={saveEntryChanges}>
-                    Salvar alteracoes
-                  </button>
-                  <button disabled={saving} style={styles.dangerButton} onClick={() => deleteEntry(selectedEntryId)}>
-                    Excluir entrada
-                  </button>
-                </div>
+                  </div>
+                )}
               </div>
-            )}
-          </aside>
-        </section>
-      )}
+            </aside>
+          </section>
+        )}
+      </div>
     </main>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: 'linear-gradient(160deg, #0b1223 0%, #0f172a 45%, #101827 100%)',
-    color: '#e2e8f0',
-    padding: '20px',
-    fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-  },
-  header: {
-    maxWidth: '1440px',
-    margin: '0 auto 16px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '16px',
-  },
-  title: { margin: 0, fontSize: '1.7rem' },
-  subtitle: { margin: '6px 0 0', color: '#93c5fd', fontSize: '0.95rem' },
-  status: {
-    maxWidth: '1440px',
-    margin: '0 auto 12px',
-    color: '#fbbf24',
-    fontSize: '0.9rem',
-  },
-  grid: {
-    maxWidth: '1440px',
-    margin: '0 auto',
-    display: 'grid',
-    gap: '14px',
-    gridTemplateColumns: '280px minmax(420px, 1fr) 360px',
-    gridTemplateAreas: `
-      "left center rightTop"
-      "left center rightBottom"
-    `,
-    alignItems: 'start',
-  },
-  leftPanel: {
-    gridArea: 'left',
-    background: '#0b1220',
-    border: '1px solid #1e293b',
-    borderRadius: '14px',
-    padding: '14px',
-    display: 'grid',
-    gap: '10px',
-  },
-  centerPanel: {
-    gridArea: 'center',
-    background: '#0b1220',
-    border: '1px solid #1e293b',
-    borderRadius: '14px',
-    padding: '14px',
-    display: 'grid',
-    gap: '14px',
-  },
-  rightTopPanel: {
-    gridArea: 'rightTop',
-    background: '#0b1220',
-    border: '1px solid #1e293b',
-    borderRadius: '14px',
-    padding: '14px',
-    display: 'grid',
-    gap: '10px',
-  },
-  rightBottomPanel: {
-    gridArea: 'rightBottom',
-    background: '#0b1220',
-    border: '1px solid #1e293b',
-    borderRadius: '14px',
-    padding: '14px',
-    display: 'grid',
-    gap: '14px',
-  },
-  panelTitle: { margin: 0, fontSize: '1.05rem', color: '#bfdbfe' },
-  cardBlock: {
-    border: '1px solid #1f2a44',
-    borderRadius: '12px',
-    padding: '12px',
-    display: 'grid',
-    gap: '10px',
-    background: '#0a1020',
-  },
-  cardTitle: {
-    margin: 0,
-    fontSize: '0.95rem',
-    color: '#cbd5e1',
-  },
-  formGrid: {
-    display: 'grid',
-    gap: '8px',
-  },
-  label: {
-    display: 'grid',
-    gap: '4px',
-    fontSize: '0.8rem',
-    color: '#cbd5e1',
-  },
-  input: {
-    border: '1px solid #24334f',
-    borderRadius: '8px',
-    background: '#0b1223',
-    color: '#e2e8f0',
-    padding: '8px 10px',
-    fontSize: '0.9rem',
-  },
-  textarea: {
-    border: '1px solid #24334f',
-    borderRadius: '8px',
-    background: '#0b1223',
-    color: '#e2e8f0',
-    padding: '8px 10px',
-    fontSize: '0.88rem',
-    resize: 'vertical',
-  },
-  primaryButton: {
-    border: 'none',
-    borderRadius: '8px',
-    padding: '9px 10px',
-    background: '#38bdf8',
-    color: '#082f49',
-    cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: '0.85rem',
-  },
-  ghostButton: {
-    border: '1px solid #334155',
-    borderRadius: '8px',
-    padding: '8px 10px',
-    background: 'transparent',
-    color: '#cbd5e1',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-  },
-  dangerButton: {
-    border: '1px solid #7f1d1d',
-    borderRadius: '8px',
-    padding: '6px 9px',
-    background: '#3f0d0d',
-    color: '#fecaca',
-    cursor: 'pointer',
-    fontSize: '0.75rem',
-  },
-  list: {
-    display: 'grid',
-    gap: '8px',
-  },
-  listItem: {
-    border: '1px solid #1f2a44',
-    borderRadius: '8px',
-    padding: '8px',
-    background: '#090f1d',
-    display: 'grid',
-    gap: '4px',
-  },
-  listItemInline: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  entryButton: {
-    border: '1px solid #1f2a44',
-    borderRadius: '8px',
-    padding: '8px',
-    background: '#090f1d',
-    color: '#e2e8f0',
-    display: 'grid',
-    gap: '4px',
-    cursor: 'pointer',
-    textAlign: 'left',
-  },
-  entryButtonActive: {
-    border: '1px solid #38bdf8',
-    borderRadius: '8px',
-    padding: '8px',
-    background: '#0c1c33',
-    color: '#e2e8f0',
-    display: 'grid',
-    gap: '4px',
-    cursor: 'pointer',
-    textAlign: 'left',
-  },
-  entryBadge: {
-    border: '1px solid #1d4ed8',
-    borderRadius: '999px',
-    padding: '1px 8px',
-    fontSize: '0.7rem',
-    color: '#bfdbfe',
-    background: '#0f2447',
-  },
-  listTitle: {
-    margin: 0,
-    fontSize: '0.85rem',
-    color: '#e2e8f0',
-    fontWeight: 600,
-  },
-  smallText: {
-    margin: 0,
-    fontSize: '0.75rem',
-    color: '#94a3b8',
-    wordBreak: 'break-word',
-  },
-  pre: {
-    margin: 0,
-    whiteSpace: 'pre-wrap',
-    fontSize: '0.78rem',
-    color: '#cbd5e1',
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-    wordBreak: 'break-word',
-  },
-  tokenBox: {
-    border: '1px dashed #0ea5e9',
-    borderRadius: '8px',
-    padding: '8px',
-    background: '#082f49',
-  },
-  code: {
-    display: 'block',
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-    fontSize: '0.78rem',
-    color: '#e0f2fe',
-    wordBreak: 'break-all',
-    marginTop: '4px',
-  },
-};

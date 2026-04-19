@@ -39,7 +39,7 @@ async function upsertById(table, userId, payload) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'MÃ©todo nÃ£o permitido.' });
+    return res.status(405).json({ error: 'Metodo nao permitido.' });
   }
 
   const auth = await getAuthenticatedUser(req);
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
   const payload = req.body?.payload || {};
 
   if (!resource) {
-    return res.status(400).json({ error: 'Campo resource Ã© obrigatÃ³rio.' });
+    return res.status(400).json({ error: 'Campo resource e obrigatorio.' });
   }
 
   try {
@@ -76,7 +76,7 @@ export default async function handler(req, res) {
       if (action === 'delete') {
         const entryId = String(payload?.id || '').trim();
         if (!entryId) {
-          return res.status(400).json({ error: 'ID da entrada é obrigatório para exclusão.' });
+          return res.status(400).json({ error: 'ID da entrada e obrigatorio para exclusao.' });
         }
 
         const { response, data } = await supabaseRest(`/rest/v1/gpt_saved_entries?id=eq.${encodeURIComponent(entryId)}&user_id=eq.${encodeURIComponent(userId)}`, {
@@ -94,7 +94,7 @@ export default async function handler(req, res) {
       if (action === 'update') {
         const entryId = String(payload?.id || '').trim();
         if (!entryId) {
-          return res.status(400).json({ error: 'ID da entrada é obrigatório para edição.' });
+          return res.status(400).json({ error: 'ID da entrada e obrigatorio para edicao.' });
         }
 
         const row = {
@@ -145,7 +145,7 @@ export default async function handler(req, res) {
       const content = String(payload?.content || '').trim();
 
       if (!type || !content) {
-        return res.status(400).json({ error: 'Campos type e content sÃ£o obrigatÃ³rios.' });
+        return res.status(400).json({ error: 'Campos type e content sao obrigatorios.' });
       }
 
       const { response, data } = await supabaseRest('/rest/v1/brand_documents?on_conflict=user_id,type', {
@@ -166,7 +166,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, document: Array.isArray(data) ? data[0] : null });
     }
 
-    return res.status(400).json({ error: `Resource nÃ£o suportado: ${resource}` });
+    return res.status(400).json({ error: `Resource nao suportado: ${resource}` });
   } catch (error) {
     return res.status(500).json({ error: error.message || 'Erro interno ao salvar.' });
   }

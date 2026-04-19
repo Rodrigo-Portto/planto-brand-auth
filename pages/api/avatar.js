@@ -1,12 +1,11 @@
 import { SUPABASE_SERVICE_KEY, SUPABASE_URL, extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
 
 const BUCKET = 'brand-library';
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const MAX_ATTACHMENTS = 10;
-const ALLOWED_EXTENSIONS = new Set(['pdf', 'md', 'txt', 'doc', 'docx']);
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif']);
 
 function sanitizeFilename(name) {
-  return String(name || 'arquivo')
+  return String(name || 'avatar')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9._-]/g, '_')
@@ -30,14 +29,6 @@ function normalizeBase64(value) {
   return input.replace(/\s/g, '');
 }
 
-async function countAttachments(userId) {
-  const { response, data } = await supabaseRest(`/rest/v1/user_attachments?user_id=eq.${encodeURIComponent(userId)}&select=id`);
-  if (!response.ok) {
-    throw new Error(extractErrorMessage(data, 'Falha ao validar a quantidade de anexos.'));
-  }
-  return Array.isArray(data) ? data.length : 0;
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Metodo nao permitido.' });
@@ -51,7 +42,6 @@ export default async function handler(req, res) {
   const userId = auth.user.id;
   const filename = String(req.body?.filename || '').trim();
   const mimeType = String(req.body?.mime_type || 'application/octet-stream').trim();
-  const sourceKind = String(req.body?.source_kind || 'dashboard-upload').trim();
   const base64 = normalizeBase64(req.body?.base64);
 
   if (!filename || !base64) {
@@ -60,7 +50,7 @@ export default async function handler(req, res) {
 
   const extension = extensionOf(filename);
   if (!ALLOWED_EXTENSIONS.has(extension)) {
-    return res.status(400).json({ error: 'Formato nao suportado. Use DOC, DOCX, PDF, MD ou TXT.' });
+    return res.status(400).json({ error: 'Formato de avatar nao suportado. Use PNG, JPG, WEBP ou GIF.' });
   }
 
   const fileBuffer = Buffer.from(base64, 'base64');
@@ -69,7 +59,7 @@ export default async function handler(req, res) {
   }
 
   if (fileBuffer.length > MAX_FILE_SIZE) {
-    return res.status(400).json({ error: 'Arquivo acima de 10 MB.' });
+    return res.status(400).json({ error: 'Avatar acima de 5 MB.' });
   }
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
@@ -77,13 +67,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const totalAttachments = await countAttachments(userId);
-    if (totalAttachments >= MAX_ATTACHMENTS) {
-      return res.status(400).json({ error: 'Limite de 10 arquivos atingido para esta conta.' });
-    }
-
     const safeName = sanitizeFilename(filename);
-    const storagePath = `${userId}/${Date.now()}-${safeName}`;
+    const storagePath = `${userId}/avatar/${Date.now()}-${safeName}`;
     const encodedPath = storagePath.split('/').map(encodeURIComponent).join('/');
 
     const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodedPath}`, {
@@ -99,39 +84,31 @@ export default async function handler(req, res) {
 
     const uploadData = await uploadResponse.json().catch(() => ({}));
     if (!uploadResponse.ok) {
-      throw new Error(extractErrorMessage(uploadData, 'Falha ao enviar arquivo para o storage.'));
+      throw new Error(extractErrorMessage(uploadData, 'Falha ao enviar avatar para o storage.'));
     }
 
-    const metadataRow = {
-      user_id: userId,
-      filename: safeName,
-      mime_type: mimeType,
-      file_size: fileBuffer.length,
-      storage_bucket: BUCKET,
-      storage_path: storagePath,
-      source_kind: sourceKind,
-      metadata_json: {
-        original_filename: filename,
-      },
-      updated_at: new Date().toISOString(),
-    };
+    const avatarUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodedPath}`;
 
-    const { response, data } = await supabaseRest('/rest/v1/user_attachments', {
+    const { response, data } = await supabaseRest('/rest/v1/user_profiles?on_conflict=id', {
       method: 'POST',
-      headers: { Prefer: 'return=representation' },
-      body: metadataRow,
+      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+      body: {
+        id: userId,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString(),
+      },
     });
 
     if (!response.ok) {
-      throw new Error(extractErrorMessage(data, 'Falha ao registrar metadados do anexo.'));
+      throw new Error(extractErrorMessage(data, 'Falha ao salvar avatar no perfil.'));
     }
 
     return res.status(200).json({
       success: true,
-      attachment: Array.isArray(data) ? data[0] : null,
-      count: totalAttachments + 1,
+      avatar_url: avatarUrl,
+      profile: Array.isArray(data) ? data[0] : null,
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Erro ao enviar arquivo.' });
+    return res.status(500).json({ error: error.message || 'Erro ao enviar avatar.' });
   }
 }
