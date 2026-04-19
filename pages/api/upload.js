@@ -5,6 +5,14 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_ATTACHMENTS = 10;
 const ALLOWED_EXTENSIONS = new Set(['pdf', 'md', 'txt', 'doc', 'docx']);
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '20mb',
+    },
+  },
+};
+
 function sanitizeFilename(name) {
   return String(name || 'arquivo')
     .normalize('NFD')

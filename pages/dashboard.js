@@ -681,10 +681,25 @@ export default function Dashboard() {
     };
 
     const response = await fetch(path, { ...options, headers });
-    const data = await response.json().catch(() => ({}));
+    const rawText = await response.text();
+    let data = {};
+
+    try {
+      data = rawText ? JSON.parse(rawText) : {};
+    } catch {
+      data = {};
+    }
 
     if (!response.ok) {
-      throw new Error(data?.error || 'Erro na requisição.');
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      if (response.status === 413) {
+        throw new Error('Arquivo muito grande para envio.');
+      }
+
+      throw new Error(`Erro na requisição (${response.status}).`);
     }
 
     return data;

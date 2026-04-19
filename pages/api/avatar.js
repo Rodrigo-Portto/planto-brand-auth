@@ -4,6 +4,14 @@ const BUCKET = 'brand-library';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif']);
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '8mb',
+    },
+  },
+};
+
 function sanitizeFilename(name) {
   return String(name || 'avatar')
     .normalize('NFD')
