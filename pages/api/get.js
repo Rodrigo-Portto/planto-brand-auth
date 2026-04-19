@@ -31,16 +31,14 @@ export default async function handler(req, res) {
   try {
     const [
       profile,
-      brandCore,
-      humanCore,
+      integratedBriefing,
       attachments,
       gptEntries,
       gptTokens,
       legacyDocuments,
     ] = await Promise.all([
       fetchOneById('user_profiles', userId),
-      fetchOneById('brand_core_responses', userId),
-      fetchOneById('human_core_responses', userId),
+      fetchOneById('brand_context_responses', userId),
       fetchMany(`/rest/v1/user_attachments?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`, 'Falha ao buscar anexos.'),
       fetchMany(`/rest/v1/gpt_saved_entries?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`, 'Falha ao buscar entradas GPT.'),
       fetchMany(`/rest/v1/gpt_access_tokens?user_id=eq.${encodeURIComponent(userId)}&select=id,label,token_prefix,token_value,status,created_at,last_used_at,expires_at,revoked_at&order=created_at.desc`, 'Falha ao buscar tokens GPT.'),
@@ -54,8 +52,7 @@ export default async function handler(req, res) {
       },
       profile,
       forms: {
-        brand_core: brandCore,
-        human_core: humanCore,
+        integrated_briefing: integratedBriefing,
       },
       attachments,
       gpt_entries: gptEntries,

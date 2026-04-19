@@ -17,41 +17,202 @@ const profileFields = [
   { key: 'specialties', label: 'Especialidades' },
 ];
 
-const brandCoreFields = [
-  { key: 'proposito', label: 'Prop\u00f3sito' },
-  { key: 'origem', label: 'Origem' },
-  { key: 'metodo', label: 'M\u00e9todo' },
-  { key: 'impacto', label: 'Impacto' },
-  { key: 'publico', label: 'P\u00fablico' },
-  { key: 'dores', label: 'Dores' },
-  { key: 'desejos', label: 'Desejos' },
-  { key: 'objecoes', label: 'Obje\u00e7\u00f5es' },
-  { key: 'diferenciais', label: 'Diferenciais' },
-  { key: 'valores', label: 'Valores' },
-  { key: 'personalidade', label: 'Personalidade' },
-  { key: 'tom', label: 'Tom de voz' },
-  { key: 'promessa', label: 'Promessa' },
-  { key: 'posicionamento', label: 'Posicionamento' },
+const BRIEFING_TITLE = 'Briefing de Contexto de Marca';
+const BRIEFING_SUBTITLE = 'Briefing Estratégico — Brand Core + Human Core';
+const BRIEFING_GENERAL_INSTRUCTION =
+  'Responda com exemplos reais, situações recorrentes, frases que você já ouviu e padrões que observa na prática. Evite respostas genéricas, adjetivos soltos e frases de efeito. Quando possível, mostre contraste: o que funciona, o que não funciona, com quem há encaixe e com quem não há.';
+const BRIEFING_FILLING_GUIDELINES = [
+  'Prefira exemplos reais a definições abstratas.',
+  'Quando citar diferenças, sempre compare com o padrão do mercado.',
+  'Quando citar público, descreva contexto e comportamento, não só demografia.',
+  'Quando citar dor, use palavras que a própria pessoa diria.',
+  'Quando citar desejo, tente separar o que ela pede do que ela realmente precisa.',
+  'Quando citar confiança, mostre quais sinais concretos reduzem risco percebido.',
+  'Quando citar linguagem, inclua frases literais, se lembrar.',
 ];
 
-const humanCoreFields = [
-  { key: 'trajetoria', label: 'Trajet\u00f3ria' },
-  { key: 'formacao', label: 'Forma\u00e7\u00e3o' },
-  { key: 'abordagem', label: 'Abordagem' },
-  { key: 'especializacoes', label: 'Especializa\u00e7\u00f5es' },
-  { key: 'publico_atendido', label: 'P\u00fablico atendido' },
-  { key: 'contexto_clinico', label: 'Contexto cl\u00ednico' },
-  { key: 'etica', label: '\u00c9tica' },
-  { key: 'limites', label: 'Limites' },
-  { key: 'motivacao', label: 'Motiva\u00e7\u00e3o' },
-  { key: 'estilo_relacional', label: 'Estilo relacional' },
-  { key: 'comunicacao', label: 'Comunica\u00e7\u00e3o' },
-  { key: 'presenca_digital', label: 'Presen\u00e7a digital' },
-  { key: 'referencias', label: 'Refer\u00eancias' },
-  { key: 'diferenciais_humanos', label: 'Diferenciais humanos' },
-  { key: 'medos', label: 'Medos' },
-  { key: 'sonhos', label: 'Sonhos' },
+const BRIEFING_SECTIONS = [
+  {
+    key: 'brand_core',
+    title: 'SEÇÃO 1 — BRAND CORE',
+    focus: 'Foco: oferta, capacidade, processo, prova, diferença, limites e crença central',
+    collapseKey: 'brandCore',
+    fields: [
+      {
+        key: 'oferta_central',
+        number: '1.',
+        title: 'Oferta central',
+        prompt:
+          'O que você entrega hoje, para quem isso faz mais sentido e que tipo de transformação essa entrega busca gerar?',
+        description: 'Se tiver mais de um serviço, explique o principal e depois os complementares.',
+      },
+      {
+        key: 'processo_mecanismo',
+        number: '2.',
+        title: 'Processo e mecanismo',
+        prompt: 'Como seu trabalho acontece na prática, do primeiro contato ao resultado percebido?',
+        description:
+          'Descreva as etapas principais, o que você investiga, como conduz e o que torna seu processo diferente de uma atuação mais genérica.',
+      },
+      {
+        key: 'capacidade_real',
+        number: '3.',
+        title: 'Capacidade real',
+        prompt:
+          'Quais tipos de problema, contexto ou demanda você sente que consegue conduzir com mais segurança, profundidade e consistência?',
+        description:
+          'Cite exemplos concretos do que você sabe fazer bem e do que costuma funcionar melhor na sua prática.',
+      },
+      {
+        key: 'limites_restricoes',
+        number: '4.',
+        title: 'Limites e restrições',
+        prompt:
+          'Quais demandas, expectativas ou perfis não combinam com seu trabalho, seja por limite técnico, ético, metodológico ou por escolha estratégica?',
+        description: 'Liste também o que você não promete e o que prefere não comunicar como resultado.',
+      },
+      {
+        key: 'resultados_percebidos',
+        number: '5.',
+        title: 'Resultados percebidos',
+        prompt: 'Que mudanças as pessoas costumam perceber ao longo do processo com você?',
+        description:
+          'Separe, se possível, ganhos práticos, emocionais, de clareza, de comportamento ou de relação consigo mesmas.',
+      },
+      {
+        key: 'provas_credibilidade',
+        number: '6.',
+        title: 'Provas e sinais de credibilidade',
+        prompt: 'Que sinais reais sustentam a confiança no seu trabalho?',
+        description:
+          'Vale citar formação, especializações, experiência, feedbacks recorrentes, casos frequentes, método próprio, consistência de resultados, indicações ou qualquer evidência observável.',
+      },
+      {
+        key: 'diferenciacao_real',
+        number: '7.',
+        title: 'Diferenciação real',
+        prompt: 'O que no seu jeito de trabalhar faz sua atuação ser preferível a alternativas parecidas?',
+        description: 'Não responda com adjetivos soltos; explique o contraste com o padrão da sua área.',
+      },
+      {
+        key: 'crencas_visao_mundo',
+        number: '8.',
+        title: 'Crenças e visão de mundo',
+        prompt:
+          'No que você acredita sobre o problema que trata, sobre o processo de mudança e sobre o que geralmente é mal compreendido no seu mercado?',
+        description:
+          'Liste crenças que orientam suas decisões e mostre, se possível, o que você vê de errado no jeito mais comum de abordar esse tema.',
+      },
+      {
+        key: 'experiencia_consistente',
+        number: '9.',
+        title: 'Experiência que precisa ser consistente',
+        prompt: 'O que nunca pode faltar na experiência de alguém atendido por você?',
+        description:
+          'Liste elementos inegociáveis da sua condução, como clareza, profundidade, acolhimento, confrontação, método, ritmo, segurança ou autonomia.',
+      },
+      {
+        key: 'presenca_profissional',
+        number: '10.',
+        title: 'Presença profissional observável',
+        prompt:
+          'Como as pessoas costumam descrever sua presença profissional e que impressões sua marca nunca deve passar?',
+        description:
+          'Inclua palavras, frases, feedbacks recorrentes e exemplos do seu jeito de explicar, conduzir e se comunicar.',
+      },
+    ],
+  },
+  {
+    key: 'human_core',
+    title: 'SEÇÃO 2 — HUMAN CORE',
+    focus: 'Foco: público prioritário, dores, desejos, tensões, decisão, objeções, linguagem e repertório simbólico',
+    collapseKey: 'humanCore',
+    fields: [
+      {
+        key: 'publico_prioritario',
+        number: '1.',
+        title: 'Público prioritário',
+        prompt: 'Que tipo de pessoa mais aparece com aderência real ao seu trabalho?',
+        description:
+          'Descreva contexto de vida, momento, padrão emocional, tipo de conflito e sinais de que essa pessoa tende a se beneficiar mais da sua forma de conduzir.',
+      },
+      {
+        key: 'momento_busca',
+        number: '2.',
+        title: 'Momento de busca',
+        prompt: 'Em que momento essa pessoa costuma procurar ajuda?',
+        description:
+          'Explique os gatilhos, rupturas, repetições, crises, cansaços ou fases da vida que normalmente antecedem a decisão.',
+      },
+      {
+        key: 'tentativas_anteriores',
+        number: '3.',
+        title: 'Tentativas anteriores',
+        prompt: 'O que essa pessoa normalmente tenta antes de chegar até você?',
+        description:
+          'Cite saídas comuns, padrões de adiamento, estratégias parciais, conteúdos consumidos, soluções rápidas ou formas de compensação.',
+      },
+      {
+        key: 'queixa_declarada',
+        number: '4.',
+        title: 'Queixa declarada',
+        prompt: 'O que essa pessoa costuma dizer que está sentindo ou vivendo, com as palavras dela?',
+        description: 'Traga frases reais, expressões recorrentes, queixas típicas e o vocabulário mais comum.',
+      },
+      {
+        key: 'dor_profunda',
+        number: '5.',
+        title: 'Dor mais profunda',
+        prompt: 'O que geralmente está por trás da queixa inicial?',
+        description:
+          'Descreva os conflitos mais profundos, padrões recorrentes, medos, repetições ou impasses que você percebe abaixo da superfície.',
+      },
+      {
+        key: 'desejos_transformacao',
+        number: '6.',
+        title: 'Desejos e transformação esperada',
+        prompt: 'O que essa pessoa diz que quer e o que ela realmente parece estar buscando?',
+        description:
+          'Se possível, separe desejo declarado, desejo real, necessidade emocional e transformação mais importante.',
+      },
+      {
+        key: 'tensoes_contradicoes',
+        number: '7.',
+        title: 'Tensões e contradições',
+        prompt: 'Que conflitos internos essa pessoa costuma viver entre querer mudar e continuar no mesmo padrão?',
+        description:
+          'Cite medos, ambivalências, crenças limitantes, resistências e formas de autojustificação.',
+      },
+      {
+        key: 'criterios_confianca',
+        number: '8.',
+        title: 'Critérios de escolha e sinais de confiança',
+        prompt: 'O que pesa mais para essa pessoa confiar e decidir por uma profissional como você?',
+        description:
+          'Liste critérios decisivos, sinais que reduzem resistência e fatores que aceleram ou travam a escolha.',
+      },
+      {
+        key: 'objecoes_desalinhamentos',
+        number: '9.',
+        title: 'Objeções e desalinhamentos',
+        prompt:
+          'Quais dúvidas, receios ou objeções mais atrasam a decisão — e o que faz alguém não escolher você, mesmo reconhecendo sua competência?',
+        description: 'Inclua objeções racionais, emocionais e simbólicas.',
+      },
+      {
+        key: 'linguagem_repertorio',
+        number: '10.',
+        title: 'Linguagem e repertório simbólico',
+        prompt:
+          'Como esse público fala sobre o próprio problema, que tipo de linguagem entende melhor e que universo simbólico gera mais identificação ou rejeição?',
+        description:
+          'Cite palavras recorrentes, metáforas, referências, estéticas, sinais de autoridade, sinais de distância e temas com os quais esse público se conecta.',
+      },
+    ],
+  },
 ];
+
+const INTEGRATED_BRIEFING_FIELDS = BRIEFING_SECTIONS.flatMap((section) => section.fields.map((field) => field.key));
 
 const EMPTY_ENTRY_EDITOR = {
   entry_type: 'note',
@@ -325,6 +486,12 @@ function createStyles(colors, isCompact) {
       padding: '12px',
     },
     cardTitle: { margin: 0, fontSize: '0.96rem', color: colors.textStrong },
+    sectionDescription: {
+      margin: '2px 0 0',
+      color: colors.textMuted,
+      fontSize: '0.84rem',
+      lineHeight: 1.5,
+    },
     collapseButton: {
       width: '34px',
       height: '34px',
@@ -454,6 +621,58 @@ function createStyles(colors, isCompact) {
       color: colors.textMuted,
       wordBreak: 'break-word',
     },
+    briefingIntro: {
+      display: 'grid',
+      gap: '12px',
+      border: `1px solid ${colors.border}`,
+      borderRadius: '14px',
+      padding: '14px',
+      background: colors.shellMuted,
+    },
+    briefingSubtitle: {
+      margin: '6px 0 0',
+      color: colors.textMuted,
+      fontSize: '0.92rem',
+      lineHeight: 1.5,
+    },
+    briefingBodyText: {
+      margin: '8px 0 0',
+      color: colors.text,
+      fontSize: '0.9rem',
+      lineHeight: 1.65,
+    },
+    briefingList: {
+      margin: '8px 0 0',
+      paddingLeft: '18px',
+      display: 'grid',
+      gap: '6px',
+      color: colors.text,
+      fontSize: '0.88rem',
+      lineHeight: 1.55,
+    },
+    fieldBlock: {
+      display: 'grid',
+      gap: '8px',
+    },
+    fieldHeading: {
+      margin: 0,
+      fontSize: '0.92rem',
+      color: colors.textStrong,
+      lineHeight: 1.45,
+    },
+    fieldPrompt: {
+      margin: 0,
+      fontSize: '0.88rem',
+      color: colors.text,
+      lineHeight: 1.6,
+      fontWeight: 600,
+    },
+    fieldDescription: {
+      margin: 0,
+      fontSize: '0.84rem',
+      color: colors.textMuted,
+      lineHeight: 1.55,
+    },
     tokenBox: {
       border: `1px dashed ${colors.borderAccent}`,
       borderRadius: '12px',
@@ -568,8 +787,7 @@ export default function Dashboard() {
   const [viewportWidth, setViewportWidth] = useState(1440);
 
   const [profile, setProfile] = useState({});
-  const [brandCore, setBrandCore] = useState({});
-  const [humanCore, setHumanCore] = useState({});
+  const [integratedBriefing, setIntegratedBriefing] = useState({});
   const [collapsedPanels, setCollapsedPanels] = useState({
     brandCore: false,
     humanCore: false,
@@ -721,8 +939,7 @@ export default function Dashboard() {
 
       setUser(data.user || null);
       setProfile(data.profile || {});
-      setBrandCore(data.forms?.brand_core || {});
-      setHumanCore(data.forms?.human_core || {});
+      setIntegratedBriefing(data.forms?.integrated_briefing || {});
       setAttachments(data.attachments || []);
       setEntries(data.gpt_entries || []);
 
@@ -760,10 +977,8 @@ export default function Dashboard() {
 
       if (resource === 'profile') {
         setProfile(data.profile || payload);
-      } else if (resource === 'brand_core') {
-        setBrandCore(data.brand_core || payload);
-      } else if (resource === 'human_core') {
-        setHumanCore(data.human_core || payload);
+      } else if (resource === 'integrated_briefing') {
+        setIntegratedBriefing(data.integrated_briefing || payload);
       }
 
       showSavedNotice();
@@ -977,6 +1192,10 @@ export default function Dashboard() {
   }, [profile?.name, user?.email]);
 
   const attachmentLimitReached = attachments.length >= MAX_ATTACHMENTS;
+  const hasIntegratedBriefingData = INTEGRATED_BRIEFING_FIELDS.some((field) => {
+    const value = integratedBriefing[field];
+    return typeof value === 'string' ? value.trim() : Boolean(value);
+  });
 
   function logout() {
     localStorage.removeItem('planto_access_token');
@@ -1098,87 +1317,85 @@ export default function Dashboard() {
             <section style={styles.centerPanel}>
               <h2 style={styles.panelTitle}>Formul\u00e1rios</h2>
 
-              <div style={styles.formCard}>
-                <div style={styles.formCardHeader}>
-                  <h3 style={styles.cardTitle}>Brand-Core</h3>
-                  <button
-                    type="button"
-                    style={styles.collapseButton}
-                    onClick={() => togglePanel('brandCore')}
-                    aria-label={collapsedPanels.brandCore ? 'Expandir Brand-Core' : 'Recolher Brand-Core'}
-                  >
-                    <ChevronIcon collapsed={collapsedPanels.brandCore} color={theme.textStrong} />
-                  </button>
+              <div style={styles.briefingIntro}>
+                <div>
+                  <h3 style={styles.panelTitle}>{BRIEFING_TITLE}</h3>
+                  <p style={styles.briefingSubtitle}>{BRIEFING_SUBTITLE}</p>
                 </div>
 
-                {!collapsedPanels.brandCore && (
-                  <div style={styles.formCardBody}>
-                    <div style={styles.formGrid}>
-                      {brandCoreFields.map((field) => (
-                        <label key={field.key} style={styles.label}>
-                          {field.label}
-                          <textarea
-                            style={styles.textarea}
-                            rows={3}
-                            value={brandCore[field.key] || ''}
-                            onChange={(event) => setBrandCore((current) => ({ ...current, [field.key]: event.target.value }))}
-                          />
-                        </label>
-                      ))}
-                    </div>
-
-                    <button
-                      disabled={saving}
-                      style={styles.primaryButton}
-                      onClick={() => saveResource('brand_core', brandCore)}
-                      type="button"
-                    >
-                      Salvar Brand-Core
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div style={styles.formCard}>
-                <div style={styles.formCardHeader}>
-                  <h3 style={styles.cardTitle}>Human-Core</h3>
-                  <button
-                    type="button"
-                    style={styles.collapseButton}
-                    onClick={() => togglePanel('humanCore')}
-                    aria-label={collapsedPanels.humanCore ? 'Expandir Human-Core' : 'Recolher Human-Core'}
-                  >
-                    <ChevronIcon collapsed={collapsedPanels.humanCore} color={theme.textStrong} />
-                  </button>
+                <div>
+                  <p style={styles.cardTitle}>Instrução geral</p>
+                  <p style={styles.briefingBodyText}>{BRIEFING_GENERAL_INSTRUCTION}</p>
                 </div>
 
-                {!collapsedPanels.humanCore && (
-                  <div style={styles.formCardBody}>
-                    <div style={styles.formGrid}>
-                      {humanCoreFields.map((field) => (
-                        <label key={field.key} style={styles.label}>
-                          {field.label}
-                          <textarea
-                            style={styles.textarea}
-                            rows={3}
-                            value={humanCore[field.key] || ''}
-                            onChange={(event) => setHumanCore((current) => ({ ...current, [field.key]: event.target.value }))}
-                          />
-                        </label>
-                      ))}
-                    </div>
+                <div>
+                  <p style={styles.cardTitle}>Orientações de preenchimento</p>
+                  <ul style={styles.briefingList}>
+                    {BRIEFING_FILLING_GUIDELINES.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
 
+                <p style={styles.smallText}>
+                  {hasIntegratedBriefingData
+                    ? 'As respostas salvas serão carregadas automaticamente neste briefing.'
+                    : 'Nenhuma resposta salva ainda para este briefing.'}
+                </p>
+              </div>
+
+              {BRIEFING_SECTIONS.map((section) => (
+                <div key={section.key} style={styles.formCard}>
+                  <div style={styles.formCardHeader}>
+                    <div>
+                      <h3 style={styles.cardTitle}>{section.title}</h3>
+                      <p style={styles.sectionDescription}>{section.focus}</p>
+                    </div>
                     <button
-                      disabled={saving}
-                      style={styles.primaryButton}
-                      onClick={() => saveResource('human_core', humanCore)}
                       type="button"
+                      style={styles.collapseButton}
+                      onClick={() => togglePanel(section.collapseKey)}
+                      aria-label={collapsedPanels[section.collapseKey] ? `Expandir ${section.title}` : `Recolher ${section.title}`}
                     >
-                      Salvar Human-Core
+                      <ChevronIcon collapsed={collapsedPanels[section.collapseKey]} color={theme.textStrong} />
                     </button>
                   </div>
-                )}
-              </div>
+
+                  {!collapsedPanels[section.collapseKey] && (
+                    <div style={styles.formCardBody}>
+                      <div style={styles.formGrid}>
+                        {section.fields.map((field) => (
+                          <div key={field.key} style={styles.fieldBlock}>
+                            <p style={styles.fieldHeading}>{`${field.number} ${field.title}`}</p>
+                            <p style={styles.fieldPrompt}>{field.prompt}</p>
+                            <p style={styles.fieldDescription}>{field.description}</p>
+                            <textarea
+                              style={styles.textarea}
+                              rows={5}
+                              value={integratedBriefing[field.key] || ''}
+                              onChange={(event) =>
+                                setIntegratedBriefing((current) => ({
+                                  ...current,
+                                  [field.key]: event.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <button
+                disabled={saving}
+                style={styles.primaryButton}
+                onClick={() => saveResource('integrated_briefing', integratedBriefing)}
+                type="button"
+              >
+                Salvar briefing integrado
+              </button>
             </section>
 
             <aside style={styles.rightColumn}>

@@ -1,8 +1,28 @@
 import { extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
 
 const PROFILE_FIELDS = ['name', 'email', 'phone', 'address', 'website', 'instagram', 'market_niche', 'education', 'specialties', 'avatar_url'];
-const BRAND_CORE_FIELDS = ['proposito', 'origem', 'metodo', 'impacto', 'publico', 'dores', 'desejos', 'objecoes', 'diferenciais', 'valores', 'personalidade', 'tom', 'promessa', 'posicionamento'];
-const HUMAN_CORE_FIELDS = ['trajetoria', 'formacao', 'abordagem', 'especializacoes', 'publico_atendido', 'contexto_clinico', 'etica', 'limites', 'motivacao', 'estilo_relacional', 'comunicacao', 'presenca_digital', 'referencias', 'diferenciais_humanos', 'medos', 'sonhos'];
+const INTEGRATED_BRIEFING_FIELDS = [
+  'oferta_central',
+  'processo_mecanismo',
+  'capacidade_real',
+  'limites_restricoes',
+  'resultados_percebidos',
+  'provas_credibilidade',
+  'diferenciacao_real',
+  'crencas_visao_mundo',
+  'experiencia_consistente',
+  'presenca_profissional',
+  'publico_prioritario',
+  'momento_busca',
+  'tentativas_anteriores',
+  'queixa_declarada',
+  'dor_profunda',
+  'desejos_transformacao',
+  'tensoes_contradicoes',
+  'criterios_confianca',
+  'objecoes_desalinhamentos',
+  'linguagem_repertorio',
+];
 
 function pickFields(source, allowed) {
   const input = source && typeof source === 'object' ? source : {};
@@ -62,14 +82,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, profile: saved });
     }
 
-    if (resource === 'brand_core') {
-      const saved = await upsertById('brand_core_responses', userId, pickFields(payload, BRAND_CORE_FIELDS));
-      return res.status(200).json({ success: true, brand_core: saved });
-    }
-
-    if (resource === 'human_core') {
-      const saved = await upsertById('human_core_responses', userId, pickFields(payload, HUMAN_CORE_FIELDS));
-      return res.status(200).json({ success: true, human_core: saved });
+    if (resource === 'integrated_briefing') {
+      const saved = await upsertById('brand_context_responses', userId, pickFields(payload, INTEGRATED_BRIEFING_FIELDS));
+      return res.status(200).json({ success: true, integrated_briefing: saved });
     }
 
     if (resource === 'gpt_entry') {
