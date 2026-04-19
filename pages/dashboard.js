@@ -5,23 +5,23 @@ const profileFields = [
   { key: 'name', label: 'Nome' },
   { key: 'email', label: 'E-mail' },
   { key: 'phone', label: 'Telefone' },
-  { key: 'address', label: 'Endereço' },
+  { key: 'address', label: 'EndereÃ§o' },
   { key: 'website', label: 'Site' },
   { key: 'instagram', label: 'Instagram' },
   { key: 'market_niche', label: 'Mercado/Nicho' },
-  { key: 'education', label: 'Formação' },
+  { key: 'education', label: 'FormaÃ§Ã£o' },
   { key: 'specialties', label: 'Especialidades' },
 ];
 
 const brandCoreFields = [
-  { key: 'proposito', label: 'Propósito' },
+  { key: 'proposito', label: 'PropÃ³sito' },
   { key: 'origem', label: 'Origem' },
-  { key: 'metodo', label: 'Método' },
+  { key: 'metodo', label: 'MÃ©todo' },
   { key: 'impacto', label: 'Impacto' },
-  { key: 'publico', label: 'Público' },
+  { key: 'publico', label: 'PÃºblico' },
   { key: 'dores', label: 'Dores' },
   { key: 'desejos', label: 'Desejos' },
-  { key: 'objecoes', label: 'Objeções' },
+  { key: 'objecoes', label: 'ObjeÃ§Ãµes' },
   { key: 'diferenciais', label: 'Diferenciais' },
   { key: 'valores', label: 'Valores' },
   { key: 'personalidade', label: 'Personalidade' },
@@ -31,19 +31,19 @@ const brandCoreFields = [
 ];
 
 const humanCoreFields = [
-  { key: 'trajetoria', label: 'Trajetória' },
-  { key: 'formacao', label: 'Formação' },
+  { key: 'trajetoria', label: 'TrajetÃ³ria' },
+  { key: 'formacao', label: 'FormaÃ§Ã£o' },
   { key: 'abordagem', label: 'Abordagem' },
-  { key: 'especializacoes', label: 'Especializações' },
-  { key: 'publico_atendido', label: 'Público atendido' },
-  { key: 'contexto_clinico', label: 'Contexto clínico' },
-  { key: 'etica', label: 'Ética' },
+  { key: 'especializacoes', label: 'EspecializaÃ§Ãµes' },
+  { key: 'publico_atendido', label: 'PÃºblico atendido' },
+  { key: 'contexto_clinico', label: 'Contexto clÃ­nico' },
+  { key: 'etica', label: 'Ãtica' },
   { key: 'limites', label: 'Limites' },
-  { key: 'motivacao', label: 'Motivação' },
+  { key: 'motivacao', label: 'MotivaÃ§Ã£o' },
   { key: 'estilo_relacional', label: 'Estilo relacional' },
-  { key: 'comunicacao', label: 'Comunicação' },
-  { key: 'presenca_digital', label: 'Presença digital' },
-  { key: 'referencias', label: 'Referências' },
+  { key: 'comunicacao', label: 'ComunicaÃ§Ã£o' },
+  { key: 'presenca_digital', label: 'PresenÃ§a digital' },
+  { key: 'referencias', label: 'ReferÃªncias' },
   { key: 'diferenciais_humanos', label: 'Diferenciais humanos' },
   { key: 'medos', label: 'Medos' },
   { key: 'sonhos', label: 'Sonhos' },
@@ -67,6 +67,35 @@ function toBase64(buffer) {
   return btoa(binary);
 }
 
+const EMPTY_ENTRY_EDITOR = {
+  entry_type: 'note',
+  title: '',
+  content_text: '',
+};
+
+function getEntryText(entry) {
+  const content = entry?.content_json;
+  if (content && typeof content === 'object' && typeof content.text === 'string') {
+    return content.text;
+  }
+  if (typeof content === 'string') {
+    return content;
+  }
+  return '';
+}
+
+function mapEntryToEditor(entry) {
+  if (!entry) {
+    return EMPTY_ENTRY_EDITOR;
+  }
+
+  return {
+    entry_type: entry.entry_type || 'note',
+    title: entry.title || '',
+    content_text: getEntryText(entry),
+  };
+}
+
 export default function Dashboard() {
   const router = useRouter();
   const [token, setToken] = useState('');
@@ -84,7 +113,8 @@ export default function Dashboard() {
   const [uploading, setUploading] = useState(false);
 
   const [entries, setEntries] = useState([]);
-  const [entryDraft, setEntryDraft] = useState({ entry_type: 'note', title: '', summary: '', content_text: '' });
+  const [selectedEntryId, setSelectedEntryId] = useState('');
+  const [entryEditor, setEntryEditor] = useState(EMPTY_ENTRY_EDITOR);
 
   const [tokens, setTokens] = useState([]);
   const [tokenLabel, setTokenLabel] = useState('Token GPT');
@@ -101,6 +131,30 @@ export default function Dashboard() {
     fetchAll(accessToken);
   }, [router]);
 
+  useEffect(() => {
+    if (entries.length === 0) {
+      if (selectedEntryId) {
+        setSelectedEntryId('');
+      }
+      setEntryEditor(EMPTY_ENTRY_EDITOR);
+      return;
+    }
+
+    const activeEntry = entries.find((item) => item.id === selectedEntryId) || entries[0];
+    const nextEditor = mapEntryToEditor(activeEntry);
+    setSelectedEntryId(activeEntry.id);
+    setEntryEditor((current) => {
+      if (
+        current.entry_type === nextEditor.entry_type &&
+        current.title === nextEditor.title &&
+        current.content_text === nextEditor.content_text
+      ) {
+        return current;
+      }
+      return nextEditor;
+    });
+  }, [entries, selectedEntryId]);
+
   async function authFetch(path, options = {}) {
     const headers = {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
@@ -112,7 +166,7 @@ export default function Dashboard() {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const message = data?.error || 'Erro na requisição';
+      const message = data?.error || 'Erro na requisiÃ§Ã£o';
       throw new Error(message);
     }
 
@@ -178,23 +232,48 @@ export default function Dashboard() {
     }
   }
 
-  async function saveEntry() {
-    if (!entryDraft.title || !entryDraft.content_text) {
-      setStatus('Preencha título e conteúdo da entrada.');
+  function openEntry(item) {
+    setSelectedEntryId(item.id);
+    setEntryEditor(mapEntryToEditor(item));
+  }
+
+  async function saveEntryChanges() {
+    if (!selectedEntryId) {
+      setStatus('Selecione uma entrada para editar.');
       return;
     }
 
-    await saveResource('gpt_entry', {
-      entry_type: entryDraft.entry_type,
-      title: entryDraft.title,
-      summary: entryDraft.summary,
-      source: 'dashboard',
-      content_json: {
-        text: entryDraft.content_text,
-      },
-    });
+    if (!entryEditor.title.trim() || !entryEditor.content_text.trim()) {
+      setStatus('Preencha titulo e conteudo da entrada.');
+      return;
+    }
 
-    setEntryDraft({ entry_type: 'note', title: '', summary: '', content_text: '' });
+    setSaving(true);
+    setStatus('Salvando entrada...');
+    try {
+      await authFetch('/api/save', {
+        method: 'POST',
+        body: JSON.stringify({
+          resource: 'gpt_entry',
+          action: 'update',
+          payload: {
+            id: selectedEntryId,
+            entry_type: entryEditor.entry_type,
+            title: entryEditor.title.trim(),
+            source: 'dashboard',
+            content_json: {
+              text: entryEditor.content_text.trim(),
+            },
+          },
+        }),
+      });
+      setStatus('Entrada atualizada.');
+      await fetchAll(token);
+    } catch (error) {
+      setStatus(error.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function deleteEntry(id) {
@@ -258,7 +337,7 @@ export default function Dashboard() {
         body: JSON.stringify({ label: tokenLabel }),
       });
       setCreatedToken(data?.token || '');
-      setStatus('Token gerado. Copie agora: ele não será exibido novamente.');
+      setStatus('Token gerado e disponivel nesta conta.');
       await fetchAll(token);
     } catch (error) {
       setStatus(error.message);
@@ -269,13 +348,13 @@ export default function Dashboard() {
 
   function copyCurrentToken() {
     if (!createdToken) {
-      setStatus('Nenhum token disponível para copiar.');
+      setStatus('Nenhum token disponÃ­vel para copiar.');
       return;
     }
 
     navigator.clipboard.writeText(createdToken);
     setTokenCopied(true);
-    setStatus('Token copiado para a área de transferência.');
+    setStatus('Token copiado para a Ã¡rea de transferÃªncia.');
     setTimeout(() => setTokenCopied(false), 1600);
   }
 
@@ -347,10 +426,10 @@ export default function Dashboard() {
 
             <div style={styles.cardBlock}>
               <h3 style={styles.cardTitle}>Token de acesso GPT</h3>
-              <p style={styles.smallText}>O token fica visível enquanto você estiver logado nesta conta.</p>
+              <p style={styles.smallText}>O token fica visÃ­vel enquanto vocÃª estiver logado nesta conta.</p>
 
               <label style={styles.label}>
-                Rótulo do token
+                RÃ³tulo do token
                 <input style={styles.input} value={tokenLabel} onChange={(e) => setTokenLabel(e.target.value)} />
               </label>
 
@@ -374,7 +453,7 @@ export default function Dashboard() {
                     <div key={tk.id} style={styles.listItemInline}>
                       <div>
                         <p style={styles.listTitle}>{tk.label || 'Token GPT'}</p>
-                        <p style={styles.smallText}>{tk.token_prefix} · {tk.status}</p>
+                        <p style={styles.smallText}>{tk.token_prefix} Â· {tk.status}</p>
                       </div>
                       {tk.status !== 'revoked' && (
                         <button style={styles.dangerButton} onClick={() => revokeToken(tk.id)}>Revogar</button>
@@ -387,7 +466,7 @@ export default function Dashboard() {
           </aside>
 
           <section style={styles.centerPanel}>
-            <h2 style={styles.panelTitle}>Formulários</h2>
+            <h2 style={styles.panelTitle}>FormulÃ¡rios</h2>
 
             <div style={styles.cardBlock}>
               <h3 style={styles.cardTitle}>Brand-Core</h3>
@@ -450,7 +529,7 @@ export default function Dashboard() {
               {attachments.map((item) => (
                 <div key={item.id} style={styles.listItem}>
                   <p style={styles.listTitle}>{item.filename}</p>
-                  <p style={styles.smallText}>{bytesToReadable(item.file_size)} · {new Date(item.created_at).toLocaleString('pt-BR')}</p>
+                  <p style={styles.smallText}>{bytesToReadable(item.file_size)} Â· {new Date(item.created_at).toLocaleString('pt-BR')}</p>
                   <p style={styles.smallText}>{item.storage_path}</p>
                 </div>
               ))}
@@ -459,69 +538,77 @@ export default function Dashboard() {
 
           <aside style={styles.rightBottomPanel}>
             <h2 style={styles.panelTitle}>Entradas GPT</h2>
+            <p style={styles.smallText}>
+              Entradas salvas pelo GPT para esta conta. Selecione uma entrada para abrir e editar.
+            </p>
 
-            <div style={styles.cardBlock}>
-              <h3 style={styles.cardTitle}>Salvar entrada do GPT</h3>
-
-              <label style={styles.label}>
-                Tipo
-                <select
-                  style={styles.input}
-                  value={entryDraft.entry_type}
-                  onChange={(e) => setEntryDraft((old) => ({ ...old, entry_type: e.target.value }))}
-                >
-                  <option value="note">note</option>
-                  <option value="insight">insight</option>
-                  <option value="strategy">strategy</option>
-                </select>
-              </label>
-
-              <label style={styles.label}>
-                Título
-                <input
-                  style={styles.input}
-                  value={entryDraft.title}
-                  onChange={(e) => setEntryDraft((old) => ({ ...old, title: e.target.value }))}
-                />
-              </label>
-
-              <label style={styles.label}>
-                Resumo
-                <input
-                  style={styles.input}
-                  value={entryDraft.summary}
-                  onChange={(e) => setEntryDraft((old) => ({ ...old, summary: e.target.value }))}
-                />
-              </label>
-
-              <label style={styles.label}>
-                Conteúdo
-                <textarea
-                  rows={5}
-                  style={styles.textarea}
-                  value={entryDraft.content_text}
-                  onChange={(e) => setEntryDraft((old) => ({ ...old, content_text: e.target.value }))}
-                />
-              </label>
-
-              <button disabled={saving} style={styles.primaryButton} onClick={saveEntry}>
-                Salvar entrada
-              </button>
-
-              <div style={styles.list}>
-                {entries.length === 0 && <p style={styles.smallText}>Nenhuma entrada salva.</p>}
-                {entries.map((item) => (
-                  <div key={item.id} style={styles.listItem}>
+            <div style={styles.list}>
+              {entries.length === 0 && <p style={styles.smallText}>Nenhuma entrada salva.</p>}
+              {entries.map((item) => {
+                const isSelected = item.id === selectedEntryId;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    style={isSelected ? styles.entryButtonActive : styles.entryButton}
+                    onClick={() => openEntry(item)}
+                  >
                     <div style={styles.listItemInline}>
-                      <p style={styles.listTitle}>{item.title || 'Sem título'}</p>
-                      <button style={styles.dangerButton} onClick={() => deleteEntry(item.id)}>Excluir</button>
+                      <p style={styles.listTitle}>{item.title || 'Sem titulo'}</p>
+                      <span style={styles.entryBadge}>{item.entry_type || 'note'}</span>
                     </div>
                     <p style={styles.smallText}>{item.entry_type} · {new Date(item.created_at).toLocaleString('pt-BR')}</p>
-                    <pre style={styles.pre}>{item.summary || item?.content_json?.text || JSON.stringify(item.content_json || {}, null, 2)}</pre>
-                  </div>
-                ))}
-              </div>
+                  </button>
+                );
+              })}
             </div>
+
+            {selectedEntryId && (
+              <div style={styles.cardBlock}>
+                <h3 style={styles.cardTitle}>Editar entrada</h3>
+
+                <label style={styles.label}>
+                  Tipo
+                  <select
+                    style={styles.input}
+                    value={entryEditor.entry_type}
+                    onChange={(e) => setEntryEditor((old) => ({ ...old, entry_type: e.target.value }))}
+                  >
+                    <option value="note">note</option>
+                    <option value="insight">insight</option>
+                    <option value="strategy">strategy</option>
+                  </select>
+                </label>
+
+                <label style={styles.label}>
+                  Titulo
+                  <input
+                    style={styles.input}
+                    value={entryEditor.title}
+                    onChange={(e) => setEntryEditor((old) => ({ ...old, title: e.target.value }))}
+                  />
+                </label>
+
+                <label style={styles.label}>
+                  Conteudo
+                  <textarea
+                    rows={8}
+                    style={styles.textarea}
+                    value={entryEditor.content_text}
+                    onChange={(e) => setEntryEditor((old) => ({ ...old, content_text: e.target.value }))}
+                  />
+                </label>
+
+                <div style={styles.listItemInline}>
+                  <button disabled={saving} style={styles.primaryButton} onClick={saveEntryChanges}>
+                    Salvar alteracoes
+                  </button>
+                  <button disabled={saving} style={styles.dangerButton} onClick={() => deleteEntry(selectedEntryId)}>
+                    Excluir entrada
+                  </button>
+                </div>
+              </div>
+            )}
           </aside>
         </section>
       )}
@@ -687,6 +774,36 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: '8px',
+  },
+  entryButton: {
+    border: '1px solid #1f2a44',
+    borderRadius: '8px',
+    padding: '8px',
+    background: '#090f1d',
+    color: '#e2e8f0',
+    display: 'grid',
+    gap: '4px',
+    cursor: 'pointer',
+    textAlign: 'left',
+  },
+  entryButtonActive: {
+    border: '1px solid #38bdf8',
+    borderRadius: '8px',
+    padding: '8px',
+    background: '#0c1c33',
+    color: '#e2e8f0',
+    display: 'grid',
+    gap: '4px',
+    cursor: 'pointer',
+    textAlign: 'left',
+  },
+  entryBadge: {
+    border: '1px solid #1d4ed8',
+    borderRadius: '999px',
+    padding: '1px 8px',
+    fontSize: '0.7rem',
+    color: '#bfdbfe',
+    background: '#0f2447',
   },
   listTitle: {
     margin: 0,

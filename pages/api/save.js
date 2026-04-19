@@ -39,7 +39,7 @@ async function upsertById(table, userId, payload) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido.' });
+    return res.status(405).json({ error: 'MÃ©todo nÃ£o permitido.' });
   }
 
   const auth = await getAuthenticatedUser(req);
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
   const payload = req.body?.payload || {};
 
   if (!resource) {
-    return res.status(400).json({ error: 'Campo resource é obrigatório.' });
+    return res.status(400).json({ error: 'Campo resource Ã© obrigatÃ³rio.' });
   }
 
   try {
@@ -91,12 +91,38 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true });
       }
 
+      if (action === 'update') {
+        const entryId = String(payload?.id || '').trim();
+        if (!entryId) {
+          return res.status(400).json({ error: 'ID da entrada é obrigatório para edição.' });
+        }
+
+        const row = {
+          entry_type: payload?.entry_type || 'note',
+          title: payload?.title || 'Entrada GPT',
+          content_json: payload?.content_json || null,
+          source: payload?.source || 'dashboard',
+          updated_at: new Date().toISOString(),
+        };
+
+        const { response, data } = await supabaseRest(`/rest/v1/gpt_saved_entries?id=eq.${encodeURIComponent(entryId)}&user_id=eq.${encodeURIComponent(userId)}`, {
+          method: 'PATCH',
+          headers: { Prefer: 'return=representation' },
+          body: row,
+        });
+
+        if (!response.ok) {
+          throw new Error(extractErrorMessage(data, 'Falha ao atualizar entrada GPT.'));
+        }
+
+        return res.status(200).json({ success: true, entry: Array.isArray(data) ? data[0] : null });
+      }
+
       const row = {
         user_id: userId,
         entry_type: payload?.entry_type || 'note',
         title: payload?.title || 'Entrada GPT',
         content_json: payload?.content_json || null,
-        summary: payload?.summary || null,
         source: payload?.source || 'dashboard',
         updated_at: new Date().toISOString(),
       };
@@ -119,7 +145,7 @@ export default async function handler(req, res) {
       const content = String(payload?.content || '').trim();
 
       if (!type || !content) {
-        return res.status(400).json({ error: 'Campos type e content são obrigatórios.' });
+        return res.status(400).json({ error: 'Campos type e content sÃ£o obrigatÃ³rios.' });
       }
 
       const { response, data } = await supabaseRest('/rest/v1/brand_documents?on_conflict=user_id,type', {
@@ -140,7 +166,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, document: Array.isArray(data) ? data[0] : null });
     }
 
-    return res.status(400).json({ error: `Resource não suportado: ${resource}` });
+    return res.status(400).json({ error: `Resource nÃ£o suportado: ${resource}` });
   } catch (error) {
     return res.status(500).json({ error: error.message || 'Erro interno ao salvar.' });
   }
