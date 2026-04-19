@@ -43,7 +43,7 @@ export default async function handler(req, res) {
       fetchOneById('human_core_responses', userId),
       fetchMany(`/rest/v1/user_attachments?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`, 'Falha ao buscar anexos.'),
       fetchMany(`/rest/v1/gpt_saved_entries?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`, 'Falha ao buscar entradas GPT.'),
-      fetchMany(`/rest/v1/gpt_access_tokens?user_id=eq.${encodeURIComponent(userId)}&select=id,label,token_prefix,status,created_at,last_used_at,expires_at,revoked_at&order=created_at.desc`, 'Falha ao buscar tokens GPT.'),
+      fetchMany(`/rest/v1/gpt_access_tokens?user_id=eq.${encodeURIComponent(userId)}&select=id,label,token_prefix,token_value,status,created_at,last_used_at,expires_at,revoked_at&order=created_at.desc`, 'Falha ao buscar tokens GPT.'),
       fetchMany(`/rest/v1/brand_documents?user_id=eq.${encodeURIComponent(userId)}&select=*&order=updated_at.desc`, 'Falha ao buscar documentos legados.'),
     ]);
 

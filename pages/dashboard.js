@@ -89,6 +89,7 @@ export default function Dashboard() {
   const [tokens, setTokens] = useState([]);
   const [tokenLabel, setTokenLabel] = useState('Token GPT');
   const [createdToken, setCreatedToken] = useState('');
+  const [tokenCopied, setTokenCopied] = useState(false);
 
   useEffect(() => {
     const accessToken = localStorage.getItem('planto_access_token');
@@ -137,7 +138,14 @@ export default function Dashboard() {
       setHumanCore(data.forms?.human_core || {});
       setAttachments(data.attachments || []);
       setEntries(data.gpt_entries || []);
-      setTokens(data.gpt_tokens || []);
+      const fetchedTokens = data.gpt_tokens || [];
+      setTokens(fetchedTokens);
+      const visibleToken =
+        fetchedTokens.find((item) => item.status === 'active' && item.token_value)?.token_value ||
+        fetchedTokens.find((item) => item.token_value)?.token_value ||
+        '';
+      setCreatedToken(visibleToken);
+      setTokenCopied(false);
       setStatus('');
     } catch (error) {
       if (error.message.toLowerCase().includes('token')) {
@@ -259,6 +267,18 @@ export default function Dashboard() {
     }
   }
 
+  function copyCurrentToken() {
+    if (!createdToken) {
+      setStatus('Nenhum token disponível para copiar.');
+      return;
+    }
+
+    navigator.clipboard.writeText(createdToken);
+    setTokenCopied(true);
+    setStatus('Token copiado para a área de transferência.');
+    setTimeout(() => setTokenCopied(false), 1600);
+  }
+
   async function revokeToken(id) {
     setSaving(true);
     setStatus('Revogando token...');
@@ -306,22 +326,64 @@ export default function Dashboard() {
       ) : (
         <section style={styles.grid}>
           <aside style={styles.leftPanel}>
-            <h2 style={styles.panelTitle}>Perfil</h2>
-            <div style={styles.formGrid}>
-              {profileFields.map((field) => (
-                <label key={field.key} style={styles.label}>
-                  {field.label}
-                  <input
-                    style={styles.input}
-                    value={profile[field.key] || ''}
-                    onChange={(e) => setProfile((old) => ({ ...old, [field.key]: e.target.value }))}
-                  />
-                </label>
-              ))}
+            <div style={styles.cardBlock}>
+              <h2 style={styles.panelTitle}>Perfil</h2>
+              <div style={styles.formGrid}>
+                {profileFields.map((field) => (
+                  <label key={field.key} style={styles.label}>
+                    {field.label}
+                    <input
+                      style={styles.input}
+                      value={profile[field.key] || ''}
+                      onChange={(e) => setProfile((old) => ({ ...old, [field.key]: e.target.value }))}
+                    />
+                  </label>
+                ))}
+              </div>
+              <button disabled={saving} style={styles.primaryButton} onClick={() => saveResource('profile', profile)}>
+                Salvar perfil
+              </button>
             </div>
-            <button disabled={saving} style={styles.primaryButton} onClick={() => saveResource('profile', profile)}>
-              Salvar perfil
-            </button>
+
+            <div style={styles.cardBlock}>
+              <h3 style={styles.cardTitle}>Token de acesso GPT</h3>
+              <p style={styles.smallText}>O token fica visível enquanto você estiver logado nesta conta.</p>
+
+              <label style={styles.label}>
+                Rótulo do token
+                <input style={styles.input} value={tokenLabel} onChange={(e) => setTokenLabel(e.target.value)} />
+              </label>
+
+              <div style={styles.tokenBox}>
+                <p style={styles.smallText}>Token atual</p>
+                <code style={styles.code}>{createdToken || 'Nenhum token gerado ainda.'}</code>
+              </div>
+
+              <div style={styles.listItemInline}>
+                <button disabled={saving} style={styles.primaryButton} onClick={createToken}>
+                  Gerar Token
+                </button>
+                <button style={styles.ghostButton} onClick={copyCurrentToken} disabled={!createdToken}>
+                  {tokenCopied ? 'Copiado' : 'Copiar Token'}
+                </button>
+              </div>
+
+              {tokens.length > 0 && (
+                <div style={styles.list}>
+                  {tokens.slice(0, 3).map((tk) => (
+                    <div key={tk.id} style={styles.listItemInline}>
+                      <div>
+                        <p style={styles.listTitle}>{tk.label || 'Token GPT'}</p>
+                        <p style={styles.smallText}>{tk.token_prefix} · {tk.status}</p>
+                      </div>
+                      {tk.status !== 'revoked' && (
+                        <button style={styles.dangerButton} onClick={() => revokeToken(tk.id)}>Revogar</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </aside>
 
           <section style={styles.centerPanel}>
@@ -396,37 +458,7 @@ export default function Dashboard() {
           </aside>
 
           <aside style={styles.rightBottomPanel}>
-            <h2 style={styles.panelTitle}>Entradas GPT + Token</h2>
-
-            <div style={styles.cardBlock}>
-              <h3 style={styles.cardTitle}>Token de acesso do GPT</h3>
-              <label style={styles.label}>
-                Rótulo do token
-                <input style={styles.input} value={tokenLabel} onChange={(e) => setTokenLabel(e.target.value)} />
-              </label>
-              <button disabled={saving} style={styles.primaryButton} onClick={createToken}>
-                Gerar token
-              </button>
-              {createdToken && (
-                <div style={styles.tokenBox}>
-                  <p style={styles.smallText}>Copie e use no GPT Plantô:</p>
-                  <code style={styles.code}>{createdToken}</code>
-                </div>
-              )}
-              <div style={styles.list}>
-                {tokens.map((tk) => (
-                  <div key={tk.id} style={styles.listItemInline}>
-                    <div>
-                      <p style={styles.listTitle}>{tk.label || 'Token GPT'}</p>
-                      <p style={styles.smallText}>{tk.token_prefix} · {tk.status}</p>
-                    </div>
-                    {tk.status !== 'revoked' && (
-                      <button style={styles.dangerButton} onClick={() => revokeToken(tk.id)}>Revogar</button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <h2 style={styles.panelTitle}>Entradas GPT</h2>
 
             <div style={styles.cardBlock}>
               <h3 style={styles.cardTitle}>Salvar entrada do GPT</h3>

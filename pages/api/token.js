@@ -15,11 +15,18 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const { response, data } = await supabaseRest(`/rest/v1/gpt_access_tokens?user_id=eq.${encodeURIComponent(userId)}&select=id,label,token_prefix,status,created_at,last_used_at,expires_at,revoked_at&order=created_at.desc`);
+      const { response, data } = await supabaseRest(`/rest/v1/gpt_access_tokens?user_id=eq.${encodeURIComponent(userId)}&select=id,label,token_prefix,token_value,status,created_at,last_used_at,expires_at,revoked_at&order=created_at.desc`);
       if (!response.ok) {
         throw new Error(extractErrorMessage(data, 'Falha ao listar tokens.'));
       }
-      return res.status(200).json({ tokens: Array.isArray(data) ? data : [] });
+
+      const tokens = Array.isArray(data) ? data : [];
+      const currentToken = tokens.find((item) => item.status === 'active' && item.token_value)?.token_value || '';
+
+      return res.status(200).json({
+        tokens,
+        current_token: currentToken,
+      });
     }
 
     if (req.method === 'POST') {
@@ -28,6 +35,16 @@ export default async function handler(req, res) {
 
       const plainToken = `planto_${userId.slice(0, 8)}_${randomBytes(24).toString('hex')}`;
       const tokenPrefix = `${plainToken.slice(0, 18)}...`;
+      const now = new Date().toISOString();
+
+      await supabaseRest(`/rest/v1/gpt_access_tokens?user_id=eq.${encodeURIComponent(userId)}&status=eq.active`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: {
+          status: 'revoked',
+          revoked_at: now,
+        },
+      });
 
       const { response, data } = await supabaseRest('/rest/v1/gpt_access_tokens', {
         method: 'POST',
@@ -36,9 +53,11 @@ export default async function handler(req, res) {
           user_id: userId,
           token_hash: hashToken(plainToken),
           token_prefix: tokenPrefix,
+          token_value: plainToken,
           label,
           status: 'active',
           expires_at: expiresAt,
+          revoked_at: null,
         },
       });
 
@@ -66,6 +85,7 @@ export default async function handler(req, res) {
         body: {
           status: 'revoked',
           revoked_at: new Date().toISOString(),
+          token_value: null,
         },
       });
 
