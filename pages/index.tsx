@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import { useRouter } from 'next/router';
+import { loginWithEmailPassword } from '../lib/api/dashboard';
+import { getStoredAccessToken, persistSession } from '../lib/domain/session';
 
-export default function Home() {
+export default function HomePage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -9,32 +11,26 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('planto_access_token');
+    const token = getStoredAccessToken();
     if (token) {
       router.replace('/dashboard');
     }
   }, [router]);
 
-  async function handleSubmit(event) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setMessage('');
 
     try {
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
+      const data = await loginWithEmailPassword(email, password);
 
       if (data?.session?.access_token) {
-        localStorage.setItem('planto_access_token', data.session.access_token);
-        localStorage.setItem('planto_user', JSON.stringify(data.user || {}));
-        localStorage.setItem('planto_user_id', data?.user?.id || '');
+        persistSession(data);
         setMessage('Acesso liberado. Redirecionando...');
-        setTimeout(() => router.push('/dashboard'), 500);
+        window.setTimeout(() => {
+          void router.push('/dashboard');
+        }, 500);
         return;
       }
 
@@ -45,7 +41,7 @@ export default function Home() {
 
       setMessage(`Erro: ${data?.error || 'Não foi possível autenticar.'}`);
     } catch (error) {
-      setMessage(`Erro: ${error.message}`);
+      setMessage(`Erro: ${error instanceof Error ? error.message : 'Falha ao autenticar.'}`);
     } finally {
       setLoading(false);
     }
@@ -63,7 +59,7 @@ export default function Home() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="voce@exemplo.com"
               required
               style={styles.input}
@@ -75,7 +71,7 @@ export default function Home() {
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
               minLength={6}
               required
               style={styles.input}
@@ -87,13 +83,13 @@ export default function Home() {
           </button>
         </form>
 
-        {message && <p style={styles.message}>{message}</p>}
+        {message ? <p style={styles.message}>{message}</p> : null}
       </div>
     </main>
   );
 }
 
-const styles = {
+const styles: Record<string, CSSProperties> = {
   main: {
     minHeight: '100vh',
     display: 'grid',

@@ -1,11 +1,16 @@
 import { createHash, randomBytes } from 'crypto';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import type { GptToken, TokenCreatePayload, TokenListPayload } from '../../types/dashboard';
 import { extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
 
-function hashToken(token) {
+function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex');
 }
 
-export default async function handler(req, res) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<TokenListPayload | TokenCreatePayload | { success: boolean } | { error: string }>
+) {
   const auth = await getAuthenticatedUser(req);
   if (!auth.ok) {
     return res.status(auth.status).json({ error: auth.error });
@@ -15,12 +20,14 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const { response, data } = await supabaseRest(`/rest/v1/gpt_access_tokens?user_id=eq.${encodeURIComponent(userId)}&select=id,label,token_prefix,token_value,status,created_at,last_used_at,expires_at,revoked_at&order=created_at.desc`);
+      const { response, data } = await supabaseRest(
+        `/rest/v1/gpt_access_tokens?user_id=eq.${encodeURIComponent(userId)}&select=id,label,token_prefix,token_value,status,created_at,last_used_at,expires_at,revoked_at&order=created_at.desc`
+      );
       if (!response.ok) {
         throw new Error(extractErrorMessage(data, 'Falha ao listar tokens.'));
       }
 
-      const tokens = Array.isArray(data) ? data : [];
+      const tokens = Array.isArray(data) ? (data as GptToken[]) : [];
       const currentToken = tokens.find((item) => item.status === 'active' && item.token_value)?.token_value || '';
 
       return res.status(200).json({
@@ -65,7 +72,7 @@ export default async function handler(req, res) {
         throw new Error(extractErrorMessage(data, 'Falha ao criar token.'));
       }
 
-      const row = Array.isArray(data) ? data[0] : null;
+      const row = Array.isArray(data) ? (data[0] as GptToken) : null;
 
       return res.status(200).json({
         token: plainToken,
@@ -79,15 +86,18 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'ID do token é obrigatório.' });
       }
 
-      const { response, data } = await supabaseRest(`/rest/v1/gpt_access_tokens?id=eq.${encodeURIComponent(id)}&user_id=eq.${encodeURIComponent(userId)}`, {
-        method: 'PATCH',
-        headers: { Prefer: 'return=representation' },
-        body: {
-          status: 'revoked',
-          revoked_at: new Date().toISOString(),
-          token_value: null,
-        },
-      });
+      const { response, data } = await supabaseRest(
+        `/rest/v1/gpt_access_tokens?id=eq.${encodeURIComponent(id)}&user_id=eq.${encodeURIComponent(userId)}`,
+        {
+          method: 'PATCH',
+          headers: { Prefer: 'return=representation' },
+          body: {
+            status: 'revoked',
+            revoked_at: new Date().toISOString(),
+            token_value: null,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(extractErrorMessage(data, 'Falha ao revogar token.'));
@@ -98,6 +108,6 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: 'Método não permitido.' });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Erro interno.' });
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Erro interno.' });
   }
 }

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 
-export default function BibliotecaRedirect() {
+export default function BibliotecaRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {

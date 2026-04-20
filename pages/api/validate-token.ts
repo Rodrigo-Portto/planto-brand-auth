@@ -1,11 +1,12 @@
 import { createHash } from 'crypto';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { extractErrorMessage, supabaseRest } from './_lib/supabase';
 
-function hashToken(token) {
+function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex');
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<Record<string, unknown> | { error: string }>) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Metodo nao permitido.' });
   }
@@ -24,7 +25,7 @@ export default async function handler(req, res) {
       throw new Error(extractErrorMessage(data, 'Falha ao validar token.'));
     }
 
-    const row = Array.isArray(data) && data.length ? data[0] : null;
+    const row = Array.isArray(data) && data.length ? (data[0] as Record<string, unknown>) : null;
     if (!row?.user_id) {
       return res.status(401).json({ error: 'Token invalido ou revogado.' });
     }
@@ -35,6 +36,6 @@ export default async function handler(req, res) {
       status: row.status,
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Erro interno.' });
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Erro interno.' });
   }
 }

@@ -1,43 +1,24 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { INTEGRATED_BRIEFING_FIELDS, PROFILE_FIELDS } from '../../lib/domain/briefing';
+import type { GptEntry, IntegratedBriefing, Profile } from '../../types/dashboard';
 import { extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
 
-const PROFILE_FIELDS = ['name', 'email', 'phone', 'address', 'website', 'instagram', 'market_niche', 'education', 'specialties', 'avatar_url'];
-const INTEGRATED_BRIEFING_FIELDS = [
-  'oferta_central',
-  'processo_mecanismo',
-  'capacidade_real',
-  'limites_restricoes',
-  'resultados_percebidos',
-  'provas_credibilidade',
-  'diferenciacao_real',
-  'crencas_visao_mundo',
-  'experiencia_consistente',
-  'presenca_profissional',
-  'publico_prioritario',
-  'momento_busca',
-  'tentativas_anteriores',
-  'queixa_declarada',
-  'dor_profunda',
-  'desejos_transformacao',
-  'tensoes_contradicoes',
-  'criterios_confianca',
-  'objecoes_desalinhamentos',
-  'linguagem_repertorio',
-];
+const PROFILE_FIELD_KEYS = PROFILE_FIELDS.map((field) => field.key);
 
-function pickFields(source, allowed) {
-  const input = source && typeof source === 'object' ? source : {};
-  const output = {};
+function pickFields<T extends object>(source: unknown, allowed: Array<keyof T>) {
+  const input = source && typeof source === 'object' ? (source as Record<string, unknown>) : {};
+  const output: Partial<T> = {};
 
   for (const field of allowed) {
     if (Object.prototype.hasOwnProperty.call(input, field)) {
-      output[field] = input[field] ?? null;
+      output[field] = (input[field as string] ?? null) as T[keyof T];
     }
   }
 
   return output;
 }
 
-async function upsertById(table, userId, payload) {
+async function upsertById<T>(table: string, userId: string, payload: Partial<T>) {
   const row = {
     id: userId,
     ...payload,
@@ -54,10 +35,13 @@ async function upsertById(table, userId, payload) {
     throw new Error(extractErrorMessage(data, `Falha ao salvar ${table}.`));
   }
 
-  return Array.isArray(data) ? data[0] : row;
+  return Array.isArray(data) ? (data[0] as T) : (row as T);
 }
 
-export default async function handler(req, res) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Record<string, unknown> | { error: string }>
+) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Metodo nao permitido.' });
   }
@@ -78,12 +62,16 @@ export default async function handler(req, res) {
 
   try {
     if (resource === 'profile') {
-      const saved = await upsertById('user_profiles', userId, pickFields(payload, PROFILE_FIELDS));
+      const saved = await upsertById<Profile>('user_profiles', userId, pickFields<Profile>(payload, PROFILE_FIELD_KEYS));
       return res.status(200).json({ success: true, profile: saved });
     }
 
     if (resource === 'integrated_briefing') {
-      const saved = await upsertById('brand_context_responses', userId, pickFields(payload, INTEGRATED_BRIEFING_FIELDS));
+      const saved = await upsertById<IntegratedBriefing>(
+        'brand_context_responses',
+        userId,
+        pickFields<IntegratedBriefing>(payload, INTEGRATED_BRIEFING_FIELDS)
+      );
       return res.status(200).json({ success: true, integrated_briefing: saved });
     }
 
@@ -94,10 +82,13 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'ID da entrada e obrigatorio para exclusao.' });
         }
 
-        const { response, data } = await supabaseRest(`/rest/v1/gpt_saved_entries?id=eq.${encodeURIComponent(entryId)}&user_id=eq.${encodeURIComponent(userId)}`, {
-          method: 'DELETE',
-          headers: { Prefer: 'return=representation' },
-        });
+        const { response, data } = await supabaseRest(
+          `/rest/v1/gpt_saved_entries?id=eq.${encodeURIComponent(entryId)}&user_id=eq.${encodeURIComponent(userId)}`,
+          {
+            method: 'DELETE',
+            headers: { Prefer: 'return=representation' },
+          }
+        );
 
         if (!response.ok) {
           throw new Error(extractErrorMessage(data, 'Falha ao excluir entrada GPT.'));
@@ -120,17 +111,20 @@ export default async function handler(req, res) {
           updated_at: new Date().toISOString(),
         };
 
-        const { response, data } = await supabaseRest(`/rest/v1/gpt_saved_entries?id=eq.${encodeURIComponent(entryId)}&user_id=eq.${encodeURIComponent(userId)}`, {
-          method: 'PATCH',
-          headers: { Prefer: 'return=representation' },
-          body: row,
-        });
+        const { response, data } = await supabaseRest(
+          `/rest/v1/gpt_saved_entries?id=eq.${encodeURIComponent(entryId)}&user_id=eq.${encodeURIComponent(userId)}`,
+          {
+            method: 'PATCH',
+            headers: { Prefer: 'return=representation' },
+            body: row,
+          }
+        );
 
         if (!response.ok) {
           throw new Error(extractErrorMessage(data, 'Falha ao atualizar entrada GPT.'));
         }
 
-        return res.status(200).json({ success: true, entry: Array.isArray(data) ? data[0] : null });
+        return res.status(200).json({ success: true, entry: Array.isArray(data) ? (data[0] as GptEntry) : null });
       }
 
       const row = {
@@ -152,7 +146,7 @@ export default async function handler(req, res) {
         throw new Error(extractErrorMessage(data, 'Falha ao salvar entrada GPT.'));
       }
 
-      return res.status(200).json({ success: true, entry: Array.isArray(data) ? data[0] : null });
+      return res.status(200).json({ success: true, entry: Array.isArray(data) ? (data[0] as GptEntry) : null });
     }
 
     if (resource === 'legacy_document') {
@@ -183,6 +177,6 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ error: `Resource nao suportado: ${resource}` });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Erro interno ao salvar.' });
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Erro interno ao salvar.' });
   }
 }

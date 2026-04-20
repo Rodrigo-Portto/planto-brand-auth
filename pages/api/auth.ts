@@ -1,6 +1,8 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
+import type { LoginPayload } from '../../types/dashboard';
 import { SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY, SUPABASE_URL } from './_lib/supabase';
 
-async function seedUserProfile(user) {
+async function seedUserProfile(user: { id: string; email?: string | null }) {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !user?.id) return;
 
   await fetch(`${SUPABASE_URL}/rest/v1/user_profiles?on_conflict=id`, {
@@ -27,7 +29,7 @@ function buildHeaders() {
   };
 }
 
-function normalizeSession(data) {
+function normalizeSession(data: Record<string, any>): LoginPayload | null {
   if (!data?.access_token || !data?.user?.id) return null;
   return {
     user: {
@@ -43,12 +45,14 @@ function normalizeSession(data) {
   };
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<LoginPayload | { error: string }>) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido.' });
   }
 
-  const email = String(req.body?.email || '').trim().toLowerCase();
+  const email = String(req.body?.email || '')
+    .trim()
+    .toLowerCase();
   const password = String(req.body?.password || '');
 
   if (!email || !password) {
@@ -68,11 +72,11 @@ export default async function handler(req, res) {
       body: JSON.stringify({ email, password }),
     });
 
-    const loginData = await loginRes.json().catch(() => ({}));
+    const loginData = (await loginRes.json().catch(() => ({}))) as Record<string, any>;
     const loginSession = normalizeSession(loginData);
 
     if (loginSession) {
-      await seedUserProfile(loginSession.user);
+      await seedUserProfile(loginSession.user || { id: '', email: null });
       return res.status(200).json(loginSession);
     }
 
@@ -82,11 +86,11 @@ export default async function handler(req, res) {
       body: JSON.stringify({ email, password }),
     });
 
-    const signupData = await signupRes.json().catch(() => ({}));
+    const signupData = (await signupRes.json().catch(() => ({}))) as Record<string, any>;
     const signupSession = normalizeSession(signupData);
 
     if (signupSession) {
-      await seedUserProfile(signupSession.user);
+      await seedUserProfile(signupSession.user || { id: '', email: null });
       return res.status(200).json(signupSession);
     }
 
@@ -110,6 +114,6 @@ export default async function handler(req, res) {
 
     return res.status(401).json({ error: errorMessage });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Erro interno.' });
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Erro interno.' });
   }
 }

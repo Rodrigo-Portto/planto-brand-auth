@@ -1,3 +1,4 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { SUPABASE_SERVICE_KEY, SUPABASE_URL, extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
 
 const BUCKET = 'brand-library';
@@ -12,7 +13,7 @@ export const config = {
   },
 };
 
-function sanitizeFilename(name) {
+function sanitizeFilename(name: string) {
   return String(name || 'avatar')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -20,14 +21,14 @@ function sanitizeFilename(name) {
     .slice(0, 120);
 }
 
-function extensionOf(name) {
+function extensionOf(name: string) {
   const value = String(name || '');
   const parts = value.split('.');
   if (parts.length < 2) return '';
   return parts[parts.length - 1].toLowerCase();
 }
 
-function normalizeBase64(value) {
+function normalizeBase64(value: string) {
   const input = String(value || '').trim();
   if (!input) return '';
   if (input.startsWith('data:')) {
@@ -37,7 +38,7 @@ function normalizeBase64(value) {
   return input.replace(/\s/g, '');
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<Record<string, unknown> | { error: string }>) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Metodo nao permitido.' });
   }
@@ -50,7 +51,7 @@ export default async function handler(req, res) {
   const userId = auth.user.id;
   const filename = String(req.body?.filename || '').trim();
   const mimeType = String(req.body?.mime_type || 'application/octet-stream').trim();
-  const base64 = normalizeBase64(req.body?.base64);
+  const base64 = normalizeBase64(String(req.body?.base64 || ''));
 
   if (!filename || !base64) {
     return res.status(400).json({ error: 'filename e base64 sao obrigatorios.' });
@@ -77,7 +78,10 @@ export default async function handler(req, res) {
   try {
     const safeName = sanitizeFilename(filename);
     const storagePath = `${userId}/avatar/${Date.now()}-${safeName}`;
-    const encodedPath = storagePath.split('/').map(encodeURIComponent).join('/');
+    const encodedPath = storagePath
+      .split('/')
+      .map(encodeURIComponent)
+      .join('/');
 
     const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodedPath}`, {
       method: 'POST',
@@ -90,7 +94,7 @@ export default async function handler(req, res) {
       body: fileBuffer,
     });
 
-    const uploadData = await uploadResponse.json().catch(() => ({}));
+    const uploadData = (await uploadResponse.json().catch(() => ({}))) as Record<string, unknown>;
     if (!uploadResponse.ok) {
       throw new Error(extractErrorMessage(uploadData, 'Falha ao enviar avatar para o storage.'));
     }
@@ -117,6 +121,6 @@ export default async function handler(req, res) {
       profile: Array.isArray(data) ? data[0] : null,
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Erro ao enviar avatar.' });
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Erro ao enviar avatar.' });
   }
 }
