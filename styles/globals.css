@@ -1,0 +1,45 @@
+:root {
+  color-scheme: light dark;
+  --planto-bg: #09111f;
+  --planto-text: #e2e8f0;
+  --planto-muted: #94a3b8;
+  --planto-accent: #38bdf8;
+  --planto-surface: #0f172a;
+  --planto-border: #24334f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body,
+#__next {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--planto-bg);
+  color: var(--planto-text);
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body::selection {
+  background: rgba(56, 189, 248, 0.28);
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}

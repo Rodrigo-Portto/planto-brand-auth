@@ -17,6 +17,13 @@ const profileFields = [
   { key: 'specialties', label: 'Especialidades' },
 ];
 
+const LIBRARY_PANELS = [
+  { key: 'perfil', label: 'Perfil', targetId: 'perfil-panel' },
+  { key: 'formularios', label: 'Formulários', targetId: 'formularios-panel' },
+  { key: 'conhecimento', label: 'Conhecimento', targetId: 'conhecimento-panel' },
+  { key: 'entradas-gpt', label: 'Entradas GPT', targetId: 'entradas-gpt-panel' },
+];
+
 const BRIEFING_TITLE = 'Briefing de Contexto de Marca';
 const BRIEFING_SUBTITLE = 'Briefing Estratégico — Brand Core + Human Core';
 const BRIEFING_GENERAL_INSTRUCTION =
@@ -579,6 +586,25 @@ function createStyles(colors, isCompact) {
       cursor: 'pointer',
       fontSize: '0.84rem',
       fontWeight: 600,
+    },
+    quickNav: {
+      display: 'flex',
+      gap: '10px',
+      flexWrap: 'wrap',
+    },
+    quickNavLink: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '38px',
+      borderRadius: '999px',
+      border: `1px solid ${colors.borderStrong}`,
+      background: colors.shell,
+      color: colors.text,
+      padding: '8px 14px',
+      fontSize: '0.84rem',
+      fontWeight: 700,
+      textDecoration: 'none',
     },
     dangerButton: {
       border: `1px solid ${colors.danger}`,
@@ -1224,12 +1250,19 @@ export default function Dashboard() {
 
         {notice ? <div style={styles.notice}>{notice}</div> : null}
         {errorMessage ? <div style={styles.errorBanner}>{errorMessage}</div> : null}
+        <nav aria-label="Painéis da biblioteca" style={styles.quickNav}>
+          {LIBRARY_PANELS.map((panel) => (
+            <a key={panel.key} href={`#${panel.targetId}`} style={styles.quickNavLink}>
+              {panel.label}
+            </a>
+          ))}
+        </nav>
 
         {loading ? (
           <p style={styles.loader}>Carregando...</p>
         ) : (
           <section style={styles.grid}>
-            <aside style={styles.leftPanel}>
+            <aside id="perfil-panel" style={styles.leftPanel}>
               <div style={styles.cardBlock}>
                 <h2 style={styles.panelTitle}>Perfil</h2>
 
@@ -1314,7 +1347,7 @@ export default function Dashboard() {
               </div>
             </aside>
 
-            <section style={styles.centerPanel}>
+            <section id="formularios-panel" style={styles.centerPanel}>
               <h2 style={styles.panelTitle}>Formul\u00e1rios</h2>
 
               <div style={styles.briefingIntro}>
@@ -1399,7 +1432,7 @@ export default function Dashboard() {
             </section>
 
             <aside style={styles.rightColumn}>
-              <div style={styles.rightPanel}>
+              <div id="conhecimento-panel" style={styles.rightPanel}>
                 <h2 style={styles.panelTitle}>Conhecimento</h2>
                 <p style={styles.smallText}>Formatos suportados: DOC, DOCX, PDF, MD e TXT.</p>
                 <div style={styles.countBadge}>{attachments.length}/{MAX_ATTACHMENTS} arquivos</div>
@@ -1437,7 +1470,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div style={styles.rightPanel}>
+              <div id="entradas-gpt-panel" style={styles.rightPanel}>
                 <h2 style={styles.panelTitle}>Entradas GPT</h2>
                 <p style={styles.smallText}>
                   Entradas salvas pelo GPT para esta conta. Selecione uma entrada para abrir e editar.
