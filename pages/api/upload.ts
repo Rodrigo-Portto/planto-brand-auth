@@ -47,8 +47,42 @@ async function countAttachments(userId: string) {
   return Array.isArray(data) ? data.length : 0;
 }
 
+async function fetchAttachment(userId: string, attachmentId: string) {
+  const { response, data } = await supabaseRest(
+    `/rest/v1/user_attachments?id=eq.${encodeURIComponent(attachmentId)}&user_id=eq.${encodeURIComponent(userId)}&select=*&limit=1`
+  );
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(data, 'Falha ao buscar anexo.'));
+  }
+
+  return Array.isArray(data) && data.length ? (data[0] as Record<string, unknown>) : null;
+}
+
+async function deleteStorageObject(bucket: string, storagePath: string) {
+  if (!storagePath) return;
+
+  const encodedPath = storagePath
+    .split('/')
+    .map(encodeURIComponent)
+    .join('/');
+
+  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${encodedPath}`, {
+    method: 'DELETE',
+    headers: {
+      apikey: SUPABASE_SERVICE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+    },
+  });
+
+  const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!response.ok && response.status !== 404) {
+    throw new Error(extractErrorMessage(data, 'Falha ao excluir arquivo do storage.'));
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Record<string, unknown> | { error: string }>) {
-  if (req.method !== 'POST') {
+  if (req.method !== 'POST' && req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Metodo nao permitido.' });
   }
 
@@ -58,6 +92,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 
   const userId = auth.user.id;
+
+  if (req.method === 'DELETE') {
+    const attachmentId = String(req.body?.id || req.query?.id || '').trim();
+    if (!attachmentId) {
+      return res.status(400).json({ error: 'ID do anexo e obrigatorio.' });
+    }
+
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+      return res.status(500).json({ error: 'Configuracao de storage ausente.' });
+    }
+
+    try {
+      const attachment = await fetchAttachment(userId, attachmentId);
+      if (!attachment) {
+        return res.status(404).json({ error: 'Anexo nao encontrado.' });
+      }
+
+      const bucket = String(attachment.storage_bucket || BUCKET);
+      const storagePath = String(attachment.storage_path || '');
+      await deleteStorageObject(bucket, storagePath);
+
+      const { response, data } = await supabaseRest(
+        `/rest/v1/user_attachments?id=eq.${encodeURIComponent(attachmentId)}&user_id=eq.${encodeURIComponent(userId)}`,
+        {
+          method: 'DELETE',
+          headers: { Prefer: 'return=representation' },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(extractErrorMessage(data, 'Falha ao remover anexo do banco.'));
+      }
+
+      return res.status(200).json({ success: true, attachment: Array.isArray(data) ? data[0] : null });
+    } catch (error) {
+      return res.status(500).json({ error: error instanceof Error ? error.message : 'Erro ao excluir arquivo.' });
+    }
+  }
+
   const filename = String(req.body?.filename || '').trim();
   const mimeType = String(req.body?.mime_type || 'application/octet-stream').trim();
   const sourceKind = String(req.body?.source_kind || 'dashboard-upload').trim();

@@ -7,6 +7,7 @@ interface ProfilePanelProps {
   styles: DashboardStyles;
   theme: DashboardThemeColors;
   profile: Profile;
+  greetingName: string;
   saving: boolean;
   avatarUploading: boolean;
   onProfileChange: (key: keyof Profile, value: string) => void;
@@ -18,6 +19,7 @@ export function ProfilePanel({
   styles,
   theme,
   profile,
+  greetingName,
   saving,
   avatarUploading,
   onProfileChange,
@@ -38,23 +40,11 @@ export function ProfilePanel({
           disabled={avatarUploading}
         >
           {profile.avatar_url ? <img src={profile.avatar_url} alt="Avatar do perfil" style={styles.avatarImage} /> : null}
-          <div style={styles.avatarOverlay}>
+          <span style={styles.avatarCameraBadge}>
             <CameraIcon color={theme.textStrong} />
-          </div>
+          </span>
         </button>
-
-        <div style={styles.avatarMeta}>
-          <p style={styles.listTitle}>Foto do perfil</p>
-          <p style={styles.smallText}>Clique no avatar para selecionar uma imagem.</p>
-          <button
-            type="button"
-            style={styles.secondaryButton}
-            onClick={() => avatarInputRef.current?.click()}
-            disabled={avatarUploading}
-          >
-            {avatarUploading ? 'Enviando...' : 'Alterar foto'}
-          </button>
-        </div>
+        <p style={styles.avatarGreeting}>Olá, {greetingName}!</p>
       </div>
 
       <input

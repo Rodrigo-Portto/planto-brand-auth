@@ -71,6 +71,10 @@ export interface GptEntry {
   title?: string | null;
   content_json?: GptEntryContent | string | null;
   source?: string | null;
+  canvas_url?: string | null;
+  canvas_external_id?: string | null;
+  canvas_version?: string | null;
+  content_format?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -89,8 +93,19 @@ export interface GptToken {
 
 export interface LegacyDocument {
   id?: string;
+  user_id?: string | null;
   type?: string | null;
+  title?: string | null;
   content?: string | null;
+  canvas_url?: string | null;
+  canvas_content?: string | null;
+  canvas_kind?: string | null;
+  content_format?: string | null;
+  canvas_external_id?: string | null;
+  canvas_version?: string | null;
+  source?: string | null;
+  metadata_json?: Record<string, unknown> | null;
+  created_at?: string | null;
   updated_at?: string | null;
 }
 

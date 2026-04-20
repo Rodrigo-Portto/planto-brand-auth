@@ -6,7 +6,7 @@ import type {
   DashboardThemeColors,
   IntegratedBriefing,
 } from '../../../types/dashboard';
-import { ChevronIcon } from '../icons';
+import { ChevronIcon, SaveIcon } from '../icons';
 import { BriefingField } from './BriefingField';
 
 interface BriefingSectionCardProps {
@@ -45,8 +45,15 @@ export function BriefingSectionCard({
           <p style={{ ...styles.smallText, marginTop: 8 }}>{saveStateLabel}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button type="button" style={styles.secondaryButton} onClick={() => onSaveSection(section.key)} disabled={isSaving}>
-            {isSaving ? 'Salvando...' : section.key === 'brand_core' ? 'Salvar Brand Core' : 'Salvar Human Core'}
+          <button
+            type="button"
+            style={styles.iconOnlyButton}
+            onClick={() => onSaveSection(section.key)}
+            disabled={isSaving}
+            aria-label={section.key === 'brand_core' ? 'Salvar Brand Core' : 'Salvar Human Core'}
+            title={isSaving ? 'Salvando...' : section.key === 'brand_core' ? 'Salvar Brand Core' : 'Salvar Human Core'}
+          >
+            <SaveIcon color={theme.textStrong} />
           </button>
           <button
             type="button"

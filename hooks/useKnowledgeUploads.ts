@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { uploadKnowledgeFile } from '../lib/api/dashboard';
+import { deleteKnowledgeFile, uploadKnowledgeFile } from '../lib/api/dashboard';
 import { MAX_ATTACHMENTS, toBase64 } from '../lib/domain/dashboardUtils';
 import type { Attachment } from '../types/dashboard';
 
@@ -19,6 +19,7 @@ export function useKnowledgeUploads({
   const [attachments, setAttachments] = useState<Attachment[]>(initialAttachments);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [deletingAttachmentId, setDeletingAttachmentId] = useState<string | null>(null);
 
   useEffect(() => {
     setAttachments(initialAttachments);
@@ -61,12 +62,30 @@ export function useKnowledgeUploads({
     }
   }
 
+  async function deleteAttachment(id: string) {
+    if (!id || deletingAttachmentId) return;
+
+    setDeletingAttachmentId(id);
+
+    try {
+      await deleteKnowledgeFile(token, id);
+      setAttachments((current) => current.filter((attachment) => attachment.id !== id));
+      onSaved('Arquivo excluido');
+    } catch (error) {
+      onError(error instanceof Error ? error.message : 'Erro ao excluir arquivo.');
+    } finally {
+      setDeletingAttachmentId(null);
+    }
+  }
+
   return {
     attachments,
     setAttachments,
     selectedFile,
     setSelectedFile,
     uploading,
+    deletingAttachmentId,
     uploadKnowledgeFile: upload,
+    deleteAttachment,
   };
 }

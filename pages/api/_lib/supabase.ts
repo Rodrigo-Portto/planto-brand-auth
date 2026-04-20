@@ -129,6 +129,7 @@ export function extractStoragePathFromAvatarValue(value?: string | null, bucket 
 
   const publicMarker = `/storage/v1/object/public/${bucket}/`;
   const signedMarker = `/storage/v1/object/sign/${bucket}/`;
+  const legacySignedMarker = `/object/sign/${bucket}/`;
 
   if (input.includes(publicMarker)) {
     return input.split(publicMarker)[1]?.split('?')[0] || '';
@@ -136,6 +137,10 @@ export function extractStoragePathFromAvatarValue(value?: string | null, bucket 
 
   if (input.includes(signedMarker)) {
     return input.split(signedMarker)[1]?.split('?')[0] || '';
+  }
+
+  if (input.includes(legacySignedMarker)) {
+    return input.split(legacySignedMarker)[1]?.split('?')[0] || '';
   }
 
   return '';
@@ -174,5 +179,10 @@ export async function createSignedStorageUrl(bucket: string, storagePath: string
     return signedRelativePath;
   }
 
-  return `${SUPABASE_URL}${signedRelativePath.startsWith('/') ? '' : '/'}${signedRelativePath}`;
+  const normalizedSignedPath = signedRelativePath.startsWith('/') ? signedRelativePath : `/${signedRelativePath}`;
+  const signedStoragePath = normalizedSignedPath.startsWith('/storage/v1/')
+    ? normalizedSignedPath
+    : `/storage/v1${normalizedSignedPath}`;
+
+  return `${SUPABASE_URL}${signedStoragePath}`;
 }

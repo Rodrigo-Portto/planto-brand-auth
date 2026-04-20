@@ -2,7 +2,6 @@ import type { DashboardStyles, DashboardThemeColors, ThemeMode } from '../../typ
 import { MoonIcon, SunIcon } from './icons';
 
 interface DashboardHeaderProps {
-  greetingName: string;
   themeMode: ThemeMode;
   styles: DashboardStyles;
   theme: DashboardThemeColors;
@@ -11,7 +10,6 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({
-  greetingName,
   themeMode,
   styles,
   theme,
@@ -22,13 +20,17 @@ export function DashboardHeader({
     <header style={styles.header}>
       <div>
         <h1 style={styles.title}>Plantô</h1>
-        <p style={styles.subtitle}>Olá, {greetingName}!</p>
       </div>
 
       <div style={styles.headerActions}>
-        <button onClick={onToggleTheme} style={styles.iconButton} type="button">
+        <button
+          onClick={onToggleTheme}
+          style={styles.iconOnlyButton}
+          type="button"
+          aria-label={themeMode === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+          title={themeMode === 'dark' ? 'Modo claro' : 'Modo escuro'}
+        >
           {themeMode === 'dark' ? <SunIcon color={theme.text} /> : <MoonIcon color={theme.text} />}
-          {themeMode === 'dark' ? 'Modo claro' : 'Modo escuro'}
         </button>
         <button onClick={onLogout} style={styles.ghostButton} type="button">
           Sair

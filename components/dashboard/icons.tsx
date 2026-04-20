@@ -20,6 +20,48 @@ export function CameraIcon({ color }: IconProps) {
   );
 }
 
+export function FilePlusIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="36" height="36" fill="none" aria-hidden="true">
+      <path
+        d="M7 3.5h6.2L18 8.3V20a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20V5A1.5 1.5 0 0 1 7.5 3.5Z"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="M13 3.8V8h4.2M12 11v6M9 14h6" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function SaveIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path
+        d="M5 4h11.2L19 6.8V19a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4Z"
+        stroke={color}
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="M8 4v5h7V4M8 20v-6h8v6" stroke={color} strokeWidth="1.7" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path d="M9 4h6M5 7h14M10 11v6M14 11v6" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
+      <path
+        d="M7 7h10l-.7 12a1.5 1.5 0 0 1-1.5 1.4H9.2A1.5 1.5 0 0 1 7.7 19L7 7Z"
+        stroke={color}
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function ChevronIcon({ collapsed, color }: ChevronIconProps) {
   return (
     <svg

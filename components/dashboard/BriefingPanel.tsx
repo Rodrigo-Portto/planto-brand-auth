@@ -45,7 +45,7 @@ function getContextStatusLabel(formProgress: FormProgress, contextStructure: Con
     return 'Tudo salvo. O briefing integrado pode ser processado agora.';
   }
 
-  return 'Aguardando perfil salvo e as duas secoes persistidas no Supabase.';
+  return 'Aguardando perfil salvo e os formulários preenchidos.';
 }
 
 function getSectionStatusLabel(
@@ -76,7 +76,7 @@ export function BriefingPanel({
 }: BriefingPanelProps) {
   return (
     <section id="formularios-panel" style={styles.centerPanel}>
-      <h2 style={styles.panelTitle}>FormulÃ¡rios</h2>
+      <h2 style={styles.panelTitle}>Formulários</h2>
 
       <BriefingIntro styles={styles} hasIntegratedBriefingData={hasIntegratedBriefingData} />
 
@@ -106,18 +106,6 @@ export function BriefingPanel({
         >
           {saving ? 'Processando...' : 'Salvar briefing integrado'}
         </button>
-      </div>
-
-      {!formProgress.is_ready_for_final_save ? (
-        <p style={styles.smallText}>
-          O botao final so ativa quando perfil, Brand Core e Human Core estiverem respondidos e salvos no banco.
-        </p>
-      ) : null}
-
-      <div style={{ display: 'grid', gap: 6 }}>
-        <p style={styles.smallText}>Perfil salvo: {formProgress.is_profile_complete ? 'sim' : 'nao'}</p>
-        <p style={styles.smallText}>Brand Core salvo: {formProgress.is_brand_core_saved ? 'sim' : 'nao'}</p>
-        <p style={styles.smallText}>Human Core salvo: {formProgress.is_human_core_saved ? 'sim' : 'nao'}</p>
       </div>
 
       {formProgress.integrated_briefing_saved_at ? (

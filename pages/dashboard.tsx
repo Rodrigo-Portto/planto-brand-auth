@@ -180,7 +180,6 @@ export default function DashboardPage() {
       styles={styles}
       header={
         <DashboardHeader
-          greetingName={greetingName}
           themeMode={themeMode}
           styles={styles}
           theme={theme}
@@ -194,11 +193,12 @@ export default function DashboardPage() {
       loading={isLoading}
     >
       <section style={styles.grid}>
-        <aside id="perfil-panel" style={styles.leftPanel}>
+        <aside id="perfil-panel">
           <ProfilePanel
             styles={styles}
             theme={theme}
             profile={profileForm.profile}
+            greetingName={greetingName}
             saving={profileForm.savingProfile}
             avatarUploading={avatarUploading}
             onProfileChange={(key, value) =>
@@ -265,8 +265,10 @@ export default function DashboardPage() {
             attachments={knowledgeUploads.attachments}
             selectedFile={knowledgeUploads.selectedFile}
             uploading={knowledgeUploads.uploading}
+            deletingAttachmentId={knowledgeUploads.deletingAttachmentId}
             onSelectedFileChange={knowledgeUploads.setSelectedFile}
             onUpload={knowledgeUploads.uploadKnowledgeFile}
+            onDeleteAttachment={knowledgeUploads.deleteAttachment}
           />
         </aside>
       </section>

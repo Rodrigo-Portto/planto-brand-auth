@@ -159,6 +159,14 @@ export async function uploadKnowledgeFile(
   });
 }
 
+export async function deleteKnowledgeFile(accessToken: string, id: string): Promise<{ success: boolean }> {
+  return requestJson<{ success: boolean }>('/api/upload', {
+    method: 'DELETE',
+    accessToken,
+    body: { id },
+  });
+}
+
 export async function uploadAvatar(
   accessToken: string,
   payload: {
