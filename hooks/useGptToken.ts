@@ -60,6 +60,7 @@ export function useGptToken({ initialTokens, token, onSaved, onError }: UseGptTo
 
   return {
     createdToken,
+    canGenerateToken: !createdToken,
     tokenCopied,
     savingToken,
     createToken: generateToken,

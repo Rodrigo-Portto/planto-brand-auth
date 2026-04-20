@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { DashboardStyles, EntryEditorState, GptEntry } from '../../types/dashboard';
 
 interface GptEntriesPanelProps {
@@ -6,6 +7,7 @@ interface GptEntriesPanelProps {
   selectedEntryId: string;
   entryEditor: EntryEditorState;
   saving: boolean;
+  containerStyle?: CSSProperties;
   onOpenEntry: (entry: GptEntry) => void;
   onEntryEditorChange: (next: EntryEditorState) => void;
   onSaveEntryChanges: () => void;
@@ -18,13 +20,14 @@ export function GptEntriesPanel({
   selectedEntryId,
   entryEditor,
   saving,
+  containerStyle,
   onOpenEntry,
   onEntryEditorChange,
   onSaveEntryChanges,
   onDeleteEntry,
 }: GptEntriesPanelProps) {
   return (
-    <div id="entradas-gpt-panel" style={styles.rightPanel}>
+    <div id="entradas-gpt-panel" style={containerStyle || styles.rightPanel}>
       <h2 style={styles.panelTitle}>Entradas GPT</h2>
       <p style={styles.smallText}>Entradas salvas pelo GPT para esta conta. Selecione uma entrada para abrir e editar.</p>
 

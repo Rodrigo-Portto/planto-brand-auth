@@ -20,7 +20,7 @@ import { useThemeMode } from '../hooks/useThemeMode';
 import { uploadAvatar } from '../lib/api/dashboard';
 import { INTEGRATED_BRIEFING_FIELDS } from '../lib/domain/briefing';
 import { themeTokens, createDashboardStyles } from '../lib/domain/dashboardTheme';
-import { bytesToReadable, toBase64 } from '../lib/domain/dashboardUtils';
+import { toBase64 } from '../lib/domain/dashboardUtils';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -32,6 +32,7 @@ export default function DashboardPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [viewportWidth, setViewportWidth] = useState(1440);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [centralView, setCentralView] = useState<'forms' | 'gpt_entries'>('forms');
 
   const isCompact = viewportWidth < 1180;
   const theme = themeTokens[themeMode];
@@ -161,7 +162,7 @@ export default function DashboardPage() {
         base64: toBase64(buffer),
       });
 
-      const nextUrl = data.profile?.avatar_url || data.avatar_url || '';
+      const nextUrl = data.avatar_url || data.profile?.avatar_url || '';
       profileForm.setProfile((current) => ({ ...current, avatar_url: nextUrl }));
       showSavedNotice();
     } catch (error) {
@@ -189,7 +190,7 @@ export default function DashboardPage() {
       }
       notice={notice}
       errorMessage={errorMessage}
-      quickNav={<LibraryQuickNav styles={styles} />}
+      quickNav={<LibraryQuickNav styles={styles} activeView={centralView} onChangeView={setCentralView} />}
       loading={isLoading}
     >
       <section style={styles.grid}>
@@ -209,52 +210,34 @@ export default function DashboardPage() {
             onSaveProfile={profileForm.saveProfile}
             onAvatarUpload={handleAvatarUpload}
           />
-
-          <TokenPanel
-            styles={styles}
-            createdToken={gptToken.createdToken}
-            tokenCopied={gptToken.tokenCopied}
-            saving={gptToken.savingToken}
-            onCreateToken={gptToken.createToken}
-            onCopyToken={gptToken.copyCurrentToken}
-          />
         </aside>
 
-        <BriefingPanel
-          styles={styles}
-          theme={theme}
-          integratedBriefing={integratedBriefingForm.integratedBriefing}
-          collapsedPanels={collapsedPanels}
-          saving={integratedBriefingForm.savingIntegratedBriefing}
-          savingSection={integratedBriefingForm.savingSection}
-          hasIntegratedBriefingData={hasIntegratedBriefingData}
-          formProgress={integratedBriefingForm.formProgress}
-          contextStructure={integratedBriefingForm.contextStructure}
-          sectionState={integratedBriefingForm.sectionState}
-          onTogglePanel={togglePanel}
-          onFieldChange={(key, value) =>
-            integratedBriefingForm.setIntegratedBriefing((current) => ({
-              ...current,
-              [key]: value,
-            }))
-          }
-          onSaveSection={integratedBriefingForm.saveBriefingSection}
-          onSaveIntegratedBriefing={integratedBriefingForm.finalizeIntegratedBriefing}
-        />
-
-        <aside style={styles.rightColumn}>
-          <KnowledgePanel
+        {centralView === 'forms' ? (
+          <BriefingPanel
             styles={styles}
-            attachments={knowledgeUploads.attachments}
-            selectedFile={knowledgeUploads.selectedFile}
-            uploading={knowledgeUploads.uploading}
-            onSelectedFileChange={knowledgeUploads.setSelectedFile}
-            onUpload={knowledgeUploads.uploadKnowledgeFile}
-            renderFileSize={bytesToReadable}
+            theme={theme}
+            integratedBriefing={integratedBriefingForm.integratedBriefing}
+            collapsedPanels={collapsedPanels}
+            saving={integratedBriefingForm.savingIntegratedBriefing}
+            savingSection={integratedBriefingForm.savingSection}
+            hasIntegratedBriefingData={hasIntegratedBriefingData}
+            formProgress={integratedBriefingForm.formProgress}
+            contextStructure={integratedBriefingForm.contextStructure}
+            sectionState={integratedBriefingForm.sectionState}
+            onTogglePanel={togglePanel}
+            onFieldChange={(key, value) =>
+              integratedBriefingForm.setIntegratedBriefing((current) => ({
+                ...current,
+                [key]: value,
+              }))
+            }
+            onSaveSection={integratedBriefingForm.saveBriefingSection}
+            onSaveIntegratedBriefing={integratedBriefingForm.finalizeIntegratedBriefing}
           />
-
+        ) : (
           <GptEntriesPanel
             styles={styles}
+            containerStyle={styles.centerPanel}
             entries={gptEntries.entries}
             selectedEntryId={gptEntries.selectedEntryId}
             entryEditor={gptEntries.entryEditor}
@@ -263,6 +246,27 @@ export default function DashboardPage() {
             onEntryEditorChange={gptEntries.setEntryEditor}
             onSaveEntryChanges={gptEntries.saveEntryChanges}
             onDeleteEntry={gptEntries.deleteEntry}
+          />
+        )}
+
+        <aside style={styles.rightColumn}>
+          <TokenPanel
+            styles={styles}
+            createdToken={gptToken.createdToken}
+            tokenCopied={gptToken.tokenCopied}
+            saving={gptToken.savingToken}
+            canGenerateToken={gptToken.canGenerateToken}
+            onCreateToken={gptToken.createToken}
+            onCopyToken={gptToken.copyCurrentToken}
+          />
+
+          <KnowledgePanel
+            styles={styles}
+            attachments={knowledgeUploads.attachments}
+            selectedFile={knowledgeUploads.selectedFile}
+            uploading={knowledgeUploads.uploading}
+            onSelectedFileChange={knowledgeUploads.setSelectedFile}
+            onUpload={knowledgeUploads.uploadKnowledgeFile}
           />
         </aside>
       </section>

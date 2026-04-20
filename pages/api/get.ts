@@ -1,7 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { DashboardPayload } from '../../types/dashboard';
 import { buildFormProgress } from '../../lib/domain/briefing';
-import { extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
+import {
+  BRAND_LIBRARY_BUCKET,
+  createSignedStorageUrl,
+  extractErrorMessage,
+  extractStoragePathFromAvatarValue,
+  getAuthenticatedUser,
+  supabaseRest,
+} from './_lib/supabase';
 
 async function fetchOneById<T>(table: string, idColumn: string, idValue: string): Promise<T | null> {
   const { response, data } = await supabaseRest(
@@ -57,6 +64,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         ),
       ]);
 
+    let resolvedProfile = profile || {};
+    if (resolvedProfile?.avatar_url) {
+      const storagePath = extractStoragePathFromAvatarValue(resolvedProfile.avatar_url, BRAND_LIBRARY_BUCKET);
+      if (storagePath) {
+        try {
+          resolvedProfile = {
+            ...resolvedProfile,
+            avatar_url: await createSignedStorageUrl(BRAND_LIBRARY_BUCKET, storagePath),
+          };
+        } catch {
+          resolvedProfile = {
+            ...resolvedProfile,
+            avatar_url: '',
+          };
+        }
+      }
+    }
+
     const formProgress = buildFormProgress(integratedBriefing || null);
 
     return res.status(200).json({
@@ -64,7 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         id: userId,
         email: auth.user.email || null,
       },
-      profile: profile || {},
+      profile: resolvedProfile,
       forms: {
         integrated_briefing: integratedBriefing || {},
       },

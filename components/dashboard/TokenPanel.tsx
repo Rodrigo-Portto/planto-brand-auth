@@ -5,6 +5,7 @@ interface TokenPanelProps {
   createdToken: string;
   tokenCopied: boolean;
   saving: boolean;
+  canGenerateToken: boolean;
   onCreateToken: () => void;
   onCopyToken: () => void;
 }
@@ -14,6 +15,7 @@ export function TokenPanel({
   createdToken,
   tokenCopied,
   saving,
+  canGenerateToken,
   onCreateToken,
   onCopyToken,
 }: TokenPanelProps) {
@@ -27,9 +29,11 @@ export function TokenPanel({
       </div>
 
       <div style={styles.listItemInline}>
-        <button disabled={saving} style={styles.primaryButton} onClick={onCreateToken} type="button">
-          Gerar Token
-        </button>
+        {canGenerateToken ? (
+          <button disabled={saving} style={styles.primaryButton} onClick={onCreateToken} type="button">
+            Gerar Token
+          </button>
+        ) : null}
         <button style={styles.secondaryButton} onClick={onCopyToken} disabled={!createdToken} type="button">
           {tokenCopied ? 'Copiado' : 'Copiar Token'}
         </button>

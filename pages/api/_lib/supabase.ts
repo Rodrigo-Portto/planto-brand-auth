@@ -3,6 +3,7 @@ import type { NextApiRequest } from 'next';
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 export const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 export const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
+export const BRAND_LIBRARY_BUCKET = 'brand-library';
 
 interface AuthenticatedUser {
   id: string;
@@ -116,4 +117,62 @@ export function extractErrorMessage(data: unknown, fallback: string): string {
     (typeof maybeError.error === 'string' && maybeError.error) ||
     fallback
   );
+}
+
+export function extractStoragePathFromAvatarValue(value?: string | null, bucket = BRAND_LIBRARY_BUCKET): string {
+  const input = String(value || '').trim();
+  if (!input) return '';
+
+  if (!input.startsWith('http://') && !input.startsWith('https://')) {
+    return input.replace(/^\/+/, '');
+  }
+
+  const publicMarker = `/storage/v1/object/public/${bucket}/`;
+  const signedMarker = `/storage/v1/object/sign/${bucket}/`;
+
+  if (input.includes(publicMarker)) {
+    return input.split(publicMarker)[1]?.split('?')[0] || '';
+  }
+
+  if (input.includes(signedMarker)) {
+    return input.split(signedMarker)[1]?.split('?')[0] || '';
+  }
+
+  return '';
+}
+
+export async function createSignedStorageUrl(bucket: string, storagePath: string, expiresIn = 3600): Promise<string> {
+  const normalizedPath = String(storagePath || '').replace(/^\/+/, '');
+  if (!normalizedPath) return '';
+
+  const encodedPath = normalizedPath
+    .split('/')
+    .map(encodeURIComponent)
+    .join('/');
+
+  const { response, data } = await supabaseRest(`/storage/v1/object/sign/${bucket}/${encodedPath}`, {
+    method: 'POST',
+    body: { expiresIn },
+  });
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(data, 'Falha ao gerar URL assinada do storage.'));
+  }
+
+  const signedRelativePath =
+    (typeof (data as Record<string, unknown> | null)?.signedURL === 'string' &&
+      ((data as Record<string, unknown>).signedURL as string)) ||
+    (typeof (data as Record<string, unknown> | null)?.signedUrl === 'string' &&
+      ((data as Record<string, unknown>).signedUrl as string)) ||
+    '';
+
+  if (!signedRelativePath) {
+    throw new Error('Supabase nao retornou URL assinada do avatar.');
+  }
+
+  if (signedRelativePath.startsWith('http://') || signedRelativePath.startsWith('https://')) {
+    return signedRelativePath;
+  }
+
+  return `${SUPABASE_URL}${signedRelativePath.startsWith('/') ? '' : '/'}${signedRelativePath}`;
 }

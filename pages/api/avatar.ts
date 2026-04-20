@@ -1,7 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { SUPABASE_SERVICE_KEY, SUPABASE_URL, extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
+import {
+  BRAND_LIBRARY_BUCKET,
+  SUPABASE_SERVICE_KEY,
+  SUPABASE_URL,
+  createSignedStorageUrl,
+  extractErrorMessage,
+  getAuthenticatedUser,
+  supabaseRest,
+} from './_lib/supabase';
 
-const BUCKET = 'brand-library';
+const BUCKET = BRAND_LIBRARY_BUCKET;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif']);
 
@@ -99,14 +107,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error(extractErrorMessage(uploadData, 'Falha ao enviar avatar para o storage.'));
     }
 
-    const avatarUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodedPath}`;
+    const avatarUrl = await createSignedStorageUrl(BUCKET, storagePath);
 
     const { response, data } = await supabaseRest('/rest/v1/user_profiles?on_conflict=id', {
       method: 'POST',
       headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
       body: {
         id: userId,
-        avatar_url: avatarUrl,
+        avatar_url: storagePath,
         updated_at: new Date().toISOString(),
       },
     });
@@ -118,7 +126,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(200).json({
       success: true,
       avatar_url: avatarUrl,
-      profile: Array.isArray(data) ? data[0] : null,
+      profile: Array.isArray(data) && data.length ? { ...data[0], avatar_url: avatarUrl } : null,
     });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Erro ao enviar avatar.' });
