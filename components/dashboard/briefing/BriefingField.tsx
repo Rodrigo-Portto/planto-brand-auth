@@ -10,7 +10,7 @@ interface BriefingFieldProps {
 export function BriefingField({ styles, field, value, onChange }: BriefingFieldProps) {
   return (
     <div style={styles.fieldBlock}>
-      <p style={styles.fieldHeading}>{`${field.number} ${field.title}`}</p>
+      <h3 style={styles.fieldHeading}>{`${field.number} ${field.title}`}</h3>
       <p style={styles.fieldPrompt}>{field.prompt}</p>
       <p style={styles.fieldDescription}>{field.description}</p>
       <textarea

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { DashboardStyles, DashboardThemeColors, ThemeMode } from '../../types/dashboard';
 import { MoonIcon, SunIcon } from './icons';
 
@@ -5,6 +6,7 @@ interface DashboardHeaderProps {
   themeMode: ThemeMode;
   styles: DashboardStyles;
   theme: DashboardThemeColors;
+  tokenControls: ReactNode;
   onToggleTheme: () => void;
   onLogout: () => void;
 }
@@ -13,6 +15,7 @@ export function DashboardHeader({
   themeMode,
   styles,
   theme,
+  tokenControls,
   onToggleTheme,
   onLogout,
 }: DashboardHeaderProps) {
@@ -23,6 +26,7 @@ export function DashboardHeader({
       </div>
 
       <div style={styles.headerActions}>
+        {tokenControls}
         <button
           onClick={onToggleTheme}
           style={styles.iconOnlyButton}

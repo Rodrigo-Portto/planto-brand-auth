@@ -40,7 +40,7 @@ export function BriefingSectionCard({
     <div style={styles.formCard}>
       <div style={styles.formCardHeader}>
         <div>
-          <h3 style={styles.cardTitle}>{section.title}</h3>
+          <h2 style={styles.briefingH2}>{section.title}</h2>
           <p style={styles.sectionDescription}>{section.focus}</p>
           <p style={{ ...styles.smallText, marginTop: 8 }}>{saveStateLabel}</p>
         </div>

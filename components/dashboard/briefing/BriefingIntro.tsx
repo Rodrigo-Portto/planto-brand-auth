@@ -1,43 +1,51 @@
 import {
   BRIEFING_FILLING_GUIDELINES,
   BRIEFING_GENERAL_INSTRUCTION,
-  BRIEFING_SUBTITLE,
   BRIEFING_TITLE,
 } from '../../../lib/domain/briefing';
-import type { DashboardStyles } from '../../../types/dashboard';
+import type { DashboardStyles, DashboardThemeColors } from '../../../types/dashboard';
+import { ChevronIcon } from '../icons';
 
 interface BriefingIntroProps {
   styles: DashboardStyles;
-  hasIntegratedBriefingData: boolean;
+  theme: DashboardThemeColors;
+  collapsed: boolean;
+  onToggle: () => void;
 }
 
-export function BriefingIntro({ styles, hasIntegratedBriefingData }: BriefingIntroProps) {
+export function BriefingIntro({ styles, theme, collapsed, onToggle }: BriefingIntroProps) {
   return (
     <div style={styles.briefingIntro}>
-      <div>
-        <h3 style={styles.panelTitle}>{BRIEFING_TITLE}</h3>
-        <p style={styles.briefingSubtitle}>{BRIEFING_SUBTITLE}</p>
+      <div style={styles.briefingIntroHeader}>
+        <div>
+          <h1 style={styles.briefingH1}>{BRIEFING_TITLE}</h1>
+        </div>
+        <button
+          type="button"
+          style={styles.collapseButton}
+          onClick={onToggle}
+          aria-label={collapsed ? `Expandir ${BRIEFING_TITLE}` : `Recolher ${BRIEFING_TITLE}`}
+        >
+          <ChevronIcon collapsed={collapsed} color={theme.textStrong} />
+        </button>
       </div>
 
-      <div>
-        <p style={styles.cardTitle}>Instrução geral</p>
-        <p style={styles.briefingBodyText}>{BRIEFING_GENERAL_INSTRUCTION}</p>
-      </div>
+      {!collapsed ? (
+        <>
+          <div>
+            <p style={styles.briefingBodyText}>{BRIEFING_GENERAL_INSTRUCTION}</p>
+          </div>
 
-      <div>
-        <p style={styles.cardTitle}>Orientações de preenchimento</p>
-        <ul style={styles.briefingList}>
-          {BRIEFING_FILLING_GUIDELINES.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      </div>
-
-      <p style={styles.smallText}>
-        {hasIntegratedBriefingData
-          ? 'As respostas salvas serão carregadas automaticamente neste briefing.'
-          : 'Nenhuma resposta salva ainda para este briefing.'}
-      </p>
+          <div>
+            <p style={styles.cardTitle}>Orientações de preenchimento</p>
+            <ul style={styles.briefingList}>
+              {BRIEFING_FILLING_GUIDELINES.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

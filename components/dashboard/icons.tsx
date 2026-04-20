@@ -48,6 +48,58 @@ export function SaveIcon({ color }: IconProps) {
   );
 }
 
+export function CopyIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path
+        d="M8 8.5V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.5"
+        stroke={color}
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <rect x="4" y="8.5" width="11.5" height="11.5" rx="2" stroke={color} strokeWidth="1.7" />
+    </svg>
+  );
+}
+
+export function EyeIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path
+        d="M3.5 12s3-5.5 8.5-5.5 8.5 5.5 8.5 5.5-3 5.5-8.5 5.5S3.5 12 3.5 12Z"
+        stroke={color}
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="12" r="2.5" stroke={color} strokeWidth="1.7" />
+    </svg>
+  );
+}
+
+export function EyeOffIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path d="M4 4l16 16" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
+      <path
+        d="M8.6 6.9A8 8 0 0 1 12 6.2c5.5 0 8.5 5.8 8.5 5.8a15.2 15.2 0 0 1-2.4 3.1M15 17.1a8.1 8.1 0 0 1-3 .7C6.5 17.8 3.5 12 3.5 12a15.5 15.5 0 0 1 3-3.7"
+        stroke={color}
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="M10.5 10.7a2.5 2.5 0 0 0 3 3" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function KeyIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <circle cx="8" cy="12" r="3.5" stroke={color} strokeWidth="1.7" />
+      <path d="M11.5 12H21M17 12v3M14.5 12v2" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function TrashIcon({ color }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">

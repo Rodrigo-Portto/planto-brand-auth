@@ -18,7 +18,6 @@ import { useKnowledgeUploads } from '../hooks/useKnowledgeUploads';
 import { useProfileForm } from '../hooks/useProfileForm';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { uploadAvatar } from '../lib/api/dashboard';
-import { INTEGRATED_BRIEFING_FIELDS } from '../lib/domain/briefing';
 import { themeTokens, createDashboardStyles } from '../lib/domain/dashboardTheme';
 import { toBase64 } from '../lib/domain/dashboardUtils';
 
@@ -33,6 +32,7 @@ export default function DashboardPage() {
   const [viewportWidth, setViewportWidth] = useState(1440);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [centralView, setCentralView] = useState<'forms' | 'gpt_entries'>('forms');
+  const [tokenVisible, setTokenVisible] = useState(false);
 
   const isCompact = viewportWidth < 1180;
   const theme = themeTokens[themeMode];
@@ -133,15 +133,6 @@ export default function DashboardPage() {
     return 'por aqui';
   }, [profileForm.profile?.name, dashboardData.user?.email]);
 
-  const hasIntegratedBriefingData = useMemo(
-    () =>
-      INTEGRATED_BRIEFING_FIELDS.some((field) => {
-        const value = integratedBriefingForm.integratedBriefing[field];
-        return typeof value === 'string' ? value.trim().length > 0 : Boolean(value);
-      }),
-    [integratedBriefingForm.integratedBriefing]
-  );
-
   async function handleAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -183,13 +174,26 @@ export default function DashboardPage() {
           themeMode={themeMode}
           styles={styles}
           theme={theme}
+          tokenControls={
+            <TokenPanel
+              styles={styles}
+              theme={theme}
+              createdToken={gptToken.createdToken}
+              tokenCopied={gptToken.tokenCopied}
+              saving={gptToken.savingToken}
+              canGenerateToken={gptToken.canGenerateToken}
+              tokenVisible={tokenVisible}
+              onCreateToken={gptToken.createToken}
+              onCopyToken={gptToken.copyCurrentToken}
+              onToggleTokenVisibility={() => setTokenVisible((current) => !current)}
+            />
+          }
           onToggleTheme={toggleTheme}
           onLogout={logout}
         />
       }
       notice={notice}
       errorMessage={errorMessage}
-      quickNav={<LibraryQuickNav styles={styles} activeView={centralView} onChangeView={setCentralView} />}
       loading={isLoading}
     >
       <section style={styles.grid}>
@@ -220,7 +224,6 @@ export default function DashboardPage() {
             collapsedPanels={collapsedPanels}
             saving={integratedBriefingForm.savingIntegratedBriefing}
             savingSection={integratedBriefingForm.savingSection}
-            hasIntegratedBriefingData={hasIntegratedBriefingData}
             formProgress={integratedBriefingForm.formProgress}
             contextStructure={integratedBriefingForm.contextStructure}
             sectionState={integratedBriefingForm.sectionState}
@@ -250,15 +253,7 @@ export default function DashboardPage() {
         )}
 
         <aside style={styles.rightColumn}>
-          <TokenPanel
-            styles={styles}
-            createdToken={gptToken.createdToken}
-            tokenCopied={gptToken.tokenCopied}
-            saving={gptToken.savingToken}
-            canGenerateToken={gptToken.canGenerateToken}
-            onCreateToken={gptToken.createToken}
-            onCopyToken={gptToken.copyCurrentToken}
-          />
+          <LibraryQuickNav styles={styles} activeView={centralView} onChangeView={setCentralView} />
 
           <KnowledgePanel
             styles={styles}

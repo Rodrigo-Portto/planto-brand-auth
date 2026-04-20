@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BRIEFING_SECTIONS } from '../../lib/domain/briefing';
 import type {
   BriefingSectionKey,
@@ -18,7 +19,6 @@ interface BriefingPanelProps {
   collapsedPanels: CollapsedPanels;
   saving: boolean;
   savingSection: BriefingSectionKey | null;
-  hasIntegratedBriefingData: boolean;
   formProgress: FormProgress;
   contextStructure: ContextStructure | null;
   sectionState: Record<BriefingSectionKey, { isSaved: boolean; isDirty: boolean }>;
@@ -65,7 +65,6 @@ export function BriefingPanel({
   collapsedPanels,
   saving,
   savingSection,
-  hasIntegratedBriefingData,
   formProgress,
   contextStructure,
   sectionState,
@@ -74,11 +73,16 @@ export function BriefingPanel({
   onSaveSection,
   onSaveIntegratedBriefing,
 }: BriefingPanelProps) {
+  const [briefingIntroCollapsed, setBriefingIntroCollapsed] = useState(false);
+
   return (
     <section id="formularios-panel" style={styles.centerPanel}>
-      <h2 style={styles.panelTitle}>Formulários</h2>
-
-      <BriefingIntro styles={styles} hasIntegratedBriefingData={hasIntegratedBriefingData} />
+      <BriefingIntro
+        styles={styles}
+        theme={theme}
+        collapsed={briefingIntroCollapsed}
+        onToggle={() => setBriefingIntroCollapsed((current) => !current)}
+      />
 
       {BRIEFING_SECTIONS.map((section) => (
         <BriefingSectionCard

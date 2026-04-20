@@ -95,7 +95,7 @@ const styles: Record<string, CSSProperties> = {
     display: 'grid',
     placeItems: 'center',
     background: 'radial-gradient(circle at top, #1a1f3a 0%, #0d111f 45%, #070a14 100%)',
-    fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+    fontFamily: 'var(--font-inter), Inter, sans-serif',
     padding: '24px',
   },
   card: {

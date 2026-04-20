@@ -20,7 +20,7 @@ export function LibraryQuickNav({ styles, activeView, onChangeView }: LibraryQui
           cursor: 'pointer',
         }}
       >
-        Formularios
+        Formulários
       </button>
       <button
         type="button"

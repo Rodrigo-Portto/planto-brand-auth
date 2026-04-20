@@ -6,7 +6,6 @@ interface DashboardShellProps extends PropsWithChildren {
   header: ReactNode;
   notice?: string;
   errorMessage?: string;
-  quickNav: ReactNode;
   loading: boolean;
 }
 
@@ -15,7 +14,6 @@ export function DashboardShell({
   header,
   notice,
   errorMessage,
-  quickNav,
   loading,
   children,
 }: DashboardShellProps) {
@@ -25,7 +23,6 @@ export function DashboardShell({
         {header}
         {notice ? <div style={styles.notice}>{notice}</div> : null}
         {errorMessage ? <div style={styles.errorBanner}>{errorMessage}</div> : null}
-        {quickNav}
         {loading ? <p style={styles.loader}>Carregando...</p> : children}
       </div>
     </main>
