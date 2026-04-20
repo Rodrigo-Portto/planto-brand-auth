@@ -1,9 +1,13 @@
 import type {
+  BrandContextResponseRecord,
+  ContextStructure,
   DashboardPayload,
+  FormProgress,
   GptEntry,
   IntegratedBriefing,
   LoginPayload,
   Profile,
+  SaveResourceRequest,
   TokenCreatePayload,
 } from '../../types/dashboard';
 import { requestJson } from './client';
@@ -21,28 +25,80 @@ export async function fetchDashboardData(accessToken: string): Promise<Dashboard
   });
 }
 
-export async function saveProfile(accessToken: string, profile: Profile): Promise<{ profile: Profile }> {
-  return requestJson<{ profile: Profile }>('/api/save', {
+export async function saveProfile(
+  accessToken: string,
+  profile: Profile
+): Promise<{ profile: Profile; form_progress: FormProgress }> {
+  return requestJson<{ profile: Profile; form_progress: FormProgress }>('/api/save', {
     method: 'POST',
     accessToken,
     body: {
       resource: 'profile',
       payload: profile,
-    },
+    } satisfies SaveResourceRequest<Profile>,
   });
+}
+
+export async function saveBriefingSection(
+  accessToken: string,
+  resource: 'brand_core' | 'human_core',
+  integratedBriefing: IntegratedBriefing
+): Promise<{ integrated_briefing: BrandContextResponseRecord; form_progress: FormProgress }> {
+  return requestJson<{ integrated_briefing: BrandContextResponseRecord; form_progress: FormProgress }>('/api/save', {
+    method: 'POST',
+    accessToken,
+    body: {
+      resource,
+      payload: integratedBriefing,
+    } satisfies SaveResourceRequest<IntegratedBriefing>,
+  });
+}
+
+export async function finalizeIntegratedBriefing(
+  accessToken: string
+): Promise<{
+  integrated_briefing: BrandContextResponseRecord;
+  form_progress: FormProgress;
+  context_structure: ContextStructure | null;
+}> {
+  return requestJson<{
+    integrated_briefing: BrandContextResponseRecord;
+    form_progress: FormProgress;
+    context_structure: ContextStructure | null;
+  }>('/api/save', {
+    method: 'POST',
+    accessToken,
+    body: {
+      resource: 'integrated_briefing_finalize',
+      payload: {},
+    } satisfies SaveResourceRequest<Record<string, never>>,
+  });
+}
+
+export async function triggerContextGeneration(
+  accessToken: string
+): Promise<{ form_progress: FormProgress; context_structure: ContextStructure | null }> {
+  return requestJson<{ form_progress: FormProgress; context_structure: ContextStructure | null }>(
+    '/api/context/generate',
+    {
+      method: 'POST',
+      accessToken,
+      body: {},
+    }
+  );
 }
 
 export async function saveIntegratedBriefing(
   accessToken: string,
   integratedBriefing: IntegratedBriefing
-): Promise<{ integrated_briefing: IntegratedBriefing }> {
-  return requestJson<{ integrated_briefing: IntegratedBriefing }>('/api/save', {
+): Promise<{ integrated_briefing: BrandContextResponseRecord }> {
+  return requestJson<{ integrated_briefing: BrandContextResponseRecord }>('/api/save', {
     method: 'POST',
     accessToken,
     body: {
       resource: 'integrated_briefing',
       payload: integratedBriefing,
-    },
+    } satisfies SaveResourceRequest<IntegratedBriefing>,
   });
 }
 

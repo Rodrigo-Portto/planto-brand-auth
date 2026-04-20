@@ -43,6 +43,12 @@ export interface IntegratedBriefing {
   linguagem_repertorio?: string | null;
 }
 
+export interface BrandContextResponseRecord extends IntegratedBriefing, Partial<FormProgress> {
+  id?: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
 export interface Attachment {
   id: string;
   filename: string;
@@ -92,15 +98,24 @@ export interface DashboardPayload {
   user: UserSummary | null;
   profile: Profile;
   forms: {
-    integrated_briefing: IntegratedBriefing;
+    integrated_briefing: BrandContextResponseRecord;
   };
+  form_progress: FormProgress;
+  context_structure: ContextStructure | null;
   attachments: Attachment[];
   gpt_entries: GptEntry[];
   gpt_tokens: GptToken[];
   legacy_documents: LegacyDocument[];
 }
 
-export type SaveResourceName = 'profile' | 'integrated_briefing' | 'gpt_entry' | 'legacy_document';
+export type SaveResourceName =
+  | 'profile'
+  | 'brand_core'
+  | 'human_core'
+  | 'integrated_briefing'
+  | 'integrated_briefing_finalize'
+  | 'gpt_entry'
+  | 'legacy_document';
 
 export interface SaveResourceRequest<TPayload = unknown> {
   resource: SaveResourceName;
@@ -128,7 +143,7 @@ export interface BriefingFieldDefinition {
 }
 
 export interface BriefingSectionDefinition {
-  key: string;
+  key: BriefingSectionKey;
   title: string;
   focus: string;
   collapseKey: keyof CollapsedPanels;
@@ -197,4 +212,33 @@ export interface TokenListPayload {
 export interface TokenCreatePayload {
   token: string;
   token_meta?: GptToken | null;
+}
+
+export type BriefingSectionKey = 'brand_core' | 'human_core';
+
+export type ContextGenerationStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
+export interface FormProgress {
+  profile_completed_at?: string | null;
+  brand_core_saved_at?: string | null;
+  human_core_saved_at?: string | null;
+  integrated_briefing_saved_at?: string | null;
+  is_profile_complete: boolean;
+  is_brand_core_saved: boolean;
+  is_human_core_saved: boolean;
+  is_ready_for_final_save: boolean;
+}
+
+export interface ContextStructure {
+  user_id: string;
+  generation_status: ContextGenerationStatus;
+  generation_error?: string | null;
+  model?: string | null;
+  prompt_version?: string | null;
+  schema_json?: Record<string, unknown> | null;
+  source_profile_updated_at?: string | null;
+  source_brand_core_saved_at?: string | null;
+  source_human_core_saved_at?: string | null;
+  generated_at?: string | null;
+  updated_at?: string | null;
 }

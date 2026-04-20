@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { fetchDashboardData } from '../lib/api/dashboard';
 import type {
   Attachment,
+  ContextStructure,
   DashboardPayload,
+  FormProgress,
   GptEntry,
   GptToken,
-  IntegratedBriefing,
   Profile,
   UserSummary,
 } from '../types/dashboard';
@@ -18,7 +19,14 @@ interface UseDashboardDataOptions {
 export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOptions) {
   const [user, setUser] = useState<UserSummary | null>(null);
   const [profile, setProfile] = useState<Profile>({});
-  const [integratedBriefing, setIntegratedBriefing] = useState<IntegratedBriefing>({});
+  const [integratedBriefing, setIntegratedBriefing] = useState<DashboardPayload['forms']['integrated_briefing']>({});
+  const [formProgress, setFormProgress] = useState<FormProgress>({
+    is_profile_complete: false,
+    is_brand_core_saved: false,
+    is_human_core_saved: false,
+    is_ready_for_final_save: false,
+  });
+  const [contextStructure, setContextStructure] = useState<ContextStructure | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [entries, setEntries] = useState<GptEntry[]>([]);
   const [tokens, setTokens] = useState<GptToken[]>([]);
@@ -37,6 +45,15 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
       setUser(data.user || null);
       setProfile(data.profile || {});
       setIntegratedBriefing(data.forms?.integrated_briefing || {});
+      setFormProgress(
+        data.form_progress || {
+          is_profile_complete: false,
+          is_brand_core_saved: false,
+          is_human_core_saved: false,
+          is_ready_for_final_save: false,
+        }
+      );
+      setContextStructure(data.context_structure || null);
       setAttachments(data.attachments || []);
       setEntries(data.gpt_entries || []);
       setTokens(data.gpt_tokens || []);
@@ -64,12 +81,16 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
     attachments,
     entries,
     tokens,
+    formProgress,
+    contextStructure,
     legacyDocuments,
     loading,
     error,
     refresh,
     setProfile,
     setIntegratedBriefing,
+    setFormProgress,
+    setContextStructure,
     setAttachments,
     setEntries,
     setTokens,

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { saveProfile } from '../lib/api/dashboard';
-import type { Profile } from '../types/dashboard';
+import type { FormProgress, Profile } from '../types/dashboard';
 
 interface UseProfileFormOptions {
   initialProfile: Profile;
   token: string;
-  onSaved: (message?: string) => void;
+  onSaved: (result: { profile: Profile; form_progress: FormProgress }, message?: string) => void;
   onError: (message: string) => void;
 }
 
@@ -24,7 +24,7 @@ export function useProfileForm({ initialProfile, token, onSaved, onError }: UseP
     try {
       const data = await saveProfile(token, profile);
       setProfile(data.profile || profile);
-      onSaved();
+      onSaved(data);
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Erro ao salvar.');
     } finally {

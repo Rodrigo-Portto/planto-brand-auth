@@ -1,46 +1,128 @@
-import { useEffect, useState } from 'react';
-import { saveIntegratedBriefing } from '../lib/api/dashboard';
-import type { IntegratedBriefing } from '../types/dashboard';
+import { useEffect, useMemo, useState } from 'react';
+import { finalizeIntegratedBriefing, saveBriefingSection } from '../lib/api/dashboard';
+import { getFieldsForSection } from '../lib/domain/briefing';
+import type {
+  BrandContextResponseRecord,
+  BriefingSectionKey,
+  ContextStructure,
+  FormProgress,
+  IntegratedBriefing,
+} from '../types/dashboard';
 
 interface UseIntegratedBriefingFormOptions {
-  initialIntegratedBriefing: IntegratedBriefing;
+  initialIntegratedBriefing: BrandContextResponseRecord;
+  initialFormProgress: FormProgress;
+  initialContextStructure: ContextStructure | null;
   token: string;
-  onSaved: (message?: string) => void;
+  onSaved: (
+    result: {
+      integrated_briefing: BrandContextResponseRecord;
+      form_progress: FormProgress;
+      context_structure?: ContextStructure | null;
+    },
+    message?: string
+  ) => void;
   onError: (message: string) => void;
+}
+
+function hasDiffForSection(
+  current: IntegratedBriefing,
+  baseline: BrandContextResponseRecord,
+  section: BriefingSectionKey
+): boolean {
+  return getFieldsForSection(section).some((field) => (current[field] || '') !== (baseline[field] || ''));
 }
 
 export function useIntegratedBriefingForm({
   initialIntegratedBriefing,
+  initialFormProgress,
+  initialContextStructure,
   token,
   onSaved,
   onError,
 }: UseIntegratedBriefingFormOptions) {
   const [integratedBriefing, setIntegratedBriefing] = useState<IntegratedBriefing>(initialIntegratedBriefing);
-  const [saving, setSaving] = useState(false);
+  const [lastSavedIntegratedBriefing, setLastSavedIntegratedBriefing] =
+    useState<BrandContextResponseRecord>(initialIntegratedBriefing);
+  const [formProgress, setFormProgress] = useState<FormProgress>(initialFormProgress);
+  const [contextStructure, setContextStructure] = useState<ContextStructure | null>(initialContextStructure);
+  const [savingSection, setSavingSection] = useState<BriefingSectionKey | null>(null);
+  const [finalizing, setFinalizing] = useState(false);
 
   useEffect(() => {
     setIntegratedBriefing(initialIntegratedBriefing);
+    setLastSavedIntegratedBriefing(initialIntegratedBriefing);
   }, [initialIntegratedBriefing]);
 
-  async function save() {
+  useEffect(() => {
+    setFormProgress(initialFormProgress);
+  }, [initialFormProgress]);
+
+  useEffect(() => {
+    setContextStructure(initialContextStructure);
+  }, [initialContextStructure]);
+
+  const sectionState = useMemo(
+    () => ({
+      brand_core: {
+        isSaved: Boolean(formProgress.brand_core_saved_at),
+        isDirty: hasDiffForSection(integratedBriefing, lastSavedIntegratedBriefing, 'brand_core'),
+      },
+      human_core: {
+        isSaved: Boolean(formProgress.human_core_saved_at),
+        isDirty: hasDiffForSection(integratedBriefing, lastSavedIntegratedBriefing, 'human_core'),
+      },
+    }),
+    [formProgress.brand_core_saved_at, formProgress.human_core_saved_at, integratedBriefing, lastSavedIntegratedBriefing]
+  );
+
+  async function saveSection(section: BriefingSectionKey) {
     if (!token) return;
 
-    setSaving(true);
+    setSavingSection(section);
     try {
-      const data = await saveIntegratedBriefing(token, integratedBriefing);
+      const data = await saveBriefingSection(token, section, integratedBriefing);
       setIntegratedBriefing(data.integrated_briefing || integratedBriefing);
-      onSaved();
+      setLastSavedIntegratedBriefing(data.integrated_briefing || lastSavedIntegratedBriefing);
+      setFormProgress(data.form_progress || formProgress);
+      setContextStructure((current) =>
+        current ? { ...current, generation_status: 'pending', generation_error: null } : current
+      );
+      onSaved(data, section === 'brand_core' ? 'Brand Core salvo' : 'Human Core salvo');
     } catch (error) {
-      onError(error instanceof Error ? error.message : 'Erro ao salvar.');
+      onError(error instanceof Error ? error.message : 'Erro ao salvar seção.');
     } finally {
-      setSaving(false);
+      setSavingSection(null);
+    }
+  }
+
+  async function finalize() {
+    if (!token) return;
+
+    setFinalizing(true);
+    try {
+      const data = await finalizeIntegratedBriefing(token);
+      setIntegratedBriefing(data.integrated_briefing || integratedBriefing);
+      setLastSavedIntegratedBriefing(data.integrated_briefing || lastSavedIntegratedBriefing);
+      setFormProgress(data.form_progress || formProgress);
+      setContextStructure(data.context_structure || null);
+      onSaved(data, 'Briefing integrado processado');
+    } catch (error) {
+      onError(error instanceof Error ? error.message : 'Erro ao finalizar briefing integrado.');
+    } finally {
+      setFinalizing(false);
     }
   }
 
   return {
     integratedBriefing,
     setIntegratedBriefing,
-    savingIntegratedBriefing: saving,
-    saveIntegratedBriefing: save,
+    formProgress,
+    contextStructure,
+    sectionState,
+    savingSection,
+    savingIntegratedBriefing: finalizing,
+    saveBriefingSection: saveSection,
+    finalizeIntegratedBriefing: finalize,
   };
 }

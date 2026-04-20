@@ -18,6 +18,7 @@ import { useKnowledgeUploads } from '../hooks/useKnowledgeUploads';
 import { useProfileForm } from '../hooks/useProfileForm';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { uploadAvatar } from '../lib/api/dashboard';
+import { INTEGRATED_BRIEFING_FIELDS } from '../lib/domain/briefing';
 import { themeTokens, createDashboardStyles } from '../lib/domain/dashboardTheme';
 import { bytesToReadable, toBase64 } from '../lib/domain/dashboardUtils';
 
@@ -76,14 +77,31 @@ export default function DashboardPage() {
   const profileForm = useProfileForm({
     initialProfile: dashboardData.profile,
     token,
-    onSaved: showSavedNotice,
+    onSaved: (data, message) => {
+      dashboardData.setProfile(data.profile || {});
+      dashboardData.setFormProgress(data.form_progress);
+      showSavedNotice(message || 'Perfil salvo');
+    },
     onError: showError,
   });
 
   const integratedBriefingForm = useIntegratedBriefingForm({
     initialIntegratedBriefing: dashboardData.integratedBriefing,
+    initialFormProgress: dashboardData.formProgress,
+    initialContextStructure: dashboardData.contextStructure,
     token,
-    onSaved: showSavedNotice,
+    onSaved: (data, message) => {
+      dashboardData.setIntegratedBriefing(data.integrated_briefing || {});
+      dashboardData.setFormProgress(data.form_progress);
+      if (typeof data.context_structure !== 'undefined') {
+        dashboardData.setContextStructure(data.context_structure || null);
+      } else {
+        dashboardData.setContextStructure((current) =>
+          current ? { ...current, generation_status: 'pending', generation_error: null } : current
+        );
+      }
+      showSavedNotice(message || 'Briefing salvo');
+    },
     onError: showError,
   });
 
@@ -116,9 +134,10 @@ export default function DashboardPage() {
 
   const hasIntegratedBriefingData = useMemo(
     () =>
-      Object.values(integratedBriefingForm.integratedBriefing).some((value) =>
-        typeof value === 'string' ? value.trim().length > 0 : Boolean(value)
-      ),
+      INTEGRATED_BRIEFING_FIELDS.some((field) => {
+        const value = integratedBriefingForm.integratedBriefing[field];
+        return typeof value === 'string' ? value.trim().length > 0 : Boolean(value);
+      }),
     [integratedBriefingForm.integratedBriefing]
   );
 
@@ -207,7 +226,11 @@ export default function DashboardPage() {
           integratedBriefing={integratedBriefingForm.integratedBriefing}
           collapsedPanels={collapsedPanels}
           saving={integratedBriefingForm.savingIntegratedBriefing}
+          savingSection={integratedBriefingForm.savingSection}
           hasIntegratedBriefingData={hasIntegratedBriefingData}
+          formProgress={integratedBriefingForm.formProgress}
+          contextStructure={integratedBriefingForm.contextStructure}
+          sectionState={integratedBriefingForm.sectionState}
           onTogglePanel={togglePanel}
           onFieldChange={(key, value) =>
             integratedBriefingForm.setIntegratedBriefing((current) => ({
@@ -215,7 +238,8 @@ export default function DashboardPage() {
               [key]: value,
             }))
           }
-          onSaveIntegratedBriefing={integratedBriefingForm.saveIntegratedBriefing}
+          onSaveSection={integratedBriefingForm.saveBriefingSection}
+          onSaveIntegratedBriefing={integratedBriefingForm.finalizeIntegratedBriefing}
         />
 
         <aside style={styles.rightColumn}>

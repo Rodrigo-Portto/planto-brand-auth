@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { DashboardPayload } from '../../types/dashboard';
+import { buildFormProgress } from '../../lib/domain/briefing';
 import { extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
 
 async function fetchOneById<T>(table: string, userId: string): Promise<T | null> {
@@ -31,9 +32,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const userId = auth.user.id;
 
   try {
-    const [profile, integratedBriefing, attachments, gptEntries, gptTokens, legacyDocuments] = await Promise.all([
+    const [profile, integratedBriefing, contextStructure, attachments, gptEntries, gptTokens, legacyDocuments] =
+      await Promise.all([
       fetchOneById<DashboardPayload['profile']>('user_profiles', userId),
       fetchOneById<DashboardPayload['forms']['integrated_briefing']>('brand_context_responses', userId),
+      fetchOneById<DashboardPayload['context_structure']>('brand_context_structures', userId),
       fetchMany<DashboardPayload['attachments'][number]>(
         `/rest/v1/user_attachments?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`,
         'Falha ao buscar anexos.'
@@ -52,6 +55,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       ),
     ]);
 
+    const formProgress = buildFormProgress(integratedBriefing || null);
+
     return res.status(200).json({
       user: {
         id: userId,
@@ -61,6 +66,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       forms: {
         integrated_briefing: integratedBriefing || {},
       },
+      form_progress: formProgress,
+      context_structure: contextStructure,
       attachments,
       gpt_entries: gptEntries,
       gpt_tokens: gptTokens,

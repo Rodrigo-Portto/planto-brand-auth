@@ -1,6 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { INTEGRATED_BRIEFING_FIELDS, PROFILE_FIELDS } from '../../lib/domain/briefing';
-import type { GptEntry, IntegratedBriefing, Profile } from '../../types/dashboard';
+import {
+  INTEGRATED_BRIEFING_FIELDS,
+  PROFILE_FIELDS,
+  buildFormProgress,
+  getFieldsForSection,
+  isProfileComplete,
+  isSectionComplete,
+} from '../../lib/domain/briefing';
+import { generateAndPersistContext, markContextStructurePending } from '../../lib/server/contextGeneration';
+import type { BrandContextResponseRecord, GptEntry, IntegratedBriefing, Profile } from '../../types/dashboard';
 import { extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
 
 const PROFILE_FIELD_KEYS = PROFILE_FIELDS.map((field) => field.key);
@@ -38,6 +46,14 @@ async function upsertById<T>(table: string, userId: string, payload: Partial<T>)
   return Array.isArray(data) ? (data[0] as T) : (row as T);
 }
 
+async function fetchOneById<T>(table: string, userId: string): Promise<T | null> {
+  const { response, data } = await supabaseRest(`/rest/v1/${table}?id=eq.${encodeURIComponent(userId)}&select=*&limit=1`);
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(data, `Falha ao buscar ${table}.`));
+  }
+  return Array.isArray(data) && data.length ? (data[0] as T) : null;
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Record<string, unknown> | { error: string }>
@@ -63,7 +79,63 @@ export default async function handler(
   try {
     if (resource === 'profile') {
       const saved = await upsertById<Profile>('user_profiles', userId, pickFields<Profile>(payload, PROFILE_FIELD_KEYS));
-      return res.status(200).json({ success: true, profile: saved });
+      const profileCompletedAt = isProfileComplete(saved)
+        ? payload?.profile_completed_at || new Date().toISOString()
+        : null;
+
+      await upsertById<BrandContextResponseRecord>('brand_context_responses', userId, {
+        profile_completed_at: profileCompletedAt,
+      });
+
+      const progress = buildFormProgress({
+        profile_completed_at: profileCompletedAt,
+      });
+
+      await markContextStructurePending({
+        userId,
+        progress,
+      }).catch(() => null);
+
+      return res.status(200).json({
+        success: true,
+        profile: saved,
+        form_progress: progress,
+      });
+    }
+
+    if (resource === 'brand_core' || resource === 'human_core') {
+      const section = resource;
+      const fields = getFieldsForSection(section);
+      const sectionPayload = pickFields<IntegratedBriefing>(payload, fields);
+      const mergedRow = {
+        ...sectionPayload,
+        ...(section === 'brand_core'
+          ? { brand_core_saved_at: isSectionComplete('brand_core', sectionPayload as IntegratedBriefing) ? new Date().toISOString() : null }
+          : { human_core_saved_at: isSectionComplete('human_core', sectionPayload as IntegratedBriefing) ? new Date().toISOString() : null }),
+        integrated_briefing_saved_at: null,
+      };
+
+      const isComplete = isSectionComplete(section, mergedRow as IntegratedBriefing);
+      if (!isComplete) {
+        return res.status(400).json({ error: `Preencha todos os campos de ${section === 'brand_core' ? 'Brand Core' : 'Human Core'} antes de salvar.` });
+      }
+
+      const saved = await upsertById<BrandContextResponseRecord>('brand_context_responses', userId, mergedRow);
+      const profile = (await fetchOneById<Profile>('user_profiles', userId)) || {};
+      const progress = buildFormProgress({
+        profile_completed_at: isProfileComplete(profile) ? saved.profile_completed_at || null : null,
+        brand_core_saved_at: saved.brand_core_saved_at || null,
+        human_core_saved_at: saved.human_core_saved_at || null,
+        integrated_briefing_saved_at: saved.integrated_briefing_saved_at || null,
+      });
+
+      await markContextStructurePending({ userId, progress }).catch(() => null);
+
+      return res.status(200).json({
+        success: true,
+        integrated_briefing: saved,
+        form_progress: progress,
+      });
     }
 
     if (resource === 'integrated_briefing') {
@@ -73,6 +145,43 @@ export default async function handler(
         pickFields<IntegratedBriefing>(payload, INTEGRATED_BRIEFING_FIELDS)
       );
       return res.status(200).json({ success: true, integrated_briefing: saved });
+    }
+
+    if (resource === 'integrated_briefing_finalize') {
+      const profile = (await fetchOneById<Profile>('user_profiles', userId)) || {};
+      const integratedBriefing = ((await fetchOneById<BrandContextResponseRecord>('brand_context_responses', userId)) ||
+        {}) as BrandContextResponseRecord;
+      const progress = buildFormProgress({
+        profile_completed_at: isProfileComplete(profile) ? integratedBriefing.profile_completed_at || null : null,
+        brand_core_saved_at: integratedBriefing.brand_core_saved_at || null,
+        human_core_saved_at: integratedBriefing.human_core_saved_at || null,
+      });
+
+      if (!progress.is_ready_for_final_save) {
+        return res.status(400).json({ error: 'Perfil, Brand Core e Human Core precisam estar salvos antes do briefing integrado.' });
+      }
+
+      const finalizedBriefing = await upsertById<BrandContextResponseRecord>('brand_context_responses', userId, {
+        integrated_briefing_saved_at: new Date().toISOString(),
+      });
+
+      const contextStructure = await generateAndPersistContext({
+        userId,
+        profile,
+        integratedBriefing: finalizedBriefing,
+      });
+
+      return res.status(200).json({
+        success: true,
+        integrated_briefing: finalizedBriefing,
+        form_progress: buildFormProgress({
+          profile_completed_at: progress.profile_completed_at,
+          brand_core_saved_at: progress.brand_core_saved_at,
+          human_core_saved_at: progress.human_core_saved_at,
+          integrated_briefing_saved_at: finalizedBriefing.integrated_briefing_saved_at || null,
+        }),
+        context_structure: contextStructure,
+      });
     }
 
     if (resource === 'gpt_entry') {
