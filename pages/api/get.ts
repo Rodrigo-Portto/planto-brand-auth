@@ -3,8 +3,10 @@ import type { DashboardPayload } from '../../types/dashboard';
 import { buildFormProgress } from '../../lib/domain/briefing';
 import { extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
 
-async function fetchOneById<T>(table: string, userId: string): Promise<T | null> {
-  const { response, data } = await supabaseRest(`/rest/v1/${table}?id=eq.${encodeURIComponent(userId)}&select=*&limit=1`);
+async function fetchOneById<T>(table: string, idColumn: string, idValue: string): Promise<T | null> {
+  const { response, data } = await supabaseRest(
+    `/rest/v1/${table}?${idColumn}=eq.${encodeURIComponent(idValue)}&select=*&limit=1`
+  );
   if (!response.ok) {
     throw new Error(extractErrorMessage(data, `Falha ao buscar ${table}.`));
   }
@@ -34,26 +36,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const [profile, integratedBriefing, contextStructure, attachments, gptEntries, gptTokens, legacyDocuments] =
       await Promise.all([
-      fetchOneById<DashboardPayload['profile']>('user_profiles', userId),
-      fetchOneById<DashboardPayload['forms']['integrated_briefing']>('brand_context_responses', userId),
-      fetchOneById<DashboardPayload['context_structure']>('brand_context_structures', userId),
-      fetchMany<DashboardPayload['attachments'][number]>(
-        `/rest/v1/user_attachments?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`,
-        'Falha ao buscar anexos.'
-      ),
-      fetchMany<DashboardPayload['gpt_entries'][number]>(
-        `/rest/v1/gpt_saved_entries?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`,
-        'Falha ao buscar entradas GPT.'
-      ),
-      fetchMany<DashboardPayload['gpt_tokens'][number]>(
-        `/rest/v1/gpt_access_tokens?user_id=eq.${encodeURIComponent(userId)}&select=id,label,token_prefix,token_value,status,created_at,last_used_at,expires_at,revoked_at&order=created_at.desc`,
-        'Falha ao buscar tokens GPT.'
-      ),
-      fetchMany<DashboardPayload['legacy_documents'][number]>(
-        `/rest/v1/brand_documents?user_id=eq.${encodeURIComponent(userId)}&select=*&order=updated_at.desc`,
-        'Falha ao buscar documentos legados.'
-      ),
-    ]);
+        fetchOneById<DashboardPayload['profile']>('user_profiles', 'id', userId),
+        fetchOneById<DashboardPayload['forms']['integrated_briefing']>('brand_context_responses', 'id', userId),
+        fetchOneById<DashboardPayload['context_structure']>('brand_context_structures', 'user_id', userId),
+        fetchMany<DashboardPayload['attachments'][number]>(
+          `/rest/v1/user_attachments?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`,
+          'Falha ao buscar anexos.'
+        ),
+        fetchMany<DashboardPayload['gpt_entries'][number]>(
+          `/rest/v1/gpt_saved_entries?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`,
+          'Falha ao buscar entradas GPT.'
+        ),
+        fetchMany<DashboardPayload['gpt_tokens'][number]>(
+          `/rest/v1/gpt_access_tokens?user_id=eq.${encodeURIComponent(userId)}&select=id,label,token_prefix,token_value,status,created_at,last_used_at,expires_at,revoked_at&order=created_at.desc`,
+          'Falha ao buscar tokens GPT.'
+        ),
+        fetchMany<DashboardPayload['legacy_documents'][number]>(
+          `/rest/v1/brand_documents?user_id=eq.${encodeURIComponent(userId)}&select=*&order=updated_at.desc`,
+          'Falha ao buscar documentos legados.'
+        ),
+      ]);
 
     const formProgress = buildFormProgress(integratedBriefing || null);
 
