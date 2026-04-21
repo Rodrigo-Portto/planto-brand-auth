@@ -1,40 +1,43 @@
+import type { ReactNode } from 'react';
 import type { DashboardStyles } from '../../types/dashboard';
+import { CalendarIcon, ClipboardListIcon, NotesIcon } from './icons';
+
+type CentralView = 'forms' | 'editorial' | 'gpt_entries';
 
 interface LibraryQuickNavProps {
   styles: DashboardStyles;
-  activeView: 'forms' | 'gpt_entries';
-  onChangeView: (view: 'forms' | 'gpt_entries') => void;
+  activeView: CentralView;
+  collapsed?: boolean;
+  iconColor: string;
+  onChangeView: (view: CentralView) => void;
 }
 
-export function LibraryQuickNav({ styles, activeView, onChangeView }: LibraryQuickNavProps) {
+const NAV_ITEMS: Array<{ key: CentralView; label: string; icon: (color: string) => ReactNode }> = [
+  { key: 'forms', label: 'Questionario', icon: (color) => <ClipboardListIcon color={color} /> },
+  { key: 'editorial', label: 'Editorial', icon: (color) => <CalendarIcon color={color} /> },
+  { key: 'gpt_entries', label: 'Entradas GPT', icon: (color) => <NotesIcon color={color} /> },
+];
+
+export function LibraryQuickNav({ styles, activeView, collapsed = false, iconColor, onChangeView }: LibraryQuickNavProps) {
   return (
     <nav aria-label="Navegacao central" style={styles.quickNav}>
-      <button
-        type="button"
-        onClick={() => onChangeView('forms')}
-        style={{
-          ...styles.quickNavLink,
-          background: activeView === 'forms' ? styles.primaryButton.background : styles.quickNavLink.background,
-          color: activeView === 'forms' ? styles.primaryButton.color : styles.quickNavLink.color,
-          border: activeView === 'forms' ? 'none' : styles.quickNavLink.border,
-          cursor: 'pointer',
-        }}
-      >
-        Formulários
-      </button>
-      <button
-        type="button"
-        onClick={() => onChangeView('gpt_entries')}
-        style={{
-          ...styles.quickNavLink,
-          background: activeView === 'gpt_entries' ? styles.primaryButton.background : styles.quickNavLink.background,
-          color: activeView === 'gpt_entries' ? styles.primaryButton.color : styles.quickNavLink.color,
-          border: activeView === 'gpt_entries' ? 'none' : styles.quickNavLink.border,
-          cursor: 'pointer',
-        }}
-      >
-        Entradas GPT
-      </button>
+      {NAV_ITEMS.map((item) => {
+        const isActive = item.key === activeView;
+        return (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => onChangeView(item.key)}
+            style={isActive ? styles.quickNavLinkActive : styles.quickNavLink}
+            aria-current={isActive ? 'page' : undefined}
+            aria-label={item.label}
+            title={collapsed ? item.label : undefined}
+          >
+            <span style={styles.quickNavIcon}>{item.icon(iconColor)}</span>
+            {!collapsed ? <span>{item.label}</span> : null}
+          </button>
+        );
+      })}
     </nav>
   );
 }

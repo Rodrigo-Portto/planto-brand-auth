@@ -2,6 +2,7 @@ import type {
   BrandContextResponseRecord,
   ContextStructure,
   DashboardPayload,
+  EditorialLineRecord,
   FormProgress,
   GptEntry,
   IntegratedBriefing,
@@ -99,6 +100,20 @@ export async function saveIntegratedBriefing(
       resource: 'integrated_briefing',
       payload: integratedBriefing,
     } satisfies SaveResourceRequest<IntegratedBriefing>,
+  });
+}
+
+export async function saveEditorialLine(
+  accessToken: string,
+  editorialLine: EditorialLineRecord
+): Promise<{ editorial_line: EditorialLineRecord; form_progress: FormProgress }> {
+  return requestJson<{ editorial_line: EditorialLineRecord; form_progress: FormProgress }>('/api/save', {
+    method: 'POST',
+    accessToken,
+    body: {
+      resource: 'editorial_line',
+      payload: editorialLine,
+    },
   });
 }
 

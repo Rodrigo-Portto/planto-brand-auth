@@ -3,12 +3,19 @@ import { useRouter } from 'next/router';
 import { loginWithEmailPassword } from '../lib/api/dashboard';
 import { getStoredAccessToken, persistSession } from '../lib/domain/session';
 
+const REMEMBER_ACCESS_KEY = 'planto_remember_access_v1';
+
 export default function HomePage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberAccess, setRememberAccess] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(1280);
+
+  const isCompact = viewportWidth < 760;
+  const styles = createStyles(isCompact);
 
   useEffect(() => {
     const token = getStoredAccessToken();
@@ -17,10 +24,44 @@ export default function HomePage() {
     }
   }, [router]);
 
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(REMEMBER_ACCESS_KEY);
+      if (!raw) return;
+
+      const remembered = JSON.parse(raw) as { email?: string; password?: string; remember?: boolean };
+      if (remembered?.email) setEmail(remembered.email);
+      if (remembered?.password) setPassword(remembered.password);
+      setRememberAccess(Boolean(remembered?.remember));
+    } catch {
+      window.localStorage.removeItem(REMEMBER_ACCESS_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setMessage('');
+
+    if (rememberAccess) {
+      window.localStorage.setItem(
+        REMEMBER_ACCESS_KEY,
+        JSON.stringify({
+          email,
+          password,
+          remember: true,
+        })
+      );
+    } else {
+      window.localStorage.removeItem(REMEMBER_ACCESS_KEY);
+    }
 
     try {
       const data = await loginWithEmailPassword(email, password);
@@ -49,105 +90,190 @@ export default function HomePage() {
 
   return (
     <main style={styles.main}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>Plantô Brand Library</h1>
-        <p style={styles.subtitle}>Faça login para acessar sua página de conta e biblioteca de marca.</p>
+      <div style={styles.shell}>
+        <section style={styles.intro}>
+          <p style={styles.kicker}>Planttô</p>
+          <h1 style={styles.title}>Hub de marca com foco no essencial.</h1>
+          <p style={styles.subtitle}>
+            Entre para acessar seu questionários estrategicos, linha editorial e entradas do GPT, prontos para o trabalho continuo.
+          </p>
+        </section>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <label style={styles.label}>
-            E-mail
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="voce@exemplo.com"
-              required
-              style={styles.input}
-            />
-          </label>
+        <section style={styles.card}>
+          <h2 style={styles.cardTitle}>Entrar</h2>
+          <p style={styles.cardSubtitle}>Use seu e-mail e senha para acessar o dashboard.</p>
 
-          <label style={styles.label}>
-            Senha
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              minLength={6}
-              required
-              style={styles.input}
-            />
-          </label>
+          <form onSubmit={handleSubmit} style={styles.form}>
+            <label style={styles.label}>
+              E-mail
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="voce@exemplo.com"
+                required
+                style={styles.input}
+              />
+            </label>
 
-          <button type="submit" disabled={loading} style={styles.button}>
-            {loading ? 'Entrando...' : 'Entrar ou criar conta'}
-          </button>
-        </form>
+            <label style={styles.label}>
+              Senha
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                minLength={6}
+                required
+                style={styles.input}
+              />
+            </label>
 
-        {message ? <p style={styles.message}>{message}</p> : null}
+            <label style={styles.rememberRow}>
+              <input
+                type="checkbox"
+                checked={rememberAccess}
+                onChange={(event) => setRememberAccess(event.target.checked)}
+                style={styles.checkbox}
+              />
+              <span>Lembrar acesso</span>
+            </label>
+
+            <button type="submit" disabled={loading} style={styles.button}>
+              {loading ? 'Entrando...' : 'Entrar ou criar conta'}
+            </button>
+          </form>
+
+          {message ? <p style={styles.message}>{message}</p> : null}
+        </section>
       </div>
     </main>
   );
 }
 
-const styles: Record<string, CSSProperties> = {
-  main: {
-    minHeight: '100vh',
-    display: 'grid',
-    placeItems: 'center',
-    background: 'radial-gradient(circle at top, #1a1f3a 0%, #0d111f 45%, #070a14 100%)',
-    fontFamily: 'var(--font-inter), Inter, sans-serif',
-    padding: '24px',
-  },
-  card: {
-    width: '100%',
-    maxWidth: '460px',
-    background: '#0f172a',
-    border: '1px solid #1f2a44',
-    borderRadius: '16px',
-    padding: '28px',
-    color: '#e2e8f0',
-    boxShadow: '0 16px 50px rgba(2, 6, 23, 0.45)',
-  },
-  title: {
-    margin: '0 0 8px',
-    fontSize: '1.5rem',
-  },
-  subtitle: {
-    margin: '0 0 20px',
-    color: '#94a3b8',
-    fontSize: '0.95rem',
-  },
-  form: {
-    display: 'grid',
-    gap: '12px',
-  },
-  label: {
-    display: 'grid',
-    gap: '6px',
-    fontSize: '0.85rem',
-    color: '#cbd5e1',
-  },
-  input: {
-    border: '1px solid #263351',
-    background: '#0b1223',
-    color: '#e2e8f0',
-    borderRadius: '10px',
-    padding: '10px 12px',
-    fontSize: '0.95rem',
-  },
-  button: {
-    marginTop: '4px',
-    border: 'none',
-    borderRadius: '10px',
-    padding: '11px 12px',
-    background: '#38bdf8',
-    color: '#032132',
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  message: {
-    marginTop: '14px',
-    fontSize: '0.9rem',
-    color: '#fbbf24',
-  },
-};
+function createStyles(isCompact: boolean): Record<string, CSSProperties> {
+  return {
+    main: {
+      minHeight: '100vh',
+      display: 'grid',
+      placeItems: 'center',
+      background: 'var(--planto-light-page-bg)',
+      color: 'var(--planto-light-text)',
+      fontFamily: '"Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif',
+      padding: isCompact ? '12px' : '20px',
+    },
+    shell: {
+      width: '100%',
+      maxWidth: '980px',
+      display: 'grid',
+      gridTemplateColumns: isCompact ? 'minmax(0, 1fr)' : 'repeat(2, minmax(0, 1fr))',
+      gap: isCompact ? '10px' : '14px',
+      alignItems: 'stretch',
+    },
+    intro: {
+      border: '1px solid var(--planto-light-border)',
+      borderRadius: '10px',
+      padding: isCompact ? '16px' : '24px',
+      background: 'var(--planto-light-surface)',
+      display: 'grid',
+      gap: '10px',
+      alignContent: 'center',
+    },
+    kicker: {
+      margin: 0,
+      color: 'var(--planto-light-muted)',
+      fontSize: '0.75rem',
+      fontWeight: 650,
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase',
+    },
+    card: {
+      border: '1px solid var(--planto-light-border)',
+      borderRadius: '10px',
+      padding: isCompact ? '16px' : '24px',
+      background: 'var(--planto-light-surface)',
+      display: 'grid',
+      gap: '10px',
+    },
+    title: {
+      margin: '0 0 2px',
+      fontSize: isCompact ? '1.3rem' : '1.6rem',
+      lineHeight: 1.2,
+      letterSpacing: '-0.01em',
+      color: 'var(--planto-light-text-strong)',
+    },
+    subtitle: {
+      margin: 0,
+      color: 'var(--planto-light-muted)',
+      fontSize: isCompact ? '0.88rem' : '0.95rem',
+      lineHeight: 1.6,
+    },
+    cardTitle: {
+      margin: 0,
+      fontSize: isCompact ? '1.06rem' : '1.2rem',
+      color: 'var(--planto-light-text-strong)',
+    },
+    cardSubtitle: {
+      margin: '0 0 6px',
+      color: 'var(--planto-light-muted)',
+      fontSize: isCompact ? '0.84rem' : '0.9rem',
+    },
+    form: {
+      display: 'grid',
+      gap: '10px',
+    },
+    label: {
+      display: 'grid',
+      gap: '6px',
+      fontSize: '0.82rem',
+      color: 'var(--planto-light-muted)',
+      fontWeight: 600,
+    },
+    rememberRow: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      marginTop: '2px',
+      color: 'var(--planto-light-muted)',
+      fontSize: '0.82rem',
+      fontWeight: 600,
+    },
+    checkbox: {
+      width: '16px',
+      height: '16px',
+      margin: 0,
+      accentColor: 'var(--planto-light-text)',
+    },
+    input: {
+      border: '1px solid var(--planto-light-border-strong)',
+      background: 'var(--planto-light-input-bg)',
+      color: 'var(--planto-light-text)',
+      borderRadius: '8px',
+      padding: '10px',
+      fontSize: '0.92rem',
+      outline: 'none',
+      width: '100%',
+      minWidth: 0,
+    },
+    button: {
+      marginTop: '4px',
+      border: '1px solid var(--planto-light-border-strong)',
+      borderRadius: '8px',
+      padding: '10px',
+      background: 'var(--planto-light-text)',
+      color: 'var(--planto-light-accent-text)',
+      fontWeight: 650,
+      cursor: 'pointer',
+      width: '100%',
+    },
+    message: {
+      marginTop: '8px',
+      fontSize: '0.88rem',
+      color: 'var(--planto-light-danger-text)',
+      background: 'var(--planto-light-danger-bg)',
+      border: '1px solid var(--planto-light-border)',
+      borderRadius: '8px',
+      padding: '8px 10px',
+      wordBreak: 'break-word',
+    },
+  };
+}

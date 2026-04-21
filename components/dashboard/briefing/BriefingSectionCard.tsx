@@ -6,7 +6,7 @@ import type {
   DashboardThemeColors,
   IntegratedBriefing,
 } from '../../../types/dashboard';
-import { ChevronIcon, SaveIcon } from '../icons';
+import { ChevronIcon, CloseIcon, PencilIcon, SaveIcon } from '../icons';
 import { BriefingField } from './BriefingField';
 
 interface BriefingSectionCardProps {
@@ -16,9 +16,12 @@ interface BriefingSectionCardProps {
   collapsedPanels: CollapsedPanels;
   integratedBriefing: IntegratedBriefing;
   saveStateLabel: string;
+  isEditing: boolean;
   savingSection: BriefingSectionKey | null;
   onTogglePanel: (key: keyof CollapsedPanels) => void;
   onFieldChange: (key: keyof IntegratedBriefing, value: string) => void;
+  onStartEdit: (section: BriefingSectionKey) => void;
+  onCancelEdit: (section: BriefingSectionKey) => void;
   onSaveSection: (section: BriefingSectionKey) => void;
 }
 
@@ -29,9 +32,12 @@ export function BriefingSectionCard({
   collapsedPanels,
   integratedBriefing,
   saveStateLabel,
+  isEditing,
   savingSection,
   onTogglePanel,
   onFieldChange,
+  onStartEdit,
+  onCancelEdit,
   onSaveSection,
 }: BriefingSectionCardProps) {
   const isSaving = savingSection === section.key;
@@ -45,16 +51,42 @@ export function BriefingSectionCard({
           <p style={{ ...styles.smallText, marginTop: 8 }}>{saveStateLabel}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button
-            type="button"
-            style={styles.iconOnlyButton}
-            onClick={() => onSaveSection(section.key)}
-            disabled={isSaving}
-            aria-label={section.key === 'brand_core' ? 'Salvar Brand Core' : 'Salvar Human Core'}
-            title={isSaving ? 'Salvando...' : section.key === 'brand_core' ? 'Salvar Brand Core' : 'Salvar Human Core'}
-          >
-            <SaveIcon color={theme.textStrong} />
-          </button>
+          {isEditing ? (
+            <>
+              <button
+                type="button"
+                style={styles.iconOnlyButton}
+                onClick={() => onSaveSection(section.key)}
+                disabled={isSaving}
+                aria-label={section.key === 'brand_core' ? 'Salvar Brand Core' : 'Salvar Human Core'}
+                title={
+                  isSaving ? 'Salvando...' : section.key === 'brand_core' ? 'Salvar Brand Core' : 'Salvar Human Core'
+                }
+              >
+                <SaveIcon color={theme.textStrong} />
+              </button>
+              <button
+                type="button"
+                style={styles.iconOnlyButton}
+                onClick={() => onCancelEdit(section.key)}
+                disabled={isSaving}
+                aria-label={section.key === 'brand_core' ? 'Cancelar edição do Brand Core' : 'Cancelar edição do Human Core'}
+                title="Cancelar edição"
+              >
+                <CloseIcon color={theme.textStrong} />
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              style={styles.iconOnlyButton}
+              onClick={() => onStartEdit(section.key)}
+              aria-label={section.key === 'brand_core' ? 'Editar Brand Core' : 'Editar Human Core'}
+              title={section.key === 'brand_core' ? 'Editar Brand Core' : 'Editar Human Core'}
+            >
+              <PencilIcon color={theme.textStrong} />
+            </button>
+          )}
           <button
             type="button"
             style={styles.collapseButton}
@@ -75,6 +107,7 @@ export function BriefingSectionCard({
                 styles={styles}
                 field={field}
                 value={integratedBriefing[field.key]}
+                disabled={!isEditing}
                 onChange={onFieldChange}
               />
             ))}

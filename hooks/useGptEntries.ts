@@ -49,6 +49,11 @@ export function useGptEntries({ initialEntries, token, onSaved, onError }: UseGp
     setEntryEditor(mapEntryToEditor(item));
   }
 
+  function cancelEntryChanges() {
+    const activeEntry = entries.find((item) => item.id === selectedEntryId);
+    setEntryEditor(activeEntry ? mapEntryToEditor(activeEntry) : EMPTY_ENTRY_EDITOR);
+  }
+
   async function saveEntryChanges() {
     if (!selectedEntryId) {
       onError('Selecione uma entrada para editar.');
@@ -106,6 +111,7 @@ export function useGptEntries({ initialEntries, token, onSaved, onError }: UseGp
     setEntryEditor,
     savingEntry,
     openEntry,
+    cancelEntryChanges,
     saveEntryChanges,
     deleteEntry: removeEntry,
   };

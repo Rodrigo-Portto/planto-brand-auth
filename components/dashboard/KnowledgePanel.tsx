@@ -5,6 +5,7 @@ import { FilePlusIcon, TrashIcon } from './icons';
 
 interface KnowledgePanelProps {
   styles: DashboardStyles;
+  showTitle?: boolean;
   attachments: Attachment[];
   selectedFile: File | null;
   uploading: boolean;
@@ -16,6 +17,7 @@ interface KnowledgePanelProps {
 
 export function KnowledgePanel({
   styles,
+  showTitle = true,
   attachments,
   selectedFile,
   uploading,
@@ -35,8 +37,8 @@ export function KnowledgePanel({
   }
 
   return (
-    <div id="conhecimento-panel" style={styles.rightPanel}>
-      <h2 style={styles.panelTitle}>Conhecimento</h2>
+    <div id="conhecimento-panel" style={styles.cardBlock}>
+      {showTitle ? <h2 style={styles.panelTitle}>Conhecimento</h2> : null}
       <div style={styles.countBadge}>
         {attachments.length}/{MAX_ATTACHMENTS} arquivos
       </div>
@@ -78,7 +80,7 @@ export function KnowledgePanel({
 
       <button
         disabled={uploading || attachmentLimitReached}
-        style={styles.primaryButton}
+        style={styles.uploadPrimaryButton || styles.primaryButton}
         onClick={() =>
           onUpload(() => {
             if (inputRef.current) {

@@ -1,61 +1,70 @@
 :root {
   color-scheme: light dark;
 
-  /* Design system: edite principalmente este bloco. */
-  --planto-bg: #171411;
-  --planto-surface: #201e1b;
-  --planto-text: #f9f8f4;
-  --planto-muted: #f9f8f4;
-  --planto-accent: #7ec461;
-  --planto-danger: #2e743d;
+  --planto-bg: #0f0f0e;
+  --planto-surface: #1a1a19;
+  --planto-text: #f2f1ee;
+  --planto-muted: #a6a39b;
+  --planto-accent: #f2f1ee;
+  --planto-danger: #c76363;
 
-  --planto-light-bg: #f7f8f2;
-  --planto-light-surface: #ffffff;
-  --planto-light-text: #171411;
-  --planto-light-muted: #201e1b;
-  --planto-light-accent: #7ec461;
-  --planto-light-danger: #2e743d;
+  --planto-light-bg: #f5f0e8;
+  --planto-light-surface: #f4efe7;
+  --planto-light-text: #2b261f;
+  --planto-light-muted: #75695a;
+  --planto-light-accent: #22211f;
+  --planto-light-danger: #b24141;
 
-  /* Aliases derivados: altere apenas se precisar de controle fino. */
-  --planto-page-bg: linear-gradient(160deg, var(--planto-bg) 0%, color-mix(in srgb, var(--planto-bg) 72%, var(--planto-surface)) 45%, var(--planto-surface) 100%);
-  --planto-surface-muted: color-mix(in srgb, var(--planto-surface) 78%, var(--planto-bg));
-  --planto-surface-raised: color-mix(in srgb, var(--planto-surface) 82%, var(--planto-accent));
-  --planto-border: color-mix(in srgb, var(--planto-surface) 90%, var(--planto-accent));
-  --planto-border-strong: color-mix(in srgb, var(--planto-border) 90%, var(--planto-text));
-  --planto-border-accent: var(--planto-accent);
-  --planto-text-strong: color-mix(in srgb, var(--planto-text) 92%, white);
-  --planto-accent-text: color-mix(in srgb, var(--planto-bg) 88%, black);
-  --planto-accent-soft: color-mix(in srgb, var(--planto-accent) 16%, transparent);
-  --planto-accent-muted: color-mix(in srgb, var(--planto-accent) 55%, var(--planto-text));
-  --planto-danger-bg: color-mix(in srgb, var(--planto-danger) 42%, black);
-  --planto-danger-text: #fecaca;
-  --planto-success-bg: color-mix(in srgb, var(--planto-accent) 16%, transparent);
-  --planto-success-text: color-mix(in srgb, var(--planto-accent) 48%, var(--planto-text));
-  --planto-error-bg: color-mix(in srgb, var(--planto-danger) 22%, transparent);
-  --planto-error-text: var(--planto-danger-text);
-  --planto-overlay: color-mix(in srgb, var(--planto-bg) 62%, transparent);
-  --planto-input-bg: color-mix(in srgb, var(--planto-surface-muted) 88%, var(--planto-bg));
-  --planto-token-bg: color-mix(in srgb, var(--planto-accent) 18%, var(--planto-surface));
+  --planto-page-bg: var(--planto-bg);
+  --planto-surface-muted: #20201f;
+  --planto-surface-raised: #262625;
+  --planto-border: #2e2d2b;
+  --planto-border-strong: #44433f;
+  --planto-border-accent: #58564f;
+  --planto-text-strong: #fffdf8;
+  --planto-accent-text: #121210;
+  --planto-accent-soft: #252523;
+  --planto-accent-muted: #d7d4ca;
+  --planto-danger-bg: #2a1a1a;
+  --planto-danger-text: #ffc9c9;
+  --planto-success-bg: #20201e;
+  --planto-success-text: #f2f1ee;
+  --planto-error-bg: #2a1a1a;
+  --planto-error-text: #ffc9c9;
+  --planto-overlay: rgba(0, 0, 0, 0.45);
+  --planto-input-bg: #131312;
+  --planto-token-bg: #111111;
+  --planto-focus: #8f8880;
+  --planto-hover-surface: #242322;
+  --planto-selection: rgba(242, 241, 238, 0.18);
+  --planto-table-grid: #3a3835;
+  --planto-nav-active: #2d2b28;
 
-  --planto-light-page-bg: linear-gradient(160deg, var(--planto-light-bg) 0%, color-mix(in srgb, var(--planto-light-bg) 72%, var(--planto-light-accent)) 45%, color-mix(in srgb, var(--planto-light-surface) 90%, var(--planto-light-bg)) 100%);
-  --planto-light-surface-muted: color-mix(in srgb, var(--planto-light-surface) 84%, var(--planto-light-accent));
-  --planto-light-surface-raised: color-mix(in srgb, var(--planto-light-surface) 74%, var(--planto-light-accent));
-  --planto-light-border: color-mix(in srgb, var(--planto-light-surface) 72%, var(--planto-light-accent));
-  --planto-light-border-strong: color-mix(in srgb, var(--planto-light-border) 72%, var(--planto-light-text));
-  --planto-light-border-accent: var(--planto-light-accent);
-  --planto-light-text-strong: color-mix(in srgb, var(--planto-light-text) 90%, black);
-  --planto-light-accent-text: color-mix(in srgb, var(--planto-light-surface) 92%, white);
-  --planto-light-accent-soft: color-mix(in srgb, var(--planto-light-accent) 16%, var(--planto-light-surface));
-  --planto-light-accent-muted: color-mix(in srgb, var(--planto-light-accent) 82%, black);
-  --planto-light-danger-bg: color-mix(in srgb, var(--planto-light-danger) 16%, white);
-  --planto-light-danger-text: color-mix(in srgb, var(--planto-light-danger) 80%, black);
-  --planto-light-success-bg: var(--planto-light-accent-soft);
-  --planto-light-success-text: var(--planto-light-accent-muted);
-  --planto-light-error-bg: var(--planto-light-danger-bg);
-  --planto-light-error-text: var(--planto-light-danger-text);
-  --planto-light-overlay: color-mix(in srgb, var(--planto-light-text) 12%, transparent);
-  --planto-light-input-bg: color-mix(in srgb, var(--planto-light-surface) 92%, var(--planto-light-bg));
-  --planto-light-token-bg: color-mix(in srgb, var(--planto-light-accent) 12%, var(--planto-light-surface));
+  --planto-light-page-bg: var(--planto-light-bg);
+  --planto-light-view-bg: #ffffff;
+  --planto-light-surface-muted: #f0ebe3;
+  --planto-light-surface-raised: #ece6dc;
+  --planto-light-border: #d7cec0;
+  --planto-light-border-strong: #c8bcac;
+  --planto-light-border-accent: #b29f89;
+  --planto-light-text-strong: #12110f;
+  --planto-light-accent-text: #fffdf8;
+  --planto-light-accent-soft: #f2ece2;
+  --planto-light-accent-muted: #463e33;
+  --planto-light-danger-bg: #f8e0de;
+  --planto-light-danger-text: #8e2e2e;
+  --planto-light-success-bg: #efebe3;
+  --planto-light-success-text: #342d24;
+  --planto-light-error-bg: #f8e0de;
+  --planto-light-error-text: #8e2e2e;
+  --planto-light-overlay: rgba(0, 0, 0, 0.08);
+  --planto-light-input-bg: #fffdf8;
+  --planto-light-token-bg: #f0e8d8;
+  --planto-light-focus: #9f8866;
+  --planto-light-hover-surface: #eee7db;
+  --planto-light-selection: rgba(34, 33, 31, 0.12);
+  --planto-light-table-grid: #cdbda1;
+  --planto-light-nav-active: #ece5d9;
 }
 
 * {
@@ -74,13 +83,13 @@ body,
 
 body {
   margin: 0;
-  background: var(--planto-page-bg);
-  color: var(--planto-text);
-  font-family: var(--font-inter), Inter, sans-serif;
+  background: var(--planto-light-page-bg);
+  color: var(--planto-light-text);
+  font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 body::selection {
-  background: color-mix(in srgb, var(--planto-accent) 28%, transparent);
+  background: var(--planto-light-selection);
 }
 
 a {
@@ -92,4 +101,65 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+button,
+input,
+textarea,
+select,
+a {
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, opacity 140ms ease;
+}
+
+[data-planto-scrollbar="sidebar"] {
+  scrollbar-width: auto;
+  scrollbar-color: #c6c5c2 transparent;
+}
+
+[data-planto-scrollbar="sidebar"]::-webkit-scrollbar {
+  width: 12px;
+}
+
+[data-planto-scrollbar="sidebar"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-planto-scrollbar="sidebar"]::-webkit-scrollbar-thumb {
+  background: #c9c8c5;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+
+[data-planto-scrollbar="sidebar"]::-webkit-scrollbar-thumb:hover {
+  background: #b8b7b4;
+  background-clip: padding-box;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--planto-light-focus);
+  outline-offset: 1px;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: var(--planto-page-bg);
+    color: var(--planto-text);
+  }
+
+  body::selection {
+    background: var(--planto-selection);
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  a:focus-visible {
+    outline-color: var(--planto-focus);
+  }
 }

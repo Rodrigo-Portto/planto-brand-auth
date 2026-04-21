@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { BRIEFING_SECTIONS } from '../../lib/domain/briefing';
 import type {
   BriefingSectionKey,
@@ -21,9 +20,12 @@ interface BriefingPanelProps {
   savingSection: BriefingSectionKey | null;
   formProgress: FormProgress;
   contextStructure: ContextStructure | null;
-  sectionState: Record<BriefingSectionKey, { isSaved: boolean; isDirty: boolean }>;
+  brandContextCollapsed: boolean;
+  sectionState: Record<BriefingSectionKey, { isSaved: boolean; isDirty: boolean; isEditing: boolean }>;
   onTogglePanel: (key: keyof CollapsedPanels) => void;
   onFieldChange: (key: keyof IntegratedBriefing, value: string) => void;
+  onStartSectionEdit: (section: BriefingSectionKey) => void;
+  onCancelSectionEdit: (section: BriefingSectionKey) => void;
   onSaveSection: (section: BriefingSectionKey) => void;
   onSaveIntegratedBriefing: () => void;
 }
@@ -45,14 +47,15 @@ function getContextStatusLabel(formProgress: FormProgress, contextStructure: Con
     return 'Tudo salvo. O briefing integrado pode ser processado agora.';
   }
 
-  return 'Aguardando perfil salvo e os formulários preenchidos.';
+  return 'Aguardando perfil, linha editorial, Brand Core e Human Core salvos.';
 }
 
 function getSectionStatusLabel(
   section: BriefingSectionKey,
-  sectionState: Record<BriefingSectionKey, { isSaved: boolean; isDirty: boolean }>
+  sectionState: Record<BriefingSectionKey, { isSaved: boolean; isDirty: boolean; isEditing: boolean }>
 ) {
   const state = sectionState[section];
+  if (state.isEditing) return 'Editando';
   if (state.isDirty) return 'Alterado apos o ultimo save';
   if (state.isSaved) return 'Salvo no Supabase';
   return 'Nao salvo';
@@ -67,22 +70,18 @@ export function BriefingPanel({
   savingSection,
   formProgress,
   contextStructure,
+  brandContextCollapsed,
   sectionState,
   onTogglePanel,
   onFieldChange,
+  onStartSectionEdit,
+  onCancelSectionEdit,
   onSaveSection,
   onSaveIntegratedBriefing,
 }: BriefingPanelProps) {
-  const [briefingIntroCollapsed, setBriefingIntroCollapsed] = useState(false);
-
   return (
-    <section id="formularios-panel" style={styles.centerPanel}>
-      <BriefingIntro
-        styles={styles}
-        theme={theme}
-        collapsed={briefingIntroCollapsed}
-        onToggle={() => setBriefingIntroCollapsed((current) => !current)}
-      />
+    <section id="formularios-panel" style={{ ...styles.centerPanel, padding: 0 }}>
+      <BriefingIntro styles={styles} collapsed={brandContextCollapsed} />
 
       {BRIEFING_SECTIONS.map((section) => (
         <BriefingSectionCard
@@ -93,9 +92,12 @@ export function BriefingPanel({
           collapsedPanels={collapsedPanels}
           integratedBriefing={integratedBriefing}
           saveStateLabel={getSectionStatusLabel(section.key, sectionState)}
+          isEditing={sectionState[section.key].isEditing}
           savingSection={savingSection}
           onTogglePanel={onTogglePanel}
           onFieldChange={onFieldChange}
+          onStartEdit={onStartSectionEdit}
+          onCancelEdit={onCancelSectionEdit}
           onSaveSection={onSaveSection}
         />
       ))}

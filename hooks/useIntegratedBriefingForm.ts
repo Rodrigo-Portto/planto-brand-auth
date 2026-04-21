@@ -48,10 +48,15 @@ export function useIntegratedBriefingForm({
   const [contextStructure, setContextStructure] = useState<ContextStructure | null>(initialContextStructure);
   const [savingSection, setSavingSection] = useState<BriefingSectionKey | null>(null);
   const [finalizing, setFinalizing] = useState(false);
+  const [sectionEditing, setSectionEditing] = useState<Record<BriefingSectionKey, boolean>>({
+    brand_core: false,
+    human_core: false,
+  });
 
   useEffect(() => {
     setIntegratedBriefing(initialIntegratedBriefing);
     setLastSavedIntegratedBriefing(initialIntegratedBriefing);
+    setSectionEditing({ brand_core: false, human_core: false });
   }, [initialIntegratedBriefing]);
 
   useEffect(() => {
@@ -67,14 +72,39 @@ export function useIntegratedBriefingForm({
       brand_core: {
         isSaved: Boolean(formProgress.brand_core_saved_at),
         isDirty: hasDiffForSection(integratedBriefing, lastSavedIntegratedBriefing, 'brand_core'),
+        isEditing: sectionEditing.brand_core,
       },
       human_core: {
         isSaved: Boolean(formProgress.human_core_saved_at),
         isDirty: hasDiffForSection(integratedBriefing, lastSavedIntegratedBriefing, 'human_core'),
+        isEditing: sectionEditing.human_core,
       },
     }),
-    [formProgress.brand_core_saved_at, formProgress.human_core_saved_at, integratedBriefing, lastSavedIntegratedBriefing]
+    [
+      formProgress.brand_core_saved_at,
+      formProgress.human_core_saved_at,
+      integratedBriefing,
+      lastSavedIntegratedBriefing,
+      sectionEditing.brand_core,
+      sectionEditing.human_core,
+    ]
   );
+
+  function startSectionEditing(section: BriefingSectionKey) {
+    setSectionEditing((current) => ({ ...current, [section]: true }));
+  }
+
+  function cancelSectionEditing(section: BriefingSectionKey) {
+    const sectionFields = getFieldsForSection(section);
+    setIntegratedBriefing((current) => {
+      const next = { ...current };
+      sectionFields.forEach((field) => {
+        next[field] = lastSavedIntegratedBriefing[field] || '';
+      });
+      return next;
+    });
+    setSectionEditing((current) => ({ ...current, [section]: false }));
+  }
 
   async function saveSection(section: BriefingSectionKey) {
     if (!token) return;
@@ -89,6 +119,7 @@ export function useIntegratedBriefingForm({
         current ? { ...current, generation_status: 'pending', generation_error: null } : current
       );
       onSaved(data, section === 'brand_core' ? 'Brand Core salvo' : 'Human Core salvo');
+      setSectionEditing((current) => ({ ...current, [section]: false }));
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Erro ao salvar seção.');
     } finally {
@@ -120,6 +151,8 @@ export function useIntegratedBriefingForm({
     formProgress,
     contextStructure,
     sectionState,
+    startSectionEditing,
+    cancelSectionEditing,
     savingSection,
     savingIntegratedBriefing: finalizing,
     saveBriefingSection: saveSection,

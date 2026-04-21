@@ -3,7 +3,7 @@ import { THEME_STORAGE_KEY } from '../lib/domain/dashboardUtils';
 import type { ThemeMode } from '../types/dashboard';
 
 export function useThemeMode() {
-  const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
+  const [themeMode, setThemeMode] = useState<ThemeMode>('light');
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);

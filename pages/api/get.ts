@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { createDefaultEditorialLineRecord } from '../../lib/domain/editorialLine';
 import type { DashboardPayload } from '../../types/dashboard';
 import { buildFormProgress } from '../../lib/domain/briefing';
 import {
@@ -41,10 +42,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const userId = auth.user.id;
 
   try {
-    const [profile, integratedBriefing, contextStructure, attachments, gptEntries, gptTokens, legacyDocuments] =
+    const [profile, integratedBriefing, editorialLine, contextStructure, attachments, gptEntries, gptTokens, legacyDocuments] =
       await Promise.all([
         fetchOneById<DashboardPayload['profile']>('user_profiles', 'id', userId),
         fetchOneById<DashboardPayload['forms']['integrated_briefing']>('brand_context_responses', 'id', userId),
+        fetchOneById<DashboardPayload['editorial_line']>('editorial_lines', 'user_id', userId),
         fetchOneById<DashboardPayload['context_structure']>('brand_context_structures', 'user_id', userId),
         fetchMany<DashboardPayload['attachments'][number]>(
           `/rest/v1/user_attachments?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`,
@@ -82,7 +84,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     }
 
-    const formProgress = buildFormProgress(integratedBriefing || null);
+    const resolvedEditorialLine = createDefaultEditorialLineRecord(editorialLine, userId);
+    const formProgress = buildFormProgress({
+      ...(integratedBriefing || null),
+      editorial_line_saved_at: resolvedEditorialLine.updated_at || resolvedEditorialLine.created_at || null,
+    });
 
     return res.status(200).json({
       user: {
@@ -94,6 +100,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         integrated_briefing: integratedBriefing || {},
       },
       form_progress: formProgress,
+      editorial_line: resolvedEditorialLine,
       context_structure: contextStructure,
       attachments,
       gpt_entries: gptEntries,

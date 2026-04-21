@@ -7,8 +7,23 @@ import {
   isProfileComplete,
   isSectionComplete,
 } from '../../lib/domain/briefing';
+import {
+  EDITORIAL_LINE_FIELDS,
+  EDITORIAL_LINE_MAX_SLOTS,
+  EDITORIAL_LINE_MIN_SLOTS,
+  createEditorialLineSlots,
+  createDefaultEditorialLineRecord,
+  normalizeEditorialLineRows,
+} from '../../lib/domain/editorialLine';
 import { generateAndPersistContext, markContextStructurePending } from '../../lib/server/contextGeneration';
-import type { BrandContextResponseRecord, GptEntry, IntegratedBriefing, Profile } from '../../types/dashboard';
+import type {
+  BrandContextResponseRecord,
+  EditorialLineRecord,
+  EditorialLineRow,
+  GptEntry,
+  IntegratedBriefing,
+  Profile,
+} from '../../types/dashboard';
 import { extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
 
 const PROFILE_FIELD_KEYS = PROFILE_FIELDS.map((field) => field.key);
@@ -26,14 +41,14 @@ function pickFields<T extends object>(source: unknown, allowed: Array<keyof T>) 
   return output;
 }
 
-async function upsertById<T>(table: string, userId: string, payload: Partial<T>) {
+async function upsertByColumn<T>(table: string, idColumn: string, idValue: string, payload: Partial<T>) {
   const row = {
-    id: userId,
+    [idColumn]: idValue,
     ...payload,
     updated_at: new Date().toISOString(),
   };
 
-  const { response, data } = await supabaseRest(`/rest/v1/${table}?on_conflict=id`, {
+  const { response, data } = await supabaseRest(`/rest/v1/${table}?on_conflict=${idColumn}`, {
     method: 'POST',
     headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
     body: row,
@@ -46,12 +61,86 @@ async function upsertById<T>(table: string, userId: string, payload: Partial<T>)
   return Array.isArray(data) ? (data[0] as T) : (row as T);
 }
 
-async function fetchOneById<T>(table: string, userId: string): Promise<T | null> {
-  const { response, data } = await supabaseRest(`/rest/v1/${table}?id=eq.${encodeURIComponent(userId)}&select=*&limit=1`);
+async function upsertById<T>(table: string, userId: string, payload: Partial<T>) {
+  return upsertByColumn<T>(table, 'id', userId, payload);
+}
+
+async function upsertByUserId<T>(table: string, userId: string, payload: Partial<T>) {
+  return upsertByColumn<T>(table, 'user_id', userId, payload);
+}
+
+async function fetchOneByColumn<T>(table: string, column: string, value: string): Promise<T | null> {
+  const { response, data } = await supabaseRest(
+    `/rest/v1/${table}?${column}=eq.${encodeURIComponent(value)}&select=*&limit=1`
+  );
   if (!response.ok) {
     throw new Error(extractErrorMessage(data, `Falha ao buscar ${table}.`));
   }
   return Array.isArray(data) && data.length ? (data[0] as T) : null;
+}
+
+async function fetchOneById<T>(table: string, userId: string): Promise<T | null> {
+  return fetchOneByColumn<T>(table, 'id', userId);
+}
+
+function buildProgressWithEditorialLine(
+  profile: Profile,
+  integratedBriefing: BrandContextResponseRecord,
+  editorialLine: EditorialLineRecord | null
+) {
+  return buildFormProgress({
+    profile_completed_at: isProfileComplete(profile) ? integratedBriefing.profile_completed_at || null : null,
+    brand_core_saved_at: integratedBriefing.brand_core_saved_at || null,
+    human_core_saved_at: integratedBriefing.human_core_saved_at || null,
+    integrated_briefing_saved_at: integratedBriefing.integrated_briefing_saved_at || null,
+    editorial_line_saved_at: editorialLine?.updated_at || editorialLine?.created_at || null,
+  });
+}
+
+function parseEditorialLinePayload(payload: unknown) {
+  const record = createDefaultEditorialLineRecord(payload as Partial<EditorialLineRecord> | null);
+  const inputRows = Array.isArray((payload as EditorialLineRecord | null | undefined)?.rows)
+    ? ((payload as EditorialLineRecord).rows as EditorialLineRow[])
+    : [];
+
+  if (inputRows.length < EDITORIAL_LINE_MIN_SLOTS || inputRows.length > EDITORIAL_LINE_MAX_SLOTS) {
+    throw new Error(`A linha editorial precisa conter entre ${EDITORIAL_LINE_MIN_SLOTS} e ${EDITORIAL_LINE_MAX_SLOTS} linhas.`);
+  }
+
+  const receivedSlots = inputRows.map((row) => String(row?.slot || '').trim());
+  const normalizedRows = normalizeEditorialLineRows(inputRows);
+  const expectedSlots = createEditorialLineSlots(inputRows.length);
+
+  if (receivedSlots.length !== expectedSlots.length) {
+    throw new Error(`A linha editorial precisa conter entre ${EDITORIAL_LINE_MIN_SLOTS} e ${EDITORIAL_LINE_MAX_SLOTS} linhas.`);
+  }
+
+  expectedSlots.forEach((slot, index) => {
+    if (receivedSlots[index] !== slot) {
+      throw new Error(`Os slots da linha editorial devem ser sequenciais entre 01 e ${expectedSlots[expectedSlots.length - 1]}.`);
+    }
+  });
+
+  return {
+    rows: normalizedRows.map<EditorialLineRow>((row) =>
+      EDITORIAL_LINE_FIELDS.reduce<EditorialLineRow>(
+        (accumulator, field) => {
+          accumulator[field] = String(record.rows.find((current) => current.slot === row.slot)?.[field] || '').trim();
+          return accumulator;
+        },
+        {
+          slot: row.slot,
+          titulo: '',
+          objetivo: '',
+          metrica: '',
+          territorio: '',
+          tensao: '',
+          mensagem: '',
+          formato: '',
+        }
+      )
+    ),
+  };
 }
 
 export default async function handler(
@@ -89,6 +178,7 @@ export default async function handler(
 
       const progress = buildFormProgress({
         profile_completed_at: profileCompletedAt,
+        editorial_line_saved_at: (await fetchOneByColumn<EditorialLineRecord>('editorial_lines', 'user_id', userId))?.updated_at || null,
       });
 
       await markContextStructurePending({
@@ -122,12 +212,8 @@ export default async function handler(
 
       const saved = await upsertById<BrandContextResponseRecord>('brand_context_responses', userId, mergedRow);
       const profile = (await fetchOneById<Profile>('user_profiles', userId)) || {};
-      const progress = buildFormProgress({
-        profile_completed_at: isProfileComplete(profile) ? saved.profile_completed_at || null : null,
-        brand_core_saved_at: saved.brand_core_saved_at || null,
-        human_core_saved_at: saved.human_core_saved_at || null,
-        integrated_briefing_saved_at: saved.integrated_briefing_saved_at || null,
-      });
+      const editorialLine = await fetchOneByColumn<EditorialLineRecord>('editorial_lines', 'user_id', userId);
+      const progress = buildProgressWithEditorialLine(profile, saved, editorialLine);
 
       await markContextStructurePending({ userId, progress }).catch(() => null);
 
@@ -151,14 +237,13 @@ export default async function handler(
       const profile = (await fetchOneById<Profile>('user_profiles', userId)) || {};
       const integratedBriefing = ((await fetchOneById<BrandContextResponseRecord>('brand_context_responses', userId)) ||
         {}) as BrandContextResponseRecord;
-      const progress = buildFormProgress({
-        profile_completed_at: isProfileComplete(profile) ? integratedBriefing.profile_completed_at || null : null,
-        brand_core_saved_at: integratedBriefing.brand_core_saved_at || null,
-        human_core_saved_at: integratedBriefing.human_core_saved_at || null,
-      });
+      const editorialLine = await fetchOneByColumn<EditorialLineRecord>('editorial_lines', 'user_id', userId);
+      const progress = buildProgressWithEditorialLine(profile, integratedBriefing, editorialLine);
 
       if (!progress.is_ready_for_final_save) {
-        return res.status(400).json({ error: 'Perfil, Brand Core e Human Core precisam estar salvos antes do briefing integrado.' });
+        return res
+          .status(400)
+          .json({ error: 'Perfil, linha editorial, Brand Core e Human Core precisam estar salvos antes do briefing integrado.' });
       }
 
       const finalizedBriefing = await upsertById<BrandContextResponseRecord>('brand_context_responses', userId, {
@@ -169,18 +254,34 @@ export default async function handler(
         userId,
         profile,
         integratedBriefing: finalizedBriefing,
+        editorialLine: createDefaultEditorialLineRecord(editorialLine, userId),
       });
 
       return res.status(200).json({
         success: true,
         integrated_briefing: finalizedBriefing,
         form_progress: buildFormProgress({
-          profile_completed_at: progress.profile_completed_at,
-          brand_core_saved_at: progress.brand_core_saved_at,
-          human_core_saved_at: progress.human_core_saved_at,
+          ...progress,
           integrated_briefing_saved_at: finalizedBriefing.integrated_briefing_saved_at || null,
         }),
         context_structure: contextStructure,
+      });
+    }
+
+    if (resource === 'editorial_line') {
+      const saved = await upsertByUserId<EditorialLineRecord>('editorial_lines', userId, parseEditorialLinePayload(payload));
+      const profile = (await fetchOneById<Profile>('user_profiles', userId)) || {};
+      const integratedBriefing =
+        ((await fetchOneById<BrandContextResponseRecord>('brand_context_responses', userId)) || {}) as BrandContextResponseRecord;
+      const normalizedSaved = createDefaultEditorialLineRecord(saved, userId);
+      const progress = buildProgressWithEditorialLine(profile, integratedBriefing, normalizedSaved);
+
+      await markContextStructurePending({ userId, progress }).catch(() => null);
+
+      return res.status(200).json({
+        success: true,
+        editorial_line: normalizedSaved,
+        form_progress: progress,
       });
     }
 

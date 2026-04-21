@@ -8,7 +8,7 @@ interface ChevronIconProps extends IconProps {
 
 export function CameraIcon({ color }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
       <path
         d="M8.5 6.5h7l1 1.5H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h2.5l1-1.5Z"
         stroke={color}
@@ -44,6 +44,20 @@ export function SaveIcon({ color }: IconProps) {
         strokeLinejoin="round"
       />
       <path d="M8 4v5h7V4M8 20v-6h8v6" stroke={color} strokeWidth="1.7" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function PencilIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path
+        d="M4 20h4l10-10a1.9 1.9 0 0 0-4-4L4 16v4Z"
+        stroke={color}
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="m13 7 4 4" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   );
 }
@@ -152,6 +166,105 @@ export function MoonIcon({ color }: IconProps) {
         strokeWidth="1.7"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+export function MenuIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function CloseIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path d="m6 6 12 12M18 6 6 18" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function LogOutIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path d="M14.5 16.5 19 12l-4.5-4.5M19 12H9" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M10 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function PlusIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function PanelLeftIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke={color} strokeWidth="1.6" />
+      <path d="M9 4.8v14.4" stroke={color} strokeWidth="1.6" />
+      <path d="m14.8 12-2.4-2.2m2.4 2.2-2.4 2.2" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function PanelRightIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke={color} strokeWidth="1.6" />
+      <path d="M15 4.8v14.4" stroke={color} strokeWidth="1.6" />
+      <path d="m9.2 12 2.4-2.2m-2.4 2.2 2.4 2.2" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function ClipboardListIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path
+        d="M8 4.5h8A1.5 1.5 0 0 1 17.5 6v13.5A1.5 1.5 0 0 1 16 21H8A1.5 1.5 0 0 1 6.5 19.5V6A1.5 1.5 0 0 1 8 4.5Z"
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M9.5 9h5M9.5 12.5h5M9.5 16h3.4" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M10 3.3h4a1 1 0 0 1 1 1v1.2H9V4.3a1 1 0 0 1 1-1Z" stroke={color} strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+export function CalendarIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <rect x="4" y="5.5" width="16" height="14" rx="2.2" stroke={color} strokeWidth="1.6" />
+      <path d="M4 9.2h16M8 3.7v3M16 3.7v3" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="9" cy="13" r="1" fill={color} />
+      <circle cx="12.5" cy="13" r="1" fill={color} />
+      <circle cx="16" cy="13" r="1" fill={color} />
+    </svg>
+  );
+}
+
+export function NotesIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path
+        d="M6.5 4.8h11A1.7 1.7 0 0 1 19.2 6.5v11A1.7 1.7 0 0 1 17.5 19.2h-11a1.7 1.7 0 0 1-1.7-1.7v-11a1.7 1.7 0 0 1 1.7-1.7Z"
+        stroke={color}
+        strokeWidth="1.6"
+      />
+      <path d="M8.2 9h7.6M8.2 12.2h7.6M8.2 15.4H13" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }

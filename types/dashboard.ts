@@ -61,6 +61,24 @@ export interface Attachment {
   updated_at?: string | null;
 }
 
+export interface EditorialLineRow {
+  slot: string;
+  titulo: string;
+  objetivo: string;
+  metrica: string;
+  territorio: string;
+  tensao: string;
+  mensagem: string;
+  formato: string;
+}
+
+export interface EditorialLineRecord {
+  user_id: string;
+  rows: EditorialLineRow[];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
 export interface GptEntryContent {
   text?: string;
 }
@@ -116,6 +134,7 @@ export interface DashboardPayload {
     integrated_briefing: BrandContextResponseRecord;
   };
   form_progress: FormProgress;
+  editorial_line: EditorialLineRecord;
   context_structure: ContextStructure | null;
   attachments: Attachment[];
   gpt_entries: GptEntry[];
@@ -129,6 +148,7 @@ export type SaveResourceName =
   | 'human_core'
   | 'integrated_briefing'
   | 'integrated_briefing_finalize'
+  | 'editorial_line'
   | 'gpt_entry'
   | 'legacy_document';
 
@@ -237,10 +257,12 @@ export interface FormProgress {
   profile_completed_at?: string | null;
   brand_core_saved_at?: string | null;
   human_core_saved_at?: string | null;
+  editorial_line_saved_at?: string | null;
   integrated_briefing_saved_at?: string | null;
   is_profile_complete: boolean;
   is_brand_core_saved: boolean;
   is_human_core_saved: boolean;
+  is_editorial_line_saved: boolean;
   is_ready_for_final_save: boolean;
 }
 
@@ -254,6 +276,7 @@ export interface ContextStructure {
   source_profile_updated_at?: string | null;
   source_brand_core_saved_at?: string | null;
   source_human_core_saved_at?: string | null;
+  source_editorial_line_saved_at?: string | null;
   generated_at?: string | null;
   updated_at?: string | null;
 }

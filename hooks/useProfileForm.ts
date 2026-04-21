@@ -11,10 +11,12 @@ interface UseProfileFormOptions {
 
 export function useProfileForm({ initialProfile, token, onSaved, onError }: UseProfileFormOptions) {
   const [profile, setProfile] = useState<Profile>(initialProfile);
+  const [lastSavedProfile, setLastSavedProfile] = useState<Profile>(initialProfile);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setProfile(initialProfile);
+    setLastSavedProfile(initialProfile);
   }, [initialProfile]);
 
   async function save() {
@@ -23,7 +25,9 @@ export function useProfileForm({ initialProfile, token, onSaved, onError }: UseP
     setSaving(true);
     try {
       const data = await saveProfile(token, profile);
-      setProfile(data.profile || profile);
+      const nextProfile = data.profile || profile;
+      setProfile(nextProfile);
+      setLastSavedProfile(nextProfile);
       onSaved(data);
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Erro ao salvar.');
@@ -36,6 +40,7 @@ export function useProfileForm({ initialProfile, token, onSaved, onError }: UseP
     profile,
     setProfile,
     savingProfile: saving,
+    cancelProfileChanges: () => setProfile(lastSavedProfile),
     saveProfile: save,
   };
 }

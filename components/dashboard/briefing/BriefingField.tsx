@@ -4,10 +4,11 @@ interface BriefingFieldProps {
   styles: DashboardStyles;
   field: BriefingFieldDefinition;
   value: IntegratedBriefing[keyof IntegratedBriefing];
+  disabled?: boolean;
   onChange: (key: keyof IntegratedBriefing, value: string) => void;
 }
 
-export function BriefingField({ styles, field, value, onChange }: BriefingFieldProps) {
+export function BriefingField({ styles, field, value, disabled = false, onChange }: BriefingFieldProps) {
   return (
     <div style={styles.fieldBlock}>
       <h3 style={styles.fieldHeading}>{`${field.number} ${field.title}`}</h3>
@@ -17,6 +18,7 @@ export function BriefingField({ styles, field, value, onChange }: BriefingFieldP
         style={styles.textarea}
         rows={5}
         value={value || ''}
+        disabled={disabled}
         onChange={(event) => onChange(field.key, event.target.value)}
       />
     </div>

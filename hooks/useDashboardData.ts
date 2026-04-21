@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { fetchDashboardData } from '../lib/api/dashboard';
+import { createDefaultEditorialLineRecord } from '../lib/domain/editorialLine';
 import type {
   Attachment,
   ContextStructure,
   DashboardPayload,
+  EditorialLineRecord,
   FormProgress,
   GptEntry,
   GptToken,
@@ -20,10 +22,12 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
   const [user, setUser] = useState<UserSummary | null>(null);
   const [profile, setProfile] = useState<Profile>({});
   const [integratedBriefing, setIntegratedBriefing] = useState<DashboardPayload['forms']['integrated_briefing']>({});
+  const [editorialLine, setEditorialLine] = useState<EditorialLineRecord>(createDefaultEditorialLineRecord());
   const [formProgress, setFormProgress] = useState<FormProgress>({
     is_profile_complete: false,
     is_brand_core_saved: false,
     is_human_core_saved: false,
+    is_editorial_line_saved: false,
     is_ready_for_final_save: false,
   });
   const [contextStructure, setContextStructure] = useState<ContextStructure | null>(null);
@@ -35,7 +39,10 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
   const [error, setError] = useState('');
 
   async function refresh() {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setError('');
@@ -45,11 +52,13 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
       setUser(data.user || null);
       setProfile(data.profile || {});
       setIntegratedBriefing(data.forms?.integrated_briefing || {});
+      setEditorialLine(createDefaultEditorialLineRecord(data.editorial_line, data.user?.id || ''));
       setFormProgress(
         data.form_progress || {
           is_profile_complete: false,
           is_brand_core_saved: false,
           is_human_core_saved: false,
+          is_editorial_line_saved: false,
           is_ready_for_final_save: false,
         }
       );
@@ -78,6 +87,7 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
     user,
     profile,
     integratedBriefing,
+    editorialLine,
     attachments,
     entries,
     tokens,
@@ -89,6 +99,7 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
     refresh,
     setProfile,
     setIntegratedBriefing,
+    setEditorialLine,
     setFormProgress,
     setContextStructure,
     setAttachments,

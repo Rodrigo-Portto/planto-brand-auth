@@ -1,59 +1,43 @@
 import type { DashboardStyles, DashboardThemeColors } from '../../types/dashboard';
-import { CopyIcon, EyeIcon, EyeOffIcon, KeyIcon } from './icons';
+import { CopyIcon } from './icons';
 
 interface TokenPanelProps {
   styles: DashboardStyles;
   theme: DashboardThemeColors;
+  showTitle?: boolean;
   createdToken: string;
   tokenCopied: boolean;
-  saving: boolean;
-  canGenerateToken: boolean;
-  tokenVisible: boolean;
-  onCreateToken: () => void;
+  copyingDisabled: boolean;
   onCopyToken: () => void;
-  onToggleTokenVisibility: () => void;
 }
 
 export function TokenPanel({
   styles,
   theme,
+  showTitle = true,
   createdToken,
   tokenCopied,
-  saving,
-  canGenerateToken,
-  tokenVisible,
-  onCreateToken,
+  copyingDisabled,
   onCopyToken,
-  onToggleTokenVisibility,
 }: TokenPanelProps) {
-  const tokenPreview = createdToken
-    ? tokenVisible
-      ? createdToken
-      : `${createdToken.slice(0, 18)}...`
-    : 'Clique para gerar seu token GPT Plantô.';
+  const tokenPreview = createdToken ? `${createdToken.slice(0, 18)}...` : 'Nenhum token ativo encontrado.';
 
   return (
-    <div style={styles.headerTokenBar}>
+    <div style={styles.cardBlock}>
+      {showTitle ? <h2 style={styles.panelTitle}>Token</h2> : null}
       <code style={createdToken ? styles.headerTokenCode : styles.headerTokenHint}>{tokenPreview}</code>
       <button
-        disabled={saving}
-        style={styles.iconOnlyButton}
-        onClick={canGenerateToken ? onCreateToken : onCopyToken}
+        disabled={copyingDisabled}
+        style={{ ...styles.secondaryButton, background: theme.shell }}
+        onClick={onCopyToken}
         type="button"
-        aria-label={canGenerateToken ? 'Gerar Token' : 'Copiar Token'}
-        title={canGenerateToken ? 'Gerar Token' : tokenCopied ? 'Copiado' : 'Copiar Token'}
+        aria-label="Copiar Token"
+        title={tokenCopied ? 'Copiado' : 'Copiar Token'}
       >
-        {canGenerateToken ? <KeyIcon color={theme.textStrong} /> : <CopyIcon color={theme.textStrong} />}
-      </button>
-      <button
-        disabled={!createdToken}
-        style={styles.iconOnlyButton}
-        onClick={onToggleTokenVisibility}
-        type="button"
-        aria-label={tokenVisible ? 'Ocultar token' : 'Mostrar token'}
-        title={tokenVisible ? 'Ocultar token' : 'Mostrar token'}
-      >
-        {tokenVisible ? <EyeOffIcon color={theme.textStrong} /> : <EyeIcon color={theme.textStrong} />}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <CopyIcon color={theme.textStrong} />
+          {tokenCopied ? 'Copiado' : 'Copiar token'}
+        </span>
       </button>
     </div>
   );
