@@ -13,7 +13,7 @@ interface LibraryQuickNavProps {
 }
 
 const NAV_ITEMS: Array<{ key: CentralView; label: string; icon: (color: string) => ReactNode }> = [
-  { key: 'forms', label: 'Questionario', icon: (color) => <ClipboardListIcon color={color} /> },
+  { key: 'forms', label: 'Questionário', icon: (color) => <ClipboardListIcon color={color} /> },
   { key: 'editorial', label: 'Editorial', icon: (color) => <CalendarIcon color={color} /> },
   { key: 'gpt_entries', label: 'Entradas GPT', icon: (color) => <NotesIcon color={color} /> },
 ];

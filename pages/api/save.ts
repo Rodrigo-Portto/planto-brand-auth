@@ -24,7 +24,14 @@ import type {
   IntegratedBriefing,
   Profile,
 } from '../../types/dashboard';
-import { extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
+import {
+  BRAND_LIBRARY_BUCKET,
+  createSignedStorageUrl,
+  extractErrorMessage,
+  extractStoragePathFromAvatarValue,
+  getAuthenticatedUser,
+  supabaseRest,
+} from './_lib/supabase';
 
 const PROFILE_FIELD_KEYS = PROFILE_FIELDS.map((field) => field.key);
 
@@ -143,6 +150,21 @@ function parseEditorialLinePayload(payload: unknown) {
   };
 }
 
+async function resolveProfileAvatarUrl(profile: Profile): Promise<Profile> {
+  const avatarValue = String(profile?.avatar_url || '').trim();
+  if (!avatarValue) return profile;
+
+  const storagePath = extractStoragePathFromAvatarValue(avatarValue, BRAND_LIBRARY_BUCKET);
+  if (!storagePath) return profile;
+
+  try {
+    const signedUrl = await createSignedStorageUrl(BRAND_LIBRARY_BUCKET, storagePath);
+    return { ...profile, avatar_url: signedUrl };
+  } catch {
+    return { ...profile, avatar_url: '' };
+  }
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Record<string, unknown> | { error: string }>
@@ -168,6 +190,7 @@ export default async function handler(
   try {
     if (resource === 'profile') {
       const saved = await upsertById<Profile>('user_profiles', userId, pickFields<Profile>(payload, PROFILE_FIELD_KEYS));
+      const resolvedProfile = await resolveProfileAvatarUrl(saved);
       const profileCompletedAt = isProfileComplete(saved)
         ? payload?.profile_completed_at || new Date().toISOString()
         : null;
@@ -188,7 +211,7 @@ export default async function handler(
 
       return res.status(200).json({
         success: true,
-        profile: saved,
+        profile: resolvedProfile,
         form_progress: progress,
       });
     }

@@ -6,28 +6,23 @@ import type { DashboardStyles } from '../../../types/dashboard';
 
 interface BriefingIntroProps {
   styles: DashboardStyles;
-  collapsed: boolean;
 }
 
-export function BriefingIntro({ styles, collapsed }: BriefingIntroProps) {
+export function BriefingIntro({ styles }: BriefingIntroProps) {
   return (
     <div style={styles.briefingIntro}>
-      {!collapsed ? (
-        <>
-          <div>
-            <p style={styles.briefingBodyText}>{BRIEFING_GENERAL_INSTRUCTION}</p>
-          </div>
+      <div>
+        <p style={styles.briefingBodyText}>{BRIEFING_GENERAL_INSTRUCTION}</p>
+      </div>
 
-          <div>
-            <p style={styles.cardTitle}>Orientações de preenchimento</p>
-            <ul style={styles.briefingList}>
-              {BRIEFING_FILLING_GUIDELINES.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </>
-      ) : null}
+      <div>
+        <p style={styles.cardTitle}>Orientações de preenchimento</p>
+        <ul style={styles.briefingList}>
+          {BRIEFING_FILLING_GUIDELINES.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

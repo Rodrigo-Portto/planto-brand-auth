@@ -1,7 +1,6 @@
 import { BRIEFING_SECTIONS } from '../../lib/domain/briefing';
 import type {
   BriefingSectionKey,
-  CollapsedPanels,
   ContextStructure,
   DashboardStyles,
   DashboardThemeColors,
@@ -15,14 +14,11 @@ interface BriefingPanelProps {
   styles: DashboardStyles;
   theme: DashboardThemeColors;
   integratedBriefing: IntegratedBriefing;
-  collapsedPanels: CollapsedPanels;
   saving: boolean;
   savingSection: BriefingSectionKey | null;
   formProgress: FormProgress;
   contextStructure: ContextStructure | null;
-  brandContextCollapsed: boolean;
   sectionState: Record<BriefingSectionKey, { isSaved: boolean; isDirty: boolean; isEditing: boolean }>;
-  onTogglePanel: (key: keyof CollapsedPanels) => void;
   onFieldChange: (key: keyof IntegratedBriefing, value: string) => void;
   onStartSectionEdit: (section: BriefingSectionKey) => void;
   onCancelSectionEdit: (section: BriefingSectionKey) => void;
@@ -65,14 +61,11 @@ export function BriefingPanel({
   styles,
   theme,
   integratedBriefing,
-  collapsedPanels,
   saving,
   savingSection,
   formProgress,
   contextStructure,
-  brandContextCollapsed,
   sectionState,
-  onTogglePanel,
   onFieldChange,
   onStartSectionEdit,
   onCancelSectionEdit,
@@ -81,7 +74,7 @@ export function BriefingPanel({
 }: BriefingPanelProps) {
   return (
     <section id="formularios-panel" style={{ ...styles.centerPanel, padding: 0 }}>
-      <BriefingIntro styles={styles} collapsed={brandContextCollapsed} />
+      <BriefingIntro styles={styles} />
 
       {BRIEFING_SECTIONS.map((section) => (
         <BriefingSectionCard
@@ -89,12 +82,10 @@ export function BriefingPanel({
           styles={styles}
           theme={theme}
           section={section}
-          collapsedPanels={collapsedPanels}
           integratedBriefing={integratedBriefing}
           saveStateLabel={getSectionStatusLabel(section.key, sectionState)}
           isEditing={sectionState[section.key].isEditing}
           savingSection={savingSection}
-          onTogglePanel={onTogglePanel}
           onFieldChange={onFieldChange}
           onStartEdit={onStartSectionEdit}
           onCancelEdit={onCancelSectionEdit}

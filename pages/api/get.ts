@@ -11,11 +11,25 @@ import {
   supabaseRest,
 } from './_lib/supabase';
 
+function isMissingTableError(data: unknown, table: string) {
+  if (!data || typeof data !== 'object') return false;
+  const errorData = data as Record<string, unknown>;
+  const message = String(errorData.message || errorData.error || '');
+  const code = String(errorData.code || '');
+  return (
+    message.includes(`Could not find the table 'public.${table}'`) ||
+    (code === 'PGRST205' && message.toLowerCase().includes(table.toLowerCase()))
+  );
+}
+
 async function fetchOneById<T>(table: string, idColumn: string, idValue: string): Promise<T | null> {
   const { response, data } = await supabaseRest(
     `/rest/v1/${table}?${idColumn}=eq.${encodeURIComponent(idValue)}&select=*&limit=1`
   );
   if (!response.ok) {
+    if (table === 'editorial_lines' && isMissingTableError(data, table)) {
+      return null;
+    }
     throw new Error(extractErrorMessage(data, `Falha ao buscar ${table}.`));
   }
   return Array.isArray(data) && data.length ? (data[0] as T) : null;

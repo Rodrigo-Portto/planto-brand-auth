@@ -9,12 +9,10 @@ import { KnowledgePanel } from '../components/dashboard/KnowledgePanel';
 import { LibraryQuickNav } from '../components/dashboard/LibraryQuickNav';
 import { ProfilePanel } from '../components/dashboard/ProfilePanel';
 import { TokenPanel } from '../components/dashboard/TokenPanel';
-import { ChevronIcon, CloseIcon, PencilIcon, SaveIcon } from '../components/dashboard/icons';
-import { useCollapsedPanels } from '../hooks/useCollapsedPanels';
+import { CloseIcon, PencilIcon, SaveIcon } from '../components/dashboard/icons';
 import {
   useDashboardLayoutPrefs,
   type DashboardCardId,
-  type DashboardLayoutZone,
 } from '../hooks/useDashboardLayoutPrefs';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useDashboardSession } from '../hooks/useDashboardSession';
@@ -33,7 +31,6 @@ export default function DashboardPage() {
   const router = useRouter();
   const { token, sessionReady, resetSession, logout } = useDashboardSession(router);
   const { themeMode, toggleTheme } = useThemeMode();
-  const { collapsedPanels, togglePanel } = useCollapsedPanels();
   const layoutPrefs = useDashboardLayoutPrefs();
 
   const [notice, setNotice] = useState('');
@@ -43,7 +40,6 @@ export default function DashboardPage() {
   const [profileEditing, setProfileEditing] = useState(false);
   const [navPanelCollapsed, setNavPanelCollapsed] = useState(false);
   const [supportPanelCollapsed, setSupportPanelCollapsed] = useState(false);
-  const [brandContextCollapsed, setBrandContextCollapsed] = useState(false);
 
   const theme = themeTokens[themeMode];
   const styles = useMemo(() => createDashboardStyles(theme, viewportWidth), [theme, viewportWidth]);
@@ -218,18 +214,8 @@ export default function DashboardPage() {
     title: string,
     body: ReactNode,
     headerActions?: ReactNode,
-    showHeaderDivider = true,
-    collapseOptions?: {
-      collapsed: boolean;
-      onToggle: () => void;
-      labelWhenCollapsed: string;
-      labelWhenExpanded: string;
-      collapseBody?: boolean;
-    }
+    showHeaderDivider = true
   ) {
-    const collapsed = collapseOptions ? collapseOptions.collapsed : layoutPrefs.collapsedCards[cardId];
-    const collapseBody = collapseOptions?.collapseBody ?? true;
-
     return (
       <section key={cardId} style={styles.panelCard}>
         <div
@@ -240,39 +226,10 @@ export default function DashboardPage() {
           }
         >
           <h2 style={styles.panelTitle}>{title}</h2>
-          <div style={styles.panelCardHeaderGroup}>
-            {headerActions || null}
-
-            <button
-              type="button"
-              style={styles.cardIconButton}
-              onClick={collapseOptions ? collapseOptions.onToggle : () => layoutPrefs.toggleCardCollapsed(cardId)}
-              aria-expanded={!collapsed}
-              aria-label={
-                collapseOptions
-                  ? collapsed
-                    ? collapseOptions.labelWhenCollapsed
-                    : collapseOptions.labelWhenExpanded
-                  : collapsed
-                  ? `Expandir ${title}`
-                  : `Recolher ${title}`
-              }
-              title={
-                collapseOptions
-                  ? collapsed
-                    ? collapseOptions.labelWhenCollapsed
-                    : collapseOptions.labelWhenExpanded
-                  : collapsed
-                  ? 'Expandir'
-                  : 'Recolher'
-              }
-            >
-              <ChevronIcon collapsed={collapsed} color={theme.textStrong} />
-            </button>
-          </div>
+          <div style={styles.panelCardHeaderGroup}>{headerActions || null}</div>
         </div>
 
-        {!collapseBody || !collapsed ? body : null}
+        {body}
       </section>
     );
   }
@@ -285,14 +242,11 @@ export default function DashboardPage() {
             styles={styles}
             theme={theme}
             integratedBriefing={integratedBriefingForm.integratedBriefing}
-            collapsedPanels={collapsedPanels}
             saving={integratedBriefingForm.savingIntegratedBriefing}
             savingSection={integratedBriefingForm.savingSection}
             formProgress={integratedBriefingForm.formProgress}
             contextStructure={integratedBriefingForm.contextStructure}
-            brandContextCollapsed={brandContextCollapsed}
             sectionState={integratedBriefingForm.sectionState}
-            onTogglePanel={togglePanel}
             onFieldChange={(key, value) =>
               integratedBriefingForm.setIntegratedBriefing((current) => ({
                 ...current,
@@ -405,7 +359,7 @@ export default function DashboardPage() {
   function renderMainZoneCards() {
     const cards = layoutPrefs.cardOrder.main;
     const mainTitleByTab: Record<typeof layoutPrefs.mainTab, string> = {
-      forms: 'Questionario',
+      forms: 'Questionários',
       editorial: 'Editorial',
       gpt_entries: 'Entradas GPT',
     };
@@ -413,13 +367,7 @@ export default function DashboardPage() {
     return cards.map((cardId) => {
       if (cardId !== 'main_content') return null;
 
-      return renderCardChrome(cardId, mainTitleByTab[layoutPrefs.mainTab], renderMainPanelBody(), undefined, true, {
-        collapsed: brandContextCollapsed,
-        onToggle: () => setBrandContextCollapsed((current) => !current),
-        labelWhenCollapsed: 'Expandir contexto da marca',
-        labelWhenExpanded: 'Recolher contexto da marca',
-        collapseBody: false,
-      });
+      return renderCardChrome(cardId, mainTitleByTab[layoutPrefs.mainTab], renderMainPanelBody());
     });
   }
 
@@ -439,10 +387,8 @@ export default function DashboardPage() {
             editing={profileEditing}
             showHeader={false}
             showEditButton={false}
-            collapsed={false}
             saving={profileForm.savingProfile}
             avatarUploading={avatarUploading}
-            onToggleCollapsed={() => undefined}
             onStartEdit={() => setProfileEditing(true)}
             onProfileChange={(key, value) =>
               profileForm.setProfile((current) => ({

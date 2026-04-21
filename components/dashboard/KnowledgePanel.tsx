@@ -95,21 +95,34 @@ export function KnowledgePanel({
 
       <div style={styles.list}>
         {attachments.length === 0 && <p style={styles.smallText}>Sem anexos ainda.</p>}
-        {attachments.map((item) => (
-          <div key={item.id} style={styles.listItemInline}>
-            <p style={styles.listTitle}>{item.filename}</p>
-            <button
-              type="button"
-              style={styles.dangerIconButton}
-              onClick={() => onDeleteAttachment(item.id)}
-              disabled={deletingAttachmentId === item.id}
-              aria-label={`Excluir ${item.filename}`}
-              title={deletingAttachmentId === item.id ? 'Excluindo...' : 'Excluir arquivo'}
-            >
-              <TrashIcon color={styles.dangerIconButton.color as string} />
-            </button>
+        {attachments.length > 0 ? (
+          <div style={styles.attachmentListContainer}>
+            {attachments.map((item, index) => (
+              <div
+                key={item.id}
+                style={
+                  index === 0
+                    ? styles.attachmentListRow
+                    : { ...styles.attachmentListRow, borderTop: `1px solid ${String(styles.input.border)}` }
+                }
+              >
+                <p style={styles.attachmentFileName} title={item.filename}>
+                  {item.filename}
+                </p>
+                <button
+                  type="button"
+                  style={styles.dangerIconButton}
+                  onClick={() => onDeleteAttachment(item.id)}
+                  disabled={deletingAttachmentId === item.id}
+                  aria-label={`Excluir ${item.filename}`}
+                  title={deletingAttachmentId === item.id ? 'Excluindo...' : 'Excluir arquivo'}
+                >
+                  <TrashIcon color={styles.dangerIconButton.color as string} />
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
+        ) : null}
       </div>
     </div>
   );
