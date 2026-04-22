@@ -47,6 +47,11 @@ function sanitizeCardOrder(zone: DashboardLayoutZone, value: unknown): Dashboard
   return [...deduplicated, ...allowed.filter((item) => !deduplicated.includes(item))];
 }
 
+function enforceNavCalendarBelowLinks(order: DashboardCardId[]): DashboardCardId[] {
+  const next = [...order].filter((cardId) => cardId !== 'nav_links' && cardId !== 'calendar');
+  return ['nav_links', 'calendar', ...next];
+}
+
 function normalizePrefs(value: unknown): DashboardLayoutPrefsState {
   if (!value || typeof value !== 'object') return DEFAULT_LAYOUT_PREFS;
 
@@ -65,7 +70,7 @@ function normalizePrefs(value: unknown): DashboardLayoutPrefsState {
   const rawCardOrder = raw.cardOrder && typeof raw.cardOrder === 'object' ? raw.cardOrder : undefined;
 
   const nextCardOrder: Record<DashboardLayoutZone, DashboardCardId[]> = {
-    nav: sanitizeCardOrder('nav', rawCardOrder?.nav),
+    nav: enforceNavCalendarBelowLinks(sanitizeCardOrder('nav', rawCardOrder?.nav)),
     main: sanitizeCardOrder('main', rawCardOrder?.main),
     support: sanitizeCardOrder('support', rawCardOrder?.support),
   };
