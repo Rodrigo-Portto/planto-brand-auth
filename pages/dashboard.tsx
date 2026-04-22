@@ -12,7 +12,16 @@ import { LibraryQuickNav } from '../components/dashboard/LibraryQuickNav';
 import { MonthlyCalendarPanel } from '../components/dashboard/MonthlyCalendarPanel';
 import { ProfilePanel } from '../components/dashboard/ProfilePanel';
 import { TokenPanel } from '../components/dashboard/TokenPanel';
-import { ChevronIcon, CloseIcon, PencilIcon, PlusIcon, SaveIcon } from '../components/dashboard/icons';
+import {
+  CalendarIcon,
+  ChevronIcon,
+  ClipboardListIcon,
+  CloseIcon,
+  KeyIcon,
+  PencilIcon,
+  PlusIcon,
+  SaveIcon,
+} from '../components/dashboard/icons';
 import { useCollapsedPanels } from '../hooks/useCollapsedPanels';
 import {
   useDashboardLayoutPrefs,
@@ -31,7 +40,7 @@ import { useThemeMode } from '../hooks/useThemeMode';
 import { uploadAvatar } from '../lib/api/dashboard';
 import { isSessionTokenInvalidMessage } from '../lib/domain/session';
 import { themeTokens, createDashboardStyles } from '../lib/domain/dashboardTheme';
-import { toBase64 } from '../lib/domain/dashboardUtils';
+import { prepareAvatarUpload } from '../lib/domain/dashboardUtils';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -59,11 +68,11 @@ export default function DashboardPage() {
     const hasNav = !navPanelCollapsed;
 
     if (isWide) {
-      if (hasNav) return 'minmax(210px, 280px) minmax(0, 1fr)';
+      if (hasNav) return 'minmax(250px, 360px) minmax(0, 1fr)';
       return 'minmax(0, 1fr)';
     }
 
-    if (hasNav) return 'minmax(0, 1.7fr) minmax(280px, 1fr)';
+    if (hasNav) return 'minmax(0, 1.45fr) minmax(340px, 1fr)';
     return 'minmax(0, 1fr)';
   }, [isCompact, isWide, navPanelCollapsed]);
 
@@ -195,11 +204,7 @@ export default function DashboardPage() {
     return 'por aqui';
   }, [profileForm.profile?.name, profileForm.profile?.surname, dashboardData.user?.email]);
 
-  const editorialLineStatus = editorialLineForm.isDirty
-    ? 'Alterada apos o ultimo save'
-    : integratedBriefingForm.formProgress.is_editorial_line_saved
-    ? 'Salva no Supabase'
-    : 'Nao salva';
+  const editorialLineSavedCheck = integratedBriefingForm.formProgress.is_editorial_line_saved && !editorialLineForm.isDirty;
 
   async function handleAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -212,21 +217,26 @@ export default function DashboardPage() {
     }
 
     setAvatarUploading(true);
+    const previousAvatarUrl = String(profileForm.profile?.avatar_url || '');
+    const immediatePreviewUrl = URL.createObjectURL(file);
+    profileForm.setProfile((current) => ({ ...current, avatar_url: immediatePreviewUrl }));
 
     try {
-      const buffer = await file.arrayBuffer();
+      const prepared = await prepareAvatarUpload(file);
       const data = await uploadAvatar(token, {
-        filename: file.name,
-        mime_type: file.type || 'application/octet-stream',
-        base64: toBase64(buffer),
+        filename: prepared.filename,
+        mime_type: prepared.mimeType || 'application/octet-stream',
+        base64: prepared.base64,
       });
 
       const nextUrl = data.avatar_url || data.profile?.avatar_url || '';
       profileForm.setProfile((current) => ({ ...current, avatar_url: nextUrl }));
       showSavedNotice();
     } catch (error) {
+      profileForm.setProfile((current) => ({ ...current, avatar_url: previousAvatarUrl }));
       handleDashboardError(error instanceof Error ? error.message : 'Erro ao enviar avatar.');
     } finally {
+      URL.revokeObjectURL(immediatePreviewUrl);
       event.target.value = '';
       setAvatarUploading(false);
     }
@@ -237,19 +247,67 @@ export default function DashboardPage() {
     title: string,
     body: ReactNode,
     headerActions?: ReactNode,
-    showHeaderDivider = true
+    showHeaderDivider = true,
+    integrated = false
   ) {
+    const viewPadding = isCompact ? '10px' : '22px';
+    const fixedHeaderHeight = isCompact ? '56px' : '64px';
+    const headerBaseStyle = showHeaderDivider
+      ? styles.panelCardHeader
+      : { ...styles.panelCardHeader, borderBottom: 'none', paddingBottom: 0 };
+    const headerStyle = integrated
+      ? {
+          ...headerBaseStyle,
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) auto',
+          alignItems: 'center',
+          gap: '12px',
+          padding: `0 ${viewPadding}`,
+          minHeight: fixedHeaderHeight,
+          height: fixedHeaderHeight,
+        }
+      : headerBaseStyle;
+    const titleStyle = integrated
+      ? {
+          ...styles.panelTitle,
+          whiteSpace: 'nowrap' as const,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }
+      : styles.panelTitle;
+    const headerActionsStyle = integrated
+      ? {
+          ...styles.panelCardHeaderGroup,
+          minWidth: isCompact ? '40px' : '108px',
+          justifyContent: 'flex-end',
+          flexWrap: 'nowrap' as const,
+        }
+      : styles.panelCardHeaderGroup;
+
     return (
-      <section key={cardId} style={styles.panelCard}>
-        <div
-          style={
-            showHeaderDivider
-              ? styles.panelCardHeader
-              : { ...styles.panelCardHeader, borderBottom: 'none', paddingBottom: 0 }
-          }
-        >
-          <h2 style={styles.panelTitle}>{title}</h2>
-          <div style={styles.panelCardHeaderGroup}>{headerActions || null}</div>
+      <section
+        key={cardId}
+        style={
+          integrated
+            ? {
+                ...styles.panelCard,
+                border: 'none',
+                boxShadow: 'none',
+                borderRadius: '10px',
+                overflow: 'hidden',
+                padding: 0,
+                minHeight: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                alignItems: 'stretch',
+              }
+            : styles.panelCard
+        }
+      >
+        <div style={headerStyle}>
+          <h2 style={titleStyle}>{title}</h2>
+          <div style={headerActionsStyle}>{headerActions || null}</div>
         </div>
 
         {body}
@@ -260,6 +318,7 @@ export default function DashboardPage() {
   function renderMainPanelBody() {
     const collapsedCount =
       Number(brandContextCollapsed) + Number(collapsedPanels.brandCore) + Number(collapsedPanels.humanCore);
+    const viewPadding = isCompact ? '10px' : '22px';
     const formsScrollStyle =
       layoutPrefs.mainTab === 'forms'
         ? {
@@ -267,8 +326,20 @@ export default function DashboardPage() {
             maxHeight: 'none',
             overflowY: 'visible' as const,
             minHeight: isCompact ? 'auto' : `calc(100vh - ${180 + collapsedCount * 36}px)`,
+            padding: viewPadding,
           }
-        : styles.mainPanelScroll;
+        : layoutPrefs.mainTab === 'editorial'
+        ? {
+            ...styles.mainPanelScroll,
+            maxHeight: 'none',
+            overflowY: 'visible' as const,
+            minHeight: 'auto',
+            padding: viewPadding,
+          }
+        : {
+            ...styles.mainPanelScroll,
+            padding: viewPadding,
+          };
 
     return (
       <div style={formsScrollStyle} data-planto-scrollbar="sidebar">
@@ -281,7 +352,6 @@ export default function DashboardPage() {
             saving={integratedBriefingForm.savingIntegratedBriefing}
             savingSection={integratedBriefingForm.savingSection}
             formProgress={integratedBriefingForm.formProgress}
-            contextStructure={integratedBriefingForm.contextStructure}
             brandContextCollapsed={brandContextCollapsed}
             sectionState={integratedBriefingForm.sectionState}
             onTogglePanel={togglePanel}
@@ -305,7 +375,7 @@ export default function DashboardPage() {
               isEditing={editorialLineForm.isEditing}
               isDirty={editorialLineForm.isDirty}
               saving={editorialLineForm.savingEditorialLine}
-              saveStateLabel={editorialLineStatus}
+              showSavedCheck={editorialLineSavedCheck}
               onEdit={editorialLineForm.startEditing}
               onCancel={editorialLineForm.cancelEditing}
               onAddSlot={editorialLineForm.addSlot}
@@ -343,7 +413,6 @@ export default function DashboardPage() {
               styles={styles}
               theme={theme}
               profile={profileForm.profile}
-              greetingName={greetingName}
               editing={profileEditing}
               showHeader={false}
               showEditButton={false}
@@ -369,79 +438,136 @@ export default function DashboardPage() {
   }
 
   function renderNavZoneCards() {
-    const cards = layoutPrefs.cardOrder.nav;
+    const cards = layoutPrefs.cardOrder.nav.filter((cardId) => cardId !== 'nav_links');
+    const sectionTitleStyle = {
+      margin: 0,
+      fontSize: '1rem',
+      color: theme.textStrong,
+      fontWeight: 600,
+    };
 
-    return cards.map((cardId) => {
-      if (cardId === 'nav_links') {
-        return renderCardChrome(
-          cardId,
-          'Navegação',
-          <LibraryQuickNav
-            styles={styles}
-            activeView={layoutPrefs.mainTab}
-            iconColor={theme.name === 'dark' ? theme.textStrong : '#1f1b14'}
-            onChangeView={(view) => layoutPrefs.setMainTab(view)}
-          />,
-          undefined,
-          false
-        );
-      }
+    const sections = cards
+      .map((cardId): { cardId: DashboardCardId; title: string; icon: ReactNode; content: ReactNode } | null => {
+        if (cardId === 'calendar') {
+          return {
+            cardId,
+            title: 'Calendário',
+            icon: <CalendarIcon color={theme.textStrong} />,
+            content: (
+              <MonthlyCalendarPanel
+                styles={styles}
+                theme={theme}
+                notedDates={dailyNotes.notedDates}
+                onSelectDate={dailyNotes.openCreateByDate}
+              />
+            ),
+          };
+        }
 
-      if (cardId === 'knowledge') {
-        return renderCardChrome(
-          cardId,
-          'Conhecimento',
-          <KnowledgePanel
-            styles={styles}
-            showTitle={false}
-            attachments={knowledgeUploads.attachments}
-            selectedFile={knowledgeUploads.selectedFile}
-            uploading={knowledgeUploads.uploading}
-            deletingAttachmentId={knowledgeUploads.deletingAttachmentId}
-            onSelectedFileChange={knowledgeUploads.setSelectedFile}
-            onUpload={knowledgeUploads.uploadKnowledgeFile}
-            onDeleteAttachment={knowledgeUploads.deleteAttachment}
-          />,
-          undefined,
-          false
-        );
-      }
+        if (cardId === 'knowledge') {
+          return {
+            cardId,
+            title: 'Conhecimento',
+            icon: <ClipboardListIcon color={theme.textStrong} />,
+            content: (
+              <KnowledgePanel
+                styles={styles}
+                showTitle={false}
+                attachments={knowledgeUploads.attachments}
+                selectedFile={knowledgeUploads.selectedFile}
+                uploading={knowledgeUploads.uploading}
+                deletingAttachmentId={knowledgeUploads.deletingAttachmentId}
+                onSelectedFileChange={knowledgeUploads.setSelectedFile}
+                onUpload={knowledgeUploads.uploadKnowledgeFile}
+                onDeleteAttachment={knowledgeUploads.deleteAttachment}
+              />
+            ),
+          };
+        }
 
-      if (cardId === 'token') {
-        return renderCardChrome(
-          cardId,
-          'Token',
-          <TokenPanel
-            styles={styles}
-            theme={theme}
-            showTitle={false}
-            createdToken={gptToken.createdToken}
-            tokenCopied={gptToken.tokenCopied}
-            copyingDisabled={!gptToken.createdToken || gptToken.savingToken}
-            onCopyToken={gptToken.copyCurrentToken}
-          />,
-          undefined,
-          false
-        );
-      }
+        if (cardId === 'token') {
+          return {
+            cardId,
+            title: 'Token',
+            icon: <KeyIcon color={theme.textStrong} />,
+            content: (
+              <TokenPanel
+                styles={styles}
+                theme={theme}
+                showTitle={false}
+                createdToken={gptToken.createdToken}
+                tokenCopied={gptToken.tokenCopied}
+                copyingDisabled={!gptToken.createdToken || gptToken.savingToken}
+                onCopyToken={gptToken.copyCurrentToken}
+              />
+            ),
+          };
+        }
 
-      if (cardId === 'calendar') {
-        return renderCardChrome(
-          cardId,
-          'Calendário',
-          <MonthlyCalendarPanel
-            styles={styles}
-            theme={theme}
-            notedDates={dailyNotes.notedDates}
-            onSelectDate={dailyNotes.openCreateByDate}
-          />,
-          undefined,
-          false
-        );
-      }
+        return null;
+      })
+      .filter(Boolean) as Array<{ cardId: DashboardCardId; title: string; icon: ReactNode; content: ReactNode }>;
 
-      return null;
-    });
+    return (
+      <section style={{ ...styles.leftPanel, padding: isCompact ? '12px' : '16px', gap: '4px' }}>
+        {sections.map((section) => {
+          const collapsed = layoutPrefs.collapsedCards[section.cardId];
+          return (
+            <div
+              key={section.cardId}
+              style={{
+                paddingBottom: '8px',
+                marginBottom: '8px',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => layoutPrefs.toggleCardCollapsed(section.cardId)}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  background: 'transparent',
+                  padding: '8px 8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '10px',
+                  cursor: 'pointer',
+                }}
+                aria-expanded={!collapsed}
+                aria-controls={`sidebar-section-${section.cardId}`}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '24px',
+                      height: '24px',
+                      transform: 'scale(1.25)',
+                      transformOrigin: 'center',
+                    }}
+                  >
+                    <span style={{ display: 'inline-flex' }}>{section.icon}</span>
+                  </span>
+                  <span style={sectionTitleStyle}>{section.title}</span>
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ChevronIcon collapsed={collapsed} color={theme.textStrong} />
+                </span>
+              </button>
+
+              {!collapsed ? (
+                <div id={`sidebar-section-${section.cardId}`} style={{ padding: '2px 8px 4px 10px' }}>
+                  {section.content}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </section>
+    );
   }
 
   const mainHeaderActions =
@@ -509,11 +635,21 @@ export default function DashboardPage() {
       styles={styles}
       header={
         <DashboardHeader
-          appName="Planttô"
+          greetingName={greetingName}
+          avatarUrl={profileForm.profile?.avatar_url || ''}
           themeMode={themeMode}
           styles={styles}
           theme={theme}
           navCollapsed={navPanelCollapsed}
+          headerNav={
+            <LibraryQuickNav
+              styles={styles}
+              variant="horizontal"
+              activeView={layoutPrefs.mainTab}
+              iconColor={theme.name === 'dark' ? theme.textStrong : '#1f1b14'}
+              onChangeView={(view) => layoutPrefs.setMainTab(view)}
+            />
+          }
           onToggleNavPanel={() => setNavPanelCollapsed((current) => !current)}
           onToggleTheme={toggleTheme}
           onLogout={logout}
@@ -530,7 +666,7 @@ export default function DashboardPage() {
               ...styles.zoneNav,
               gridColumn: isCompact ? '1' : isWide ? '1' : '2',
             }}
-            data-planto-scrollbar="sidebar"
+            data-planto-scrollbar="sidebar-hidden"
           >
             {renderNavZoneCards()}
           </aside>
@@ -546,18 +682,18 @@ export default function DashboardPage() {
               : isCompact
               ? '1'
               : '1',
-          }}
+            }}
         >
           {layoutPrefs.cardOrder.main.map((cardId) => {
             if (cardId !== 'main_content') return null;
             const titles: Record<typeof layoutPrefs.mainTab, string> = {
-              forms: 'Questionários',
+              forms: 'Contexto de Marca',
               editorial: 'Editorial',
               gpt_entries: 'Entradas GPT',
               daily_notes: 'Notas diárias',
               profile: 'Perfil',
             };
-            return renderCardChrome(cardId, titles[layoutPrefs.mainTab], renderMainPanelBody(), mainHeaderActions);
+            return renderCardChrome(cardId, titles[layoutPrefs.mainTab], renderMainPanelBody(), mainHeaderActions, true, true);
           })}
         </main>
       </section>

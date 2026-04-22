@@ -136,6 +136,16 @@ a {
   background-clip: padding-box;
 }
 
+[data-planto-scrollbar="sidebar-hidden"] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+[data-planto-scrollbar="sidebar-hidden"]::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,

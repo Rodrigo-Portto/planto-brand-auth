@@ -68,7 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const userId = auth.user.id;
 
   try {
-    const [profile, integratedBriefing, editorialLine, contextStructure, attachments, gptEntries, gptTokens, legacyDocuments, dailyNotes] =
+    const [profile, integratedBriefing, editorialLine, contextStructure, attachments, gptTokens, legacyDocuments, dailyNotes] =
       await Promise.all([
         fetchOneById<DashboardPayload['profile']>('user_profiles', 'id', userId),
         fetchOneById<DashboardPayload['forms']['integrated_briefing']>('brand_context_responses', 'id', userId),
@@ -77,10 +77,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         fetchMany<DashboardPayload['attachments'][number]>(
           `/rest/v1/user_attachments?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`,
           'Falha ao buscar anexos.'
-        ),
-        fetchMany<DashboardPayload['gpt_entries'][number]>(
-          `/rest/v1/gpt_saved_entries?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`,
-          'Falha ao buscar entradas GPT.'
         ),
         fetchMany<DashboardPayload['gpt_tokens'][number]>(
           `/rest/v1/gpt_access_tokens?user_id=eq.${encodeURIComponent(userId)}&select=id,label,token_prefix,token_value,status,created_at,last_used_at,expires_at,revoked_at&order=created_at.desc`,
@@ -105,7 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         try {
           resolvedProfile = {
             ...resolvedProfile,
-            avatar_url: await createSignedStorageUrl(BRAND_LIBRARY_BUCKET, storagePath),
+            avatar_url: await createSignedStorageUrl(BRAND_LIBRARY_BUCKET, storagePath, 60 * 60 * 24 * 30),
           };
         } catch {
           resolvedProfile = {
@@ -135,7 +131,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       editorial_line: resolvedEditorialLine,
       context_structure: contextStructure,
       attachments,
-      gpt_entries: gptEntries,
+      gpt_entries: [],
       gpt_tokens: gptTokens,
       legacy_documents: legacyDocuments,
       daily_notes: dailyNotes,

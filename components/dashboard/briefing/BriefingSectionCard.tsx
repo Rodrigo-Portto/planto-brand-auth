@@ -6,7 +6,7 @@ import type {
   DashboardThemeColors,
   IntegratedBriefing,
 } from '../../../types/dashboard';
-import { ChevronIcon, CloseIcon, PencilIcon, SaveIcon } from '../icons';
+import { CheckIcon, ChevronIcon, CloseIcon, PencilIcon, SaveIcon } from '../icons';
 import { BriefingField } from './BriefingField';
 
 interface BriefingSectionCardProps {
@@ -16,6 +16,7 @@ interface BriefingSectionCardProps {
   collapsedPanels: CollapsedPanels;
   integratedBriefing: IntegratedBriefing;
   saveStateLabel: string;
+  showCompletedCheck: boolean;
   isEditing: boolean;
   savingSection: BriefingSectionKey | null;
   onTogglePanel: (key: keyof CollapsedPanels) => void;
@@ -32,6 +33,7 @@ export function BriefingSectionCard({
   collapsedPanels,
   integratedBriefing,
   saveStateLabel,
+  showCompletedCheck,
   isEditing,
   savingSection,
   onTogglePanel,
@@ -47,10 +49,26 @@ export function BriefingSectionCard({
       <div style={styles.formCardHeader}>
         <div>
           <h2 style={styles.briefingH2}>{section.title}</h2>
-          <p style={styles.sectionDescription}>{section.focus}</p>
-          <p style={{ ...styles.smallText, marginTop: 8 }}>{saveStateLabel}</p>
+          {saveStateLabel ? <p style={{ ...styles.smallText, marginTop: 8 }}>{saveStateLabel}</p> : null}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {!isEditing && showCompletedCheck ? (
+            <span
+              aria-label={`${section.title} completo e salvo`}
+              title={`${section.title} completo e salvo`}
+              style={{
+                width: '20px',
+                height: '20px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '999px',
+                background: 'rgba(34, 160, 85, 0.18)',
+              }}
+            >
+              <CheckIcon color="#22a055" />
+            </span>
+          ) : null}
           {isEditing ? (
             <>
               <button
@@ -99,8 +117,8 @@ export function BriefingSectionCard({
       </div>
 
       {!collapsedPanels[section.collapseKey] ? (
-        <div style={styles.formCardBody}>
-          <div style={styles.formGrid}>
+        <div style={{ ...styles.formCardBody, borderTop: 'none', paddingTop: '12px' }}>
+          <div style={styles.briefingGrid || styles.formGrid}>
             {section.fields.map((field) => (
               <BriefingField
                 key={field.key}

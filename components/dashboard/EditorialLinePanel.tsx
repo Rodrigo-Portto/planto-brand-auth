@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { DashboardStyles, DashboardThemeColors, EditorialLineRecord, EditorialLineRow } from '../../types/dashboard';
-import { PlusIcon } from './icons';
+import { CheckIcon, PlusIcon } from './icons';
 
 interface EditorialLinePanelProps {
   styles: DashboardStyles;
@@ -9,7 +9,7 @@ interface EditorialLinePanelProps {
   isEditing: boolean;
   isDirty: boolean;
   saving: boolean;
-  saveStateLabel: string;
+  showSavedCheck: boolean;
   onEdit: () => void;
   onCancel: () => void;
   onAddSlot: () => void;
@@ -46,7 +46,7 @@ export function EditorialLinePanel({
   isEditing,
   isDirty,
   saving,
-  saveStateLabel,
+  showSavedCheck,
   onEdit,
   onCancel,
   onAddSlot,
@@ -61,10 +61,10 @@ export function EditorialLinePanel({
       style={{
         ...styles.cardBlock,
         gap: '14px',
-        border: `1px solid ${theme.border}`,
-        borderRadius: '8px',
-        background: theme.name === 'light' ? '#ffffff' : theme.shell,
-        padding: '12px',
+        border: 'none',
+        borderRadius: 0,
+        background: 'transparent',
+        padding: 0,
       }}
     >
       <div style={{ ...styles.formCardHeader, padding: 0, paddingInline: contentPadding }}>
@@ -85,16 +85,31 @@ export function EditorialLinePanel({
               </button>
             </>
           ) : (
-            <button type="button" onClick={onEdit} disabled={saving} style={styles.secondaryButton}>
-              Editar
-            </button>
+            <>
+              {showSavedCheck ? (
+                <span
+                  aria-label="Editorial completo e salvo"
+                  title="Editorial completo e salvo"
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '999px',
+                    background: 'rgba(34, 160, 85, 0.18)',
+                  }}
+                >
+                  <CheckIcon color="#22a055" />
+                </span>
+              ) : null}
+              <button type="button" onClick={onEdit} disabled={saving} style={styles.secondaryButton}>
+                Editar
+              </button>
+            </>
           )}
         </div>
       </div>
-
-      <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: '12px' }} />
-
-      <p style={{ ...styles.smallText, paddingInline: contentPadding }}>{saveStateLabel}</p>
 
       <div
         style={{
@@ -153,7 +168,7 @@ export function EditorialLinePanel({
                             background: theme.name === 'light' ? '#ffffff' : theme.shellMuted,
                             boxSizing: 'border-box',
                             lineHeight: 1.45,
-                            fontSize: '0.9rem',
+                            fontSize: '0.92rem',
                           }}
                         />
                       ) : (
@@ -162,7 +177,7 @@ export function EditorialLinePanel({
                             minHeight: '112px',
                             whiteSpace: 'pre-wrap',
                             color: cellValue ? theme.text : theme.textMuted,
-                            fontSize: '0.9rem',
+                            fontSize: '0.92rem',
                             lineHeight: 1.45,
                             padding: '12px 10px',
                           }}
@@ -197,13 +212,11 @@ export function EditorialLinePanel({
         </button>
       </div>
 
-      <p style={{ ...styles.smallText, paddingInline: contentPadding }}>
-        {isEditing
-          ? isDirty
-            ? 'Há alterações prontas para salvar.'
-            : 'Modo de edição ativo.'
-          : 'Use Editar para atualizar a base estratégica de conteúdo.'}
-      </p>
+      {isEditing ? (
+        <p style={{ ...styles.smallText, paddingInline: contentPadding }}>
+          {isDirty ? 'Há alterações prontas para salvar.' : 'Modo de edição ativo.'}
+        </p>
+      ) : null}
     </section>
   );
 }

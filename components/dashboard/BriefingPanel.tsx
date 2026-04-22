@@ -2,7 +2,6 @@ import { BRIEFING_SECTIONS } from '../../lib/domain/briefing';
 import type {
   BriefingSectionKey,
   CollapsedPanels,
-  ContextStructure,
   DashboardStyles,
   DashboardThemeColors,
   FormProgress,
@@ -19,7 +18,6 @@ interface BriefingPanelProps {
   saving: boolean;
   savingSection: BriefingSectionKey | null;
   formProgress: FormProgress;
-  contextStructure: ContextStructure | null;
   brandContextCollapsed: boolean;
   sectionState: Record<BriefingSectionKey, { isSaved: boolean; isDirty: boolean; isEditing: boolean }>;
   onTogglePanel: (key: keyof CollapsedPanels) => void;
@@ -30,24 +28,24 @@ interface BriefingPanelProps {
   onSaveIntegratedBriefing: () => void;
 }
 
-function getContextStatusLabel(formProgress: FormProgress, contextStructure: ContextStructure | null) {
-  if (contextStructure?.generation_status === 'completed') {
-    return 'Contexto estruturado gerado com sucesso.';
-  }
+function toTimeValue(value?: string | null) {
+  if (!value) return 0;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
 
-  if (contextStructure?.generation_status === 'processing') {
-    return 'Gerando contexto estruturado com a OpenAI...';
-  }
+function shouldEnableContextButton(formProgress: FormProgress) {
+  const integratedSavedAt = toTimeValue(formProgress.integrated_briefing_saved_at);
+  if (!integratedSavedAt) return true;
 
-  if (contextStructure?.generation_status === 'failed') {
-    return `Falha na geracao: ${contextStructure.generation_error || 'erro desconhecido.'}`;
-  }
+  const latestSourceUpdate = Math.max(
+    toTimeValue(formProgress.profile_completed_at),
+    toTimeValue(formProgress.brand_core_saved_at),
+    toTimeValue(formProgress.human_core_saved_at),
+    toTimeValue(formProgress.editorial_line_saved_at)
+  );
 
-  if (formProgress.is_ready_for_final_save) {
-    return 'Tudo salvo. O briefing integrado pode ser processado agora.';
-  }
-
-  return 'Aguardando perfil, linha editorial, Brand Core e Human Core salvos.';
+  return latestSourceUpdate > integratedSavedAt;
 }
 
 function getSectionStatusLabel(
@@ -64,7 +62,7 @@ function getSectionStatusLabel(
 
   if (state.isEditing) return 'Editando';
   if (state.isDirty) return 'Alterado apos o ultimo save';
-  if (state.isSaved) return 'Salvo no Supabase';
+  if (state.isSaved) return '';
   if (hasAnyValueInSection) return 'Rascunho salvo (faltam campos obrigatorios)';
   return 'Nao salvo';
 }
@@ -77,7 +75,6 @@ export function BriefingPanel({
   saving,
   savingSection,
   formProgress,
-  contextStructure,
   brandContextCollapsed,
   sectionState,
   onTogglePanel,
@@ -87,6 +84,10 @@ export function BriefingPanel({
   onSaveSection,
   onSaveIntegratedBriefing,
 }: BriefingPanelProps) {
+  const canUpdateContext = shouldEnableContextButton(formProgress);
+  const hasSavedContext = Boolean(formProgress.integrated_briefing_saved_at);
+  const contextButtonLabel = hasSavedContext ? 'Atualizar contexto de marca' : 'Salvar contexto de marca';
+
   return (
     <section id="formularios-panel" style={{ ...styles.centerPanel, padding: 0 }}>
       <BriefingIntro styles={styles} collapsed={brandContextCollapsed} />
@@ -100,6 +101,7 @@ export function BriefingPanel({
           collapsedPanels={collapsedPanels}
           integratedBriefing={integratedBriefing}
           saveStateLabel={getSectionStatusLabel(section.key, integratedBriefing, sectionState)}
+          showCompletedCheck={sectionState[section.key].isSaved && !sectionState[section.key].isDirty}
           isEditing={sectionState[section.key].isEditing}
           savingSection={savingSection}
           onTogglePanel={onTogglePanel}
@@ -111,32 +113,22 @@ export function BriefingPanel({
       ))}
 
       <div style={{ display: 'grid', gap: 10 }}>
-        <p style={styles.smallText}>{getContextStatusLabel(formProgress, contextStructure)}</p>
         <button
-          disabled={saving || !formProgress.is_ready_for_final_save}
-          style={styles.primaryButton}
+          disabled={saving || !formProgress.is_ready_for_final_save || !canUpdateContext}
+          style={{
+            ...styles.primaryButton,
+            width: 'fit-content',
+            minHeight: '34px',
+            padding: '6px 12px',
+            fontSize: '0.82rem',
+            justifySelf: 'start',
+          }}
           onClick={onSaveIntegratedBriefing}
           type="button"
         >
-          {saving ? 'Processando...' : 'Salvar briefing integrado'}
+          {saving ? 'Processando...' : contextButtonLabel}
         </button>
       </div>
-
-      {formProgress.integrated_briefing_saved_at ? (
-        <p style={styles.smallText}>
-          Briefing integrado salvo em {new Date(formProgress.integrated_briefing_saved_at).toLocaleString('pt-BR')}
-        </p>
-      ) : null}
-
-      {contextStructure?.model ? <p style={styles.smallText}>Modelo: {contextStructure.model}</p> : null}
-      {contextStructure?.prompt_version ? (
-        <p style={styles.smallText}>Versao do prompt: {contextStructure.prompt_version}</p>
-      ) : null}
-      {contextStructure?.generated_at ? (
-        <p style={styles.smallText}>
-          Ultima geracao: {new Date(contextStructure.generated_at).toLocaleString('pt-BR')}
-        </p>
-      ) : null}
     </section>
   );
 }

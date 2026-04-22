@@ -176,6 +176,51 @@ function parseDailyNotePayload(payload: unknown) {
   };
 }
 
+function resolveNoteDate(value: unknown) {
+  const candidate = String(value || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(candidate)) {
+    return candidate;
+  }
+
+  return new Date().toISOString().slice(0, 10);
+}
+
+function parseGptEntryAsDailyNote(payload: unknown) {
+  const input = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
+  const contentJson =
+    input.content_json && typeof input.content_json === 'object' ? (input.content_json as Record<string, unknown>) : {};
+  const title = String(input.title || '').trim() || 'Entrada GPT';
+  const content = String(input.content_text || contentJson.text || input.content || '').trim();
+  const tag = String(input.entry_type || input.tag || '').trim();
+
+  if (!content) {
+    throw new Error('Conteudo da entrada e obrigatorio.');
+  }
+
+  return {
+    note_date: resolveNoteDate(input.note_date),
+    note_data: {
+      title,
+      content,
+      tag,
+    },
+  };
+}
+
+function mapDailyNoteToGptEntry(note: DailyNote): GptEntry {
+  return {
+    id: note.id,
+    entry_type: note.note_data?.tag || 'note',
+    title: note.note_data?.title || 'Entrada GPT',
+    content_json: {
+      text: note.note_data?.content || '',
+    },
+    source: 'daily_notes',
+    created_at: note.created_at || null,
+    updated_at: note.updated_at || null,
+  };
+}
+
 async function resolveProfileAvatarUrl(profile: Profile): Promise<Profile> {
   const avatarValue = String(profile?.avatar_url || '').trim();
   if (!avatarValue) return profile;
@@ -184,7 +229,7 @@ async function resolveProfileAvatarUrl(profile: Profile): Promise<Profile> {
   if (!storagePath) return profile;
 
   try {
-    const signedUrl = await createSignedStorageUrl(BRAND_LIBRARY_BUCKET, storagePath);
+    const signedUrl = await createSignedStorageUrl(BRAND_LIBRARY_BUCKET, storagePath, 60 * 60 * 24 * 30);
     return { ...profile, avatar_url: signedUrl };
   } catch {
     return { ...profile, avatar_url: '' };
@@ -337,7 +382,7 @@ export default async function handler(
         }
 
         const { response, data } = await supabaseRest(
-          `/rest/v1/gpt_saved_entries?id=eq.${encodeURIComponent(entryId)}&user_id=eq.${encodeURIComponent(userId)}`,
+          `/rest/v1/daily_notes?id=eq.${encodeURIComponent(entryId)}&user_id=eq.${encodeURIComponent(userId)}`,
           {
             method: 'DELETE',
             headers: { Prefer: 'return=representation' },
@@ -345,7 +390,7 @@ export default async function handler(
         );
 
         if (!response.ok) {
-          throw new Error(extractErrorMessage(data, 'Falha ao excluir entrada GPT.'));
+          throw new Error(extractErrorMessage(data, 'Falha ao excluir nota diaria.'));
         }
 
         return res.status(200).json({ success: true });
@@ -357,16 +402,15 @@ export default async function handler(
           return res.status(400).json({ error: 'ID da entrada e obrigatorio para edicao.' });
         }
 
+        const parsed = parseGptEntryAsDailyNote(payload);
         const row = {
-          entry_type: payload?.entry_type || 'note',
-          title: payload?.title || 'Entrada GPT',
-          content_json: payload?.content_json || null,
-          source: payload?.source || 'dashboard',
+          note_date: parsed.note_date,
+          note_data: parsed.note_data,
           updated_at: new Date().toISOString(),
         };
 
         const { response, data } = await supabaseRest(
-          `/rest/v1/gpt_saved_entries?id=eq.${encodeURIComponent(entryId)}&user_id=eq.${encodeURIComponent(userId)}`,
+          `/rest/v1/daily_notes?id=eq.${encodeURIComponent(entryId)}&user_id=eq.${encodeURIComponent(userId)}`,
           {
             method: 'PATCH',
             headers: { Prefer: 'return=representation' },
@@ -375,32 +419,33 @@ export default async function handler(
         );
 
         if (!response.ok) {
-          throw new Error(extractErrorMessage(data, 'Falha ao atualizar entrada GPT.'));
+          throw new Error(extractErrorMessage(data, 'Falha ao atualizar nota diaria.'));
         }
 
-        return res.status(200).json({ success: true, entry: Array.isArray(data) ? (data[0] as GptEntry) : null });
+        const note = Array.isArray(data) ? (data[0] as DailyNote) : null;
+        return res.status(200).json({ success: true, entry: note ? mapDailyNoteToGptEntry(note) : null });
       }
 
+      const parsed = parseGptEntryAsDailyNote(payload);
       const row = {
         user_id: userId,
-        entry_type: payload?.entry_type || 'note',
-        title: payload?.title || 'Entrada GPT',
-        content_json: payload?.content_json || null,
-        source: payload?.source || 'dashboard',
+        note_date: parsed.note_date,
+        note_data: parsed.note_data,
         updated_at: new Date().toISOString(),
       };
 
-      const { response, data } = await supabaseRest('/rest/v1/gpt_saved_entries', {
+      const { response, data } = await supabaseRest('/rest/v1/daily_notes', {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
         body: row,
       });
 
       if (!response.ok) {
-        throw new Error(extractErrorMessage(data, 'Falha ao salvar entrada GPT.'));
+        throw new Error(extractErrorMessage(data, 'Falha ao salvar nota diaria.'));
       }
 
-      return res.status(200).json({ success: true, entry: Array.isArray(data) ? (data[0] as GptEntry) : null });
+      const note = Array.isArray(data) ? (data[0] as DailyNote) : null;
+      return res.status(200).json({ success: true, entry: note ? mapDailyNoteToGptEntry(note) : null });
     }
 
     if (resource === 'legacy_document') {

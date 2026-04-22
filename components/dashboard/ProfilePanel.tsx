@@ -6,7 +6,6 @@ interface ProfilePanelProps {
   styles: DashboardStyles;
   theme: DashboardThemeColors;
   profile: Profile;
-  greetingName: string;
   editing: boolean;
   showHeader?: boolean;
   showEditButton?: boolean;
@@ -22,7 +21,6 @@ export function ProfilePanel({
   styles,
   theme,
   profile,
-  greetingName,
   editing,
   showHeader = true,
   showEditButton = true,
@@ -71,7 +69,6 @@ export function ProfilePanel({
               <CameraIcon color={theme.textStrong} />
             </span>
           </button>
-          <p style={styles.avatarGreeting}>Olá, {greetingName}!</p>
         </div>
 
         <input

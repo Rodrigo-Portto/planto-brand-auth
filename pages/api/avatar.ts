@@ -107,7 +107,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error(extractErrorMessage(uploadData, 'Falha ao enviar avatar para o storage.'));
     }
 
-    const avatarUrl = await createSignedStorageUrl(BUCKET, storagePath);
+    const avatarUrl = await createSignedStorageUrl(BUCKET, storagePath, 60 * 60 * 24 * 30);
 
     const { response, data } = await supabaseRest('/rest/v1/user_profiles?on_conflict=id', {
       method: 'POST',

@@ -209,6 +209,24 @@ export function PlusIcon({ color }: IconProps) {
   );
 }
 
+export function DotsVerticalIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+      <circle cx="12" cy="6" r="1.35" fill={color} />
+      <circle cx="12" cy="12" r="1.35" fill={color} />
+      <circle cx="12" cy="18" r="1.35" fill={color} />
+    </svg>
+  );
+}
+
+export function CheckIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path d="m5.5 12.5 4 4L18.5 7.5" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function PanelLeftIcon({ color }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">

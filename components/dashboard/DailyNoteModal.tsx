@@ -45,6 +45,9 @@ export function DailyNoteModal({
   return (
     <div
       role="presentation"
+      onClick={() => {
+        if (!saving) onCancel();
+      }}
       style={{
         position: 'fixed',
         inset: 0,
@@ -59,59 +62,85 @@ export function DailyNoteModal({
         role="dialog"
         aria-modal="true"
         aria-label={isEditing ? 'Editar nota diaria' : 'Nova nota diaria'}
+        onClick={(event) => event.stopPropagation()}
         style={{
           ...styles.formCard,
           width: 'min(92vw, 640px)',
           display: 'grid',
-          gap: '10px',
+          gap: '12px',
+          padding: '30px',
           border: `1px solid ${theme.borderStrong}`,
-          boxShadow: theme.name === 'light' ? '0 26px 46px rgba(22, 16, 8, 0.17)' : '0 22px 44px rgba(0, 0, 0, 0.48)',
+          boxShadow: 'none',
+          minHeight: '440px',
+          gridTemplateRows: 'auto 1fr auto',
         }}
       >
-        <header style={{ display: 'grid', gap: '2px' }}>
-          <h3 style={{ margin: 0, color: theme.textStrong }}>{isEditing ? 'Editar nota' : 'Nova nota diária'}</h3>
-          <p style={{ ...styles.smallText, margin: 0 }}>Data: {formatDate(noteDate)}</p>
-        </header>
-
-        <label style={styles.fieldLabel}>
-          Título
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
           <input
             type="text"
             value={title}
             onChange={(event) => onTitleChange(event.target.value)}
-            style={styles.input}
+            style={{
+              ...styles.input,
+              border: 'none',
+              borderRadius: 0,
+              padding: 0,
+              background: 'transparent',
+              color: theme.textStrong,
+              fontSize: '1.18rem',
+              fontWeight: 700,
+              minWidth: 0,
+              flex: 1,
+            }}
             placeholder="Título da nota"
           />
-        </label>
+          <p style={{ ...styles.smallText, margin: 0, textAlign: 'right', whiteSpace: 'nowrap' }}>{formatDate(noteDate)}</p>
+        </div>
 
-        <label style={styles.fieldLabel}>
-          Tag
+        <textarea
+          value={content}
+          onChange={(event) => onContentChange(event.target.value)}
+          style={{
+            ...styles.textarea,
+            minHeight: '100%',
+            height: '100%',
+            border: 'none',
+            borderRadius: 0,
+            padding: 0,
+            background: 'transparent',
+            resize: 'vertical',
+          }}
+          placeholder="Escreva sua nota..."
+        />
+
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px' }}>
           <input
             type="text"
             value={tag}
             onChange={(event) => onTagChange(event.target.value)}
-            style={styles.input}
-            placeholder="Ex.: Planejamento"
+            placeholder="Tag da nota"
+            style={{
+              ...styles.input,
+              width: 'fit-content',
+              minWidth: '150px',
+              maxWidth: '100%',
+              borderRadius: '999px',
+              border: `1px solid ${theme.borderAccent}`,
+              color: theme.accentMuted,
+              background: theme.accentSoft,
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              padding: '6px 12px',
+            }}
           />
-        </label>
-
-        <label style={styles.fieldLabel}>
-          Conteúdo
-          <textarea
-            value={content}
-            onChange={(event) => onContentChange(event.target.value)}
-            style={{ ...styles.textarea, minHeight: '180px' }}
-            placeholder="Escreva sua nota..."
-          />
-        </label>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <button type="button" style={styles.secondaryButton} onClick={onCancel} disabled={saving}>
-            Cancelar
-          </button>
-          <button type="button" style={styles.primaryButton} onClick={onSave} disabled={saving}>
-            {saving ? 'Salvando...' : 'Salvar'}
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <button type="button" style={styles.secondaryButton} onClick={onCancel} disabled={saving}>
+              Cancelar
+            </button>
+            <button type="button" style={styles.primaryButton} onClick={onSave} disabled={saving}>
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
         </div>
       </section>
     </div>

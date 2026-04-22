@@ -41,7 +41,7 @@ export function MonthlyCalendarPanel({ styles, theme, notedDates = [], onSelectD
   const days = useMemo(() => {
     const first = startOfMonth(cursor);
     const firstWeekday = first.getDay();
-    const startOffset = (firstWeekday + 6) % 7;
+    const startOffset = firstWeekday;
     const monthDays = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
     const cells: Array<{ day: number | null; date: Date | null }> = [];
 
@@ -63,72 +63,109 @@ export function MonthlyCalendarPanel({ styles, theme, notedDates = [], onSelectD
 
   return (
     <section style={styles.cardBlock}>
-      <div style={styles.formCardHeader}>
-        <button type="button" style={styles.cardIconButton} onClick={() => setCursor((current) => addMonths(current, -1))}>
-          {'<'}
-        </button>
-        <h3 style={{ ...styles.cardTitle, textTransform: 'capitalize' }}>{monthLabel}</h3>
-        <button type="button" style={styles.cardIconButton} onClick={() => setCursor((current) => addMonths(current, 1))}>
-          {'>'}
-        </button>
+      <div style={{ ...styles.formCardHeader, alignItems: 'center', borderBottom: 'none', paddingBottom: 0 }}>
+        <h3 style={{ ...styles.cardTitle, textTransform: 'capitalize', margin: 0, textAlign: 'left' }}>{monthLabel}</h3>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginLeft: 'auto' }}>
+          <button
+            type="button"
+            onClick={() => setCursor((current) => addMonths(current, -1))}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              color: theme.textMuted,
+              cursor: 'pointer',
+              fontSize: '1.2rem',
+              width: '30px',
+              height: '30px',
+              padding: 0,
+            }}
+            aria-label="Mês anterior"
+            title="Mês anterior"
+          >
+            {'‹'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCursor((current) => addMonths(current, 1))}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              color: theme.textMuted,
+              cursor: 'pointer',
+              fontSize: '1.2rem',
+              width: '30px',
+              height: '30px',
+              padding: 0,
+            }}
+            aria-label="Próximo mês"
+            title="Próximo mês"
+          >
+            {'›'}
+          </button>
+        </div>
       </div>
 
-      <div style={styles.formCardBody}>
+      <div style={{ display: 'grid', gap: '10px', paddingTop: '6px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '6px' }}>
-          {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((dayName) => (
-            <div key={dayName} style={{ ...styles.smallText, textAlign: 'center', fontWeight: 700 }}>
+          {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((dayName, index) => (
+            <div key={`${dayName}-${index}`} style={{ ...styles.smallText, textAlign: 'center', fontWeight: 700 }}>
               {dayName}
             </div>
           ))}
 
-          {days.map((cell, index) => {
-            if (!cell.date || !cell.day) {
-              return <div key={`${cell.day || 'empty'}-${index}`} style={{ minHeight: '34px' }} />;
-            }
+          <div
+            style={{
+              gridColumn: '1 / -1',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+              gap: '6px',
+            }}
+          >
+            {days.map((cell, index) => {
+              const isToday = Boolean(cell.date && sameDate(cell.date, today));
+              const dateKey = cell.date ? toIsoDate(cell.date) : '';
+              const hasNotes = dateKey ? notedDateKeys.has(dateKey) : false;
 
-            const isToday = sameDate(cell.date, today);
-            const dateKey = toIsoDate(cell.date);
-            const hasNotes = notedDateKeys.has(dateKey);
-
-            return (
-              <button
-                key={`${cell.day}-${index}`}
-                type="button"
-                onClick={() => onSelectDate?.(cell.date as Date)}
-                style={{
-                  minHeight: '34px',
-                  borderRadius: '6px',
-                  border: `1px solid ${isToday ? theme.borderAccent : theme.border}`,
-                  background: isToday ? theme.accentSoft : theme.shellMuted,
-                  color: theme.text,
-                  display: 'grid',
-                  placeItems: 'center',
-                  fontSize: '0.82rem',
-                  fontWeight: isToday ? 700 : 500,
-                  position: 'relative',
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
-                aria-label={`Adicionar nota para ${cell.date.toLocaleDateString('pt-BR')}`}
-                title="Adicionar nota"
-              >
-                {cell.day}
-                {hasNotes ? (
-                  <span
+              if (!cell.date || !cell.day) {
+                return (
+                  <div
+                    key={`${cell.day || 'empty'}-${index}`}
                     style={{
-                      position: 'absolute',
-                      bottom: '4px',
-                      right: '4px',
-                      width: '5px',
-                      height: '5px',
-                      borderRadius: '999px',
-                      background: theme.accent,
+                      minHeight: '40px',
+                      background: 'transparent',
                     }}
                   />
-                ) : null}
-              </button>
-            );
-          })}
+                );
+              }
+
+              return (
+                <button
+                  key={`${cell.day}-${index}`}
+                  type="button"
+                  onClick={() => onSelectDate?.(cell.date as Date)}
+                  style={{
+                    minHeight: '40px',
+                    border: 'none',
+                    borderRadius: '10px',
+                    background: isToday ? '#1d4ed8' : 'transparent',
+                    color: isToday ? '#ffffff' : theme.text,
+                    display: 'grid',
+                    placeItems: 'center',
+                    fontSize: '0.82rem',
+                    fontWeight: isToday ? 700 : 500,
+                    position: 'relative',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                  aria-label={`Adicionar nota para ${cell.date.toLocaleDateString('pt-BR')}`}
+                  title="Adicionar nota"
+                >
+                  {cell.day}
+                  {hasNotes ? null : null}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>

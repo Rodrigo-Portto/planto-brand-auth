@@ -149,6 +149,14 @@ export default function HomePage() {
 }
 
 function createStyles(isCompact: boolean): Record<string, CSSProperties> {
+  const typeScale = {
+    h1: isCompact ? '1.5rem' : '1.6rem',
+    h2: '1.12rem',
+    body: '0.92rem',
+    small: '0.82rem',
+    meta: '0.75rem',
+  };
+
   return {
     main: {
       minHeight: '100vh',
@@ -179,7 +187,7 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
     kicker: {
       margin: 0,
       color: 'var(--planto-light-muted)',
-      fontSize: '0.75rem',
+      fontSize: typeScale.meta,
       fontWeight: 650,
       letterSpacing: '0.08em',
       textTransform: 'uppercase',
@@ -194,7 +202,7 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
     },
     title: {
       margin: '0 0 2px',
-      fontSize: isCompact ? '1.3rem' : '1.6rem',
+      fontSize: typeScale.h1,
       lineHeight: 1.2,
       letterSpacing: '-0.01em',
       color: 'var(--planto-light-text-strong)',
@@ -202,18 +210,18 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
     subtitle: {
       margin: 0,
       color: 'var(--planto-light-muted)',
-      fontSize: isCompact ? '0.88rem' : '0.95rem',
+      fontSize: typeScale.body,
       lineHeight: 1.6,
     },
     cardTitle: {
       margin: 0,
-      fontSize: isCompact ? '1.06rem' : '1.2rem',
+      fontSize: typeScale.h2,
       color: 'var(--planto-light-text-strong)',
     },
     cardSubtitle: {
       margin: '0 0 6px',
       color: 'var(--planto-light-muted)',
-      fontSize: isCompact ? '0.84rem' : '0.9rem',
+      fontSize: typeScale.body,
     },
     form: {
       display: 'grid',
@@ -222,7 +230,7 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
     label: {
       display: 'grid',
       gap: '6px',
-      fontSize: '0.82rem',
+      fontSize: typeScale.small,
       color: 'var(--planto-light-muted)',
       fontWeight: 600,
     },
@@ -232,7 +240,7 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       gap: '8px',
       marginTop: '2px',
       color: 'var(--planto-light-muted)',
-      fontSize: '0.82rem',
+      fontSize: typeScale.small,
       fontWeight: 600,
     },
     checkbox: {
@@ -247,7 +255,7 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       color: 'var(--planto-light-text)',
       borderRadius: '8px',
       padding: '10px',
-      fontSize: '0.92rem',
+      fontSize: typeScale.body,
       outline: 'none',
       width: '100%',
       minWidth: 0,
@@ -265,7 +273,7 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
     },
     message: {
       marginTop: '8px',
-      fontSize: '0.88rem',
+      fontSize: typeScale.body,
       color: 'var(--planto-light-danger-text)',
       background: 'var(--planto-light-danger-bg)',
       border: '1px solid var(--planto-light-border)',

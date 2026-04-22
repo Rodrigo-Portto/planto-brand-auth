@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { DashboardStyles, DashboardThemeColors, DailyNote } from '../../types/dashboard';
-import { PencilIcon, TrashIcon } from './icons';
+import { DotsVerticalIcon } from './icons';
 
 interface DailyNotesPanelProps {
   styles: DashboardStyles;
@@ -20,8 +21,14 @@ function formatDate(value?: string | null) {
 }
 
 export function DailyNotesPanel({ styles, theme, notes, deletingId, onEdit, onDelete }: DailyNotesPanelProps) {
+  const [openMenuId, setOpenMenuId] = useState('');
+
   return (
-    <section id="daily-notes-panel" style={{ ...styles.centerPanel, padding: 0, gap: '10px' }}>
+    <section
+      id="daily-notes-panel"
+      style={{ ...styles.centerPanel, padding: 0, gap: '10px' }}
+      onClick={() => setOpenMenuId('')}
+    >
       {notes.length === 0 ? (
         <article style={{ ...styles.formCard, padding: '18px' }}>
           <p style={{ ...styles.smallText, margin: 0 }}>Nenhuma nota diária salva ainda.</p>
@@ -40,65 +47,134 @@ export function DailyNotesPanel({ styles, theme, notes, deletingId, onEdit, onDe
             return (
               <article
                 key={note.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => onEdit(note)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onEdit(note);
+                  }
+                }}
                 style={{
                   ...styles.formCard,
                   display: 'grid',
-                  gap: '10px',
-                  minHeight: '160px',
-                  alignContent: 'start',
+                  gridTemplateRows: 'auto 1fr auto',
+                  gap: '12px',
+                  height: '220px',
+                  alignContent: 'stretch',
+                  cursor: 'pointer',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'flex-start' }}>
                   <div style={{ minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: '0.72rem', color: theme.textMuted }}>{formatDate(note.note_date)}</p>
-                    <h3 style={{ margin: '4px 0 0', fontSize: '0.95rem', color: theme.textStrong, overflowWrap: 'anywhere' }}>
+                    <h3 style={{ margin: 0, fontSize: '1rem', color: theme.textStrong, overflowWrap: 'anywhere' }}>
                       {String(noteData.title || 'Sem titulo')}
                     </h3>
                   </div>
-                  <div style={{ display: 'inline-flex', gap: '6px' }}>
+                  <div style={{ position: 'relative', display: 'inline-flex' }} onClick={(event) => event.stopPropagation()}>
                     <button
                       type="button"
-                      style={styles.cardIconButton}
-                      onClick={() => onEdit(note)}
-                      aria-label="Editar nota"
-                      title="Editar nota"
+                      style={{
+                        ...styles.cardIconButton,
+                        border: 'none',
+                        background: 'transparent',
+                        width: '24px',
+                        minWidth: '24px',
+                        height: '24px',
+                      }}
+                      onClick={() => setOpenMenuId((current) => (current === note.id ? '' : note.id))}
+                      aria-label="Ações da nota"
+                      title="Ações da nota"
                     >
-                      <PencilIcon color={theme.textStrong} />
+                      <DotsVerticalIcon color={theme.textStrong} />
                     </button>
-                    <button
-                      type="button"
-                      style={styles.dangerIconButton}
-                      onClick={() => onDelete(note.id)}
-                      disabled={deletingId === note.id}
-                      aria-label="Excluir nota"
-                      title="Excluir nota"
-                    >
-                      <TrashIcon color={theme.dangerText} />
-                    </button>
+
+                    {openMenuId === note.id ? (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          right: 0,
+                          top: 'calc(100% + 6px)',
+                          zIndex: 5,
+                          minWidth: '128px',
+                          border: `1px solid ${theme.borderStrong}`,
+                          borderRadius: '10px',
+                          background: theme.name === 'light' ? '#ffffff' : theme.shell,
+                          display: 'grid',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenMenuId('');
+                            onEdit(note);
+                          }}
+                          style={{ ...styles.secondaryButton, border: 'none', borderRadius: 0, justifyContent: 'flex-start' }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenMenuId('');
+                            onDelete(note.id);
+                          }}
+                          disabled={deletingId === note.id}
+                          style={{
+                            ...styles.secondaryButton,
+                            border: 'none',
+                            borderRadius: 0,
+                            justifyContent: 'flex-start',
+                            color: theme.dangerText,
+                          }}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
-                {String(noteData.tag || '').trim() ? (
-                  <p
-                    style={{
-                      margin: 0,
-                      width: 'fit-content',
-                      borderRadius: '999px',
-                      border: `1px solid ${theme.borderAccent}`,
-                      color: theme.accentMuted,
-                      background: theme.accentSoft,
-                      fontSize: '0.72rem',
-                      fontWeight: 600,
-                      padding: '2px 8px',
-                    }}
-                  >
-                    {String(noteData.tag)}
-                  </p>
-                ) : null}
-
-                <p style={{ margin: 0, color: theme.text, lineHeight: 1.45, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                <p
+                  style={{
+                    margin: 0,
+                    color: theme.text,
+                    fontSize: '0.92rem',
+                    lineHeight: 1.45,
+                    overflowWrap: 'anywhere',
+                    overflow: 'hidden',
+                    display: '-webkit-box',
+                    WebkitBoxOrient: 'vertical',
+                    WebkitLineClamp: 5,
+                  }}
+                >
                   {String(noteData.content || '')}
                 </p>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '8px' }}>
+                  {String(noteData.tag || '').trim() ? (
+                    <p
+                      style={{
+                        margin: 0,
+                        width: 'fit-content',
+                        borderRadius: '999px',
+                        border: `1px solid ${theme.borderAccent}`,
+                        color: theme.accentMuted,
+                        background: theme.accentSoft,
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                      }}
+                    >
+                      {String(noteData.tag)}
+                    </p>
+                  ) : (
+                    <span />
+                  )}
+                  <p style={{ margin: 0, fontSize: '0.82rem', color: theme.textMuted }}>{formatDate(note.note_date)}</p>
+                </div>
               </article>
             );
           })}
