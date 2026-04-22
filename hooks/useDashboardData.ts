@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchDashboardData } from '../lib/api/dashboard';
 import { normalizeBriefingRecord } from '../lib/domain/briefing';
 import { createDefaultEditorialLineRecord } from '../lib/domain/editorialLine';
@@ -40,14 +40,21 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
   const [dailyNotes, setDailyNotes] = useState<DailyNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const onTokenInvalidRef = useRef(onTokenInvalid);
 
-  const refresh = useCallback(async () => {
+  useEffect(() => {
+    onTokenInvalidRef.current = onTokenInvalid;
+  }, [onTokenInvalid]);
+
+  const refresh = useCallback(async (options?: { silent?: boolean }) => {
     if (!token) {
       setLoading(false);
       return;
     }
 
-    setLoading(true);
+    if (!options?.silent) {
+      setLoading(true);
+    }
     setError('');
 
     try {
@@ -72,14 +79,16 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro ao carregar dados.';
       if (isSessionTokenInvalidMessage(message)) {
-        onTokenInvalid();
+        onTokenInvalidRef.current();
         return;
       }
       setError(message);
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
-  }, [token, onTokenInvalid]);
+  }, [token]);
 
   useEffect(() => {
     void refresh();

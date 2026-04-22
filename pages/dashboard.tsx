@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
 import { useRouter } from 'next/router';
 import { BriefingPanel } from '../components/dashboard/BriefingPanel';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
@@ -110,12 +110,14 @@ export default function DashboardPage() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  const handleTokenInvalid = useCallback(() => {
+    resetSession();
+    void router.replace('/');
+  }, [resetSession, router]);
+
   const dashboardData = useDashboardData({
     token,
-    onTokenInvalid: () => {
-      resetSession();
-      router.replace('/');
-    },
+    onTokenInvalid: handleTokenInvalid,
   });
 
   useEffect(() => {
@@ -208,10 +210,8 @@ export default function DashboardPage() {
 
     const syncFromBackend = () => {
       if (!canAutoSyncDashboard) return;
-      void dashboardData.refresh();
+      void dashboardData.refresh({ silent: true });
     };
-
-    syncFromBackend();
 
     const interval = window.setInterval(syncFromBackend, 15000);
     const handleFocus = () => syncFromBackend();
