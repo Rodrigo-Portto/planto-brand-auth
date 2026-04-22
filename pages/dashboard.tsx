@@ -7,6 +7,7 @@ import { EditorialLinePanel } from '../components/dashboard/EditorialLinePanel';
 import { GptEntriesPanel } from '../components/dashboard/GptEntriesPanel';
 import { KnowledgePanel } from '../components/dashboard/KnowledgePanel';
 import { LibraryQuickNav } from '../components/dashboard/LibraryQuickNav';
+import { MonthlyCalendarPanel } from '../components/dashboard/MonthlyCalendarPanel';
 import { ProfilePanel } from '../components/dashboard/ProfilePanel';
 import { TokenPanel } from '../components/dashboard/TokenPanel';
 import { CloseIcon, PencilIcon, SaveIcon } from '../components/dashboard/icons';
@@ -167,10 +168,11 @@ export default function DashboardPage() {
   });
 
   const greetingName = useMemo(() => {
-    if (profileForm.profile?.name) return profileForm.profile.name;
+    const fullName = [profileForm.profile?.name, profileForm.profile?.surname].filter(Boolean).join(' ').trim();
+    if (fullName) return fullName;
     if (dashboardData.user?.email) return dashboardData.user.email;
     return 'por aqui';
-  }, [profileForm.profile?.name, dashboardData.user?.email]);
+  }, [profileForm.profile?.name, profileForm.profile?.surname, dashboardData.user?.email]);
 
   const editorialLineStatus = editorialLineForm.isDirty
     ? 'Alterada apos o ultimo save'
@@ -276,7 +278,7 @@ export default function DashboardPage() {
               onSave={editorialLineForm.saveEditorialLine}
             />
           </section>
-        ) : (
+        ) : layoutPrefs.mainTab === 'gpt_entries' ? (
           <GptEntriesPanel
             styles={styles}
             containerStyle={{ ...styles.centerPanel, padding: 0 }}
@@ -290,6 +292,32 @@ export default function DashboardPage() {
             onSaveEntryChanges={gptEntries.saveEntryChanges}
             onDeleteEntry={gptEntries.deleteEntry}
           />
+        ) : (
+          <section id="perfil-panel" style={{ ...styles.centerPanel, padding: 0, gap: 0 }}>
+            <ProfilePanel
+              styles={styles}
+              theme={theme}
+              profile={profileForm.profile}
+              greetingName={greetingName}
+              editing={profileEditing}
+              showHeader={false}
+              showEditButton={false}
+              saving={profileForm.savingProfile}
+              avatarUploading={avatarUploading}
+              onStartEdit={() => setProfileEditing(true)}
+              onProfileChange={(key, value) =>
+                profileForm.setProfile((current) => ({
+                  ...current,
+                  [key]: value,
+                }))
+              }
+              onSaveProfile={async () => {
+                await profileForm.saveProfile();
+                setProfileEditing(false);
+              }}
+              onAvatarUpload={handleAvatarUpload}
+            />
+          </section>
         )}
       </div>
     );
@@ -356,86 +384,16 @@ export default function DashboardPage() {
     });
   }
 
-  function renderMainZoneCards() {
-    const cards = layoutPrefs.cardOrder.main;
-    const mainTitleByTab: Record<typeof layoutPrefs.mainTab, string> = {
-      forms: 'Questionários',
-      editorial: 'Editorial',
-      gpt_entries: 'Entradas GPT',
-    };
-
-    return cards.map((cardId) => {
-      if (cardId !== 'main_content') return null;
-
-      return renderCardChrome(cardId, mainTitleByTab[layoutPrefs.mainTab], renderMainPanelBody());
-    });
-  }
-
   function renderSupportZoneCards() {
     const cards = layoutPrefs.cardOrder.support;
 
     return cards.map((cardId) => {
-      if (cardId === 'profile') {
+      if (cardId === 'calendar') {
         return renderCardChrome(
           cardId,
-          'Perfil',
-          <ProfilePanel
-            styles={styles}
-            theme={theme}
-            profile={profileForm.profile}
-            greetingName={greetingName}
-            editing={profileEditing}
-            showHeader={false}
-            showEditButton={false}
-            saving={profileForm.savingProfile}
-            avatarUploading={avatarUploading}
-            onStartEdit={() => setProfileEditing(true)}
-            onProfileChange={(key, value) =>
-              profileForm.setProfile((current) => ({
-                ...current,
-                [key]: value,
-              }))
-            }
-            onSaveProfile={async () => {
-              await profileForm.saveProfile();
-              setProfileEditing(false);
-            }}
-            onAvatarUpload={handleAvatarUpload}
-          />,
-          <>
-            <button
-              type="button"
-              style={styles.cardIconButton}
-              onClick={
-                profileEditing
-                  ? async () => {
-                      await profileForm.saveProfile();
-                      setProfileEditing(false);
-                    }
-                  : () => setProfileEditing(true)
-              }
-              disabled={profileForm.savingProfile || avatarUploading}
-              aria-label={profileEditing ? 'Salvar perfil' : 'Editar perfil'}
-              title={profileEditing ? 'Salvar perfil' : 'Editar perfil'}
-            >
-              {profileEditing ? <SaveIcon color={theme.textStrong} /> : <PencilIcon color={theme.textStrong} />}
-            </button>
-            {profileEditing ? (
-              <button
-                type="button"
-                style={styles.cardIconButton}
-                onClick={() => {
-                  profileForm.cancelProfileChanges();
-                  setProfileEditing(false);
-                }}
-                disabled={profileForm.savingProfile || avatarUploading}
-                aria-label="Cancelar edição do perfil"
-                title="Cancelar edição do perfil"
-              >
-                <CloseIcon color={theme.textStrong} />
-              </button>
-            ) : null}
-          </>,
+          'Calendário',
+          <MonthlyCalendarPanel styles={styles} theme={theme} />,
+          undefined,
           false
         );
       }
@@ -443,6 +401,44 @@ export default function DashboardPage() {
       return null;
     });
   }
+
+  const mainHeaderActions =
+    layoutPrefs.mainTab === 'profile' ? (
+      <>
+        <button
+          type="button"
+          style={styles.cardIconButton}
+          onClick={
+            profileEditing
+              ? async () => {
+                  await profileForm.saveProfile();
+                  setProfileEditing(false);
+                }
+              : () => setProfileEditing(true)
+          }
+          disabled={profileForm.savingProfile || avatarUploading}
+          aria-label={profileEditing ? 'Salvar perfil' : 'Editar perfil'}
+          title={profileEditing ? 'Salvar perfil' : 'Editar perfil'}
+        >
+          {profileEditing ? <SaveIcon color={theme.textStrong} /> : <PencilIcon color={theme.textStrong} />}
+        </button>
+        {profileEditing ? (
+          <button
+            type="button"
+            style={styles.cardIconButton}
+            onClick={() => {
+              profileForm.cancelProfileChanges();
+              setProfileEditing(false);
+            }}
+            disabled={profileForm.savingProfile || avatarUploading}
+            aria-label="Cancelar edição do perfil"
+            title="Cancelar edição do perfil"
+          >
+            <CloseIcon color={theme.textStrong} />
+          </button>
+        ) : null}
+      </>
+    ) : undefined;
 
   const isLoading = !sessionReady || dashboardData.loading;
 
@@ -492,7 +488,16 @@ export default function DashboardPage() {
               : '1',
           }}
         >
-          {renderMainZoneCards()}
+          {layoutPrefs.cardOrder.main.map((cardId) => {
+            if (cardId !== 'main_content') return null;
+            const titles: Record<typeof layoutPrefs.mainTab, string> = {
+              forms: 'Questionários',
+              editorial: 'Editorial',
+              gpt_entries: 'Entradas GPT',
+              profile: 'Perfil',
+            };
+            return renderCardChrome(cardId, titles[layoutPrefs.mainTab], renderMainPanelBody(), mainHeaderActions);
+          })}
         </main>
 
         {!supportPanelCollapsed ? (

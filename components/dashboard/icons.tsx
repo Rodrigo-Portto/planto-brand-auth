@@ -268,3 +268,17 @@ export function NotesIcon({ color }: IconProps) {
     </svg>
   );
 }
+
+export function UserIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <circle cx="12" cy="8" r="3.2" stroke={color} strokeWidth="1.6" />
+      <path
+        d="M5.5 19.2a6.5 6.5 0 0 1 13 0"
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}

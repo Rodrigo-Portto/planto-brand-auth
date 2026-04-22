@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import type { DashboardStyles } from '../../types/dashboard';
-import { CalendarIcon, ClipboardListIcon, NotesIcon } from './icons';
+import { CalendarIcon, ClipboardListIcon, NotesIcon, UserIcon } from './icons';
 
-type CentralView = 'forms' | 'editorial' | 'gpt_entries';
+type CentralView = 'forms' | 'editorial' | 'gpt_entries' | 'profile';
 
 interface LibraryQuickNavProps {
   styles: DashboardStyles;
@@ -13,9 +13,10 @@ interface LibraryQuickNavProps {
 }
 
 const NAV_ITEMS: Array<{ key: CentralView; label: string; icon: (color: string) => ReactNode }> = [
-  { key: 'forms', label: 'Questionário', icon: (color) => <ClipboardListIcon color={color} /> },
+  { key: 'forms', label: 'Questionários', icon: (color) => <ClipboardListIcon color={color} /> },
   { key: 'editorial', label: 'Editorial', icon: (color) => <CalendarIcon color={color} /> },
   { key: 'gpt_entries', label: 'Entradas GPT', icon: (color) => <NotesIcon color={color} /> },
+  { key: 'profile', label: 'Perfil', icon: (color) => <UserIcon color={color} /> },
 ];
 
 export function LibraryQuickNav({ styles, activeView, collapsed = false, iconColor, onChangeView }: LibraryQuickNavProps) {

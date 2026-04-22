@@ -403,6 +403,18 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       display: 'grid',
       gap: '14px',
     },
+    profileGridTwo: {
+      display: 'grid',
+      gap: '12px',
+      gridTemplateColumns: isCompact ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+      alignItems: 'start',
+    },
+    profileGridThree: {
+      display: 'grid',
+      gap: '12px',
+      gridTemplateColumns: isCompact ? '1fr' : 'repeat(3, minmax(0, 1fr))',
+      alignItems: 'start',
+    },
     label: {
       display: 'grid',
       gap: '6px',
@@ -421,11 +433,12 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       boxSizing: 'border-box',
     },
     profileInput: {
-      border: `1px solid ${colors.borderStrong}`,
-      borderRadius: '8px',
-      background: colors.name === 'light' ? '#ffffff' : colors.inputBg,
+      border: 'none',
+      borderBottom: `1px solid ${colors.borderStrong}`,
+      borderRadius: 0,
+      background: 'transparent',
       color: colors.name === 'light' ? '#1f1b14' : colors.text,
-      padding: '9px 10px',
+      padding: '8px 0 6px',
       fontSize: '0.92rem',
       width: '100%',
       outline: 'none',
@@ -713,7 +726,7 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
     avatarArea: {
       display: 'grid',
       alignItems: 'center',
-      justifyItems: 'center',
+      justifyItems: 'start',
       gap: '10px',
       padding: '4px 0 8px',
     },
@@ -753,7 +766,7 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       color: colors.textStrong,
       fontSize: '0.98rem',
       fontWeight: 700,
-      textAlign: 'center',
+      textAlign: 'left',
     },
     hiddenInput: {
       display: 'none',

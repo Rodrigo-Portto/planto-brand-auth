@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
-export type DashboardMainTab = 'forms' | 'editorial' | 'gpt_entries';
+export type DashboardMainTab = 'forms' | 'editorial' | 'gpt_entries' | 'profile';
 export type DashboardLayoutZone = 'nav' | 'main' | 'support';
-export type DashboardCardId = 'nav_links' | 'session_actions' | 'main_content' | 'profile' | 'knowledge' | 'token';
+export type DashboardCardId = 'nav_links' | 'session_actions' | 'main_content' | 'profile' | 'calendar' | 'knowledge' | 'token';
 
 interface DashboardLayoutPrefsState {
   collapsedCards: Record<DashboardCardId, boolean>;
@@ -18,13 +18,14 @@ const DEFAULT_LAYOUT_PREFS: DashboardLayoutPrefsState = {
     session_actions: false,
     main_content: false,
     profile: false,
+    calendar: false,
     knowledge: false,
     token: false,
   },
   cardOrder: {
     nav: ['nav_links', 'knowledge', 'token'],
     main: ['main_content'],
-    support: ['profile'],
+    support: ['calendar'],
   },
   mainTab: 'forms',
 };
@@ -32,7 +33,7 @@ const DEFAULT_LAYOUT_PREFS: DashboardLayoutPrefsState = {
 const ZONE_CARD_IDS: Record<DashboardLayoutZone, DashboardCardId[]> = {
   nav: ['nav_links', 'knowledge', 'token'],
   main: ['main_content'],
-  support: ['profile'],
+  support: ['calendar'],
 };
 
 function sanitizeCardOrder(zone: DashboardLayoutZone, value: unknown): DashboardCardId[] {
@@ -70,7 +71,9 @@ function normalizePrefs(value: unknown): DashboardLayoutPrefsState {
   };
 
   const mainTab: DashboardMainTab =
-    raw.mainTab === 'forms' || raw.mainTab === 'editorial' || raw.mainTab === 'gpt_entries' ? raw.mainTab : DEFAULT_LAYOUT_PREFS.mainTab;
+    raw.mainTab === 'forms' || raw.mainTab === 'editorial' || raw.mainTab === 'gpt_entries' || raw.mainTab === 'profile'
+      ? raw.mainTab
+      : DEFAULT_LAYOUT_PREFS.mainTab;
 
   return {
     collapsedCards: nextCollapsedCards,

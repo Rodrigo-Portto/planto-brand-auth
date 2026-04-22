@@ -1,5 +1,4 @@
 import { useRef, type ChangeEvent } from 'react';
-import { PROFILE_FIELDS } from '../../lib/domain/briefing';
 import type { DashboardStyles, DashboardThemeColors, Profile } from '../../types/dashboard';
 import { CameraIcon } from './icons';
 
@@ -35,6 +34,21 @@ export function ProfilePanel({
   onAvatarUpload,
 }: ProfilePanelProps) {
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const disabled = !editing || saving || avatarUploading;
+
+  function renderField(key: keyof Profile, label: string) {
+    return (
+      <label style={styles.label} key={String(key)}>
+        {label}
+        <input
+          style={styles.profileInput || styles.input}
+          value={profile[key] || ''}
+          onChange={(event) => onProfileChange(key, event.target.value)}
+          disabled={disabled}
+        />
+      </label>
+    );
+  }
 
   return (
     <div style={styles.cardBlock}>
@@ -69,17 +83,13 @@ export function ProfilePanel({
         />
 
         <div style={styles.formGrid}>
-          {PROFILE_FIELDS.map((field) => (
-            <label key={field.key} style={styles.label}>
-              {field.label}
-              <input
-                style={styles.profileInput || styles.input}
-                value={profile[field.key] || ''}
-                onChange={(event) => onProfileChange(field.key, event.target.value)}
-                disabled={!editing || saving || avatarUploading}
-              />
-            </label>
-          ))}
+          <div style={styles.profileGridTwo}>{[renderField('name', 'Nome'), renderField('surname', 'Sobrenome')]}</div>
+          <div style={styles.profileGridThree}>
+            {[renderField('market_niche', 'Mercado/Nicho'), renderField('education', 'Formação'), renderField('specialties', 'Especialidades')]}
+          </div>
+          <div style={styles.profileGridTwo}>{[renderField('email', 'E-mail'), renderField('phone', 'Telefone')]}</div>
+          <div style={styles.profileGridTwo}>{[renderField('website', 'Site'), renderField('instagram', 'Instagram')]}</div>
+          <div style={styles.profileGridTwo}>{[renderField('address', 'Endereço'), renderField('modalidade', 'Modalidade atendimento')]}</div>
         </div>
 
         {showEditButton

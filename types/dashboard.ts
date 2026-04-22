@@ -9,9 +9,11 @@ export interface UserSummary {
 
 export interface Profile {
   name?: string | null;
+  surname?: string | null;
   email?: string | null;
   phone?: string | null;
   address?: string | null;
+  modalidade?: string | null;
   website?: string | null;
   instagram?: string | null;
   market_niche?: string | null;
