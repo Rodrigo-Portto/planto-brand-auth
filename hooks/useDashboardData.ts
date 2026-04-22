@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { fetchDashboardData } from '../lib/api/dashboard';
 import { normalizeBriefingRecord } from '../lib/domain/briefing';
 import { createDefaultEditorialLineRecord } from '../lib/domain/editorialLine';
@@ -41,7 +41,7 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     if (!token) {
       setLoading(false);
       return;
@@ -79,11 +79,11 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
     } finally {
       setLoading(false);
     }
-  }
+  }, [token, onTokenInvalid]);
 
   useEffect(() => {
     void refresh();
-  }, [token]);
+  }, [refresh]);
 
   return {
     user,

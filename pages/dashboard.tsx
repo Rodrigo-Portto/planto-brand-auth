@@ -195,6 +195,41 @@ export default function DashboardPage() {
   }, [profileForm.profile?.name, profileForm.profile?.surname, dashboardData.user?.email]);
 
   const editorialLineSavedCheck = integratedBriefingForm.formProgress.is_editorial_line_saved && !editorialLineForm.isDirty;
+  const canAutoSyncDashboard =
+    !profileEditing &&
+    !integratedBriefingForm.isEditing &&
+    !integratedBriefingForm.isDirty &&
+    !editorialLineForm.isEditing &&
+    !editorialLineForm.isDirty &&
+    !avatarUploading;
+
+  useEffect(() => {
+    if (!token || !sessionReady) return undefined;
+
+    const syncFromBackend = () => {
+      if (!canAutoSyncDashboard) return;
+      void dashboardData.refresh();
+    };
+
+    syncFromBackend();
+
+    const interval = window.setInterval(syncFromBackend, 15000);
+    const handleFocus = () => syncFromBackend();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncFromBackend();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [token, sessionReady, canAutoSyncDashboard, dashboardData.refresh]);
 
   async function handleAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
