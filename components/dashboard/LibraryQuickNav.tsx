@@ -17,7 +17,7 @@ const NAV_ITEMS: Array<{ key: DashboardMainTab; label: string; icon: (color: str
   { key: 'forms', label: 'Contexto de Marca', icon: (color) => <ClipboardListIcon color={color} /> },
   { key: 'editorial', label: 'Editorial', icon: (color) => <CalendarIcon color={color} /> },
   { key: 'daily_notes', label: 'Notas diárias', icon: (color) => <NotesIcon color={color} /> },
-  { key: 'gpt_entries', label: 'Entradas GPT', icon: (color) => <NotesIcon color={color} /> },
+  { key: 'gpt_entries', label: 'Documentos GPT', icon: (color) => <NotesIcon color={color} /> },
 ];
 
 export function LibraryQuickNav({
