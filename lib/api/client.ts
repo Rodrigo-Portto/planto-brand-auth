@@ -40,6 +40,10 @@ export async function requestJson<T>(path: string, options: RequestJsonOptions =
   const data = (await parseJsonSafe<T & { error?: string }>(response)) as T & { error?: string };
 
   if (!response.ok) {
+    if (options.accessToken && (response.status === 401 || response.status === 403)) {
+      throw new Error('Sessão expirada. Faça login novamente.');
+    }
+
     if (data?.error) {
       throw new Error(data.error);
     }

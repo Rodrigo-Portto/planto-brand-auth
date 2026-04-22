@@ -29,6 +29,7 @@ import { useKnowledgeUploads } from '../hooks/useKnowledgeUploads';
 import { useProfileForm } from '../hooks/useProfileForm';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { uploadAvatar } from '../lib/api/dashboard';
+import { isSessionTokenInvalidMessage } from '../lib/domain/session';
 import { themeTokens, createDashboardStyles } from '../lib/domain/dashboardTheme';
 import { toBase64 } from '../lib/domain/dashboardUtils';
 
@@ -76,6 +77,16 @@ export default function DashboardPage() {
     setNotice(message);
   }
 
+  function handleDashboardError(message: string) {
+    if (isSessionTokenInvalidMessage(message)) {
+      resetSession();
+      void router.replace('/');
+      return;
+    }
+
+    showError(message);
+  }
+
   useEffect(() => {
     const handleResize = () => setViewportWidth(window.innerWidth);
     handleResize();
@@ -111,7 +122,7 @@ export default function DashboardPage() {
       dashboardData.setFormProgress(data.form_progress);
       showSavedNotice(message || 'Perfil salvo');
     },
-    onError: showError,
+    onError: handleDashboardError,
   });
 
   const integratedBriefingForm = useIntegratedBriefingForm({
@@ -131,7 +142,7 @@ export default function DashboardPage() {
       }
       showSavedNotice(message || 'Briefing salvo');
     },
-    onError: showError,
+    onError: handleDashboardError,
   });
 
   const editorialLineForm = useEditorialLineForm({
@@ -145,35 +156,35 @@ export default function DashboardPage() {
       );
       showSavedNotice(message || 'Linha editorial salva');
     },
-    onError: showError,
+    onError: handleDashboardError,
   });
 
   const knowledgeUploads = useKnowledgeUploads({
     initialAttachments: dashboardData.attachments,
     token,
     onSaved: showSavedNotice,
-    onError: showError,
+    onError: handleDashboardError,
   });
 
   const gptEntries = useGptEntries({
     initialEntries: dashboardData.entries,
     token,
     onSaved: showSavedNotice,
-    onError: showError,
+    onError: handleDashboardError,
   });
 
   const gptToken = useGptToken({
     initialTokens: dashboardData.tokens,
     token,
     onSaved: showSavedNotice,
-    onError: showError,
+    onError: handleDashboardError,
   });
 
   const dailyNotes = useDailyNotes({
     initialNotes: dashboardData.dailyNotes,
     token,
     onSaved: showSavedNotice,
-    onError: showError,
+    onError: handleDashboardError,
     onCreated: () => layoutPrefs.setMainTab('daily_notes'),
   });
 
@@ -214,7 +225,7 @@ export default function DashboardPage() {
       profileForm.setProfile((current) => ({ ...current, avatar_url: nextUrl }));
       showSavedNotice();
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Erro ao enviar avatar.');
+      handleDashboardError(error instanceof Error ? error.message : 'Erro ao enviar avatar.');
     } finally {
       event.target.value = '';
       setAvatarUploading(false);

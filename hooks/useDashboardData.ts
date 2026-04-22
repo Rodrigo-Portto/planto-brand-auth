@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchDashboardData } from '../lib/api/dashboard';
 import { createDefaultEditorialLineRecord } from '../lib/domain/editorialLine';
+import { isSessionTokenInvalidMessage } from '../lib/domain/session';
 import type {
   Attachment,
   ContextStructure,
@@ -72,7 +73,7 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
       setDailyNotes(data.daily_notes || []);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro ao carregar dados.';
-      if (message.toLowerCase().includes('token')) {
+      if (isSessionTokenInvalidMessage(message)) {
         onTokenInvalid();
         return;
       }

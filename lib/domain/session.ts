@@ -23,3 +23,20 @@ export function clearStoredSession(): void {
   window.localStorage.removeItem(USER_STORAGE_KEY);
   window.localStorage.removeItem(USER_ID_STORAGE_KEY);
 }
+
+export function isSessionTokenInvalidMessage(message: string): boolean {
+  const normalized = String(message || '').toLowerCase();
+
+  return (
+    normalized.includes('sessão expirada') ||
+    normalized.includes('sessao expirada') ||
+    normalized.includes('token inválido') ||
+    normalized.includes('token invalido') ||
+    normalized.includes('token expirado') ||
+    normalized.includes('token is expired') ||
+    normalized.includes('invalid jwt') ||
+    normalized.includes('jwt') ||
+    normalized.includes('bearer token ausente') ||
+    normalized.includes('invalid claims')
+  );
+}
