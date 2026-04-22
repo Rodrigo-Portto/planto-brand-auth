@@ -52,12 +52,20 @@ function getContextStatusLabel(formProgress: FormProgress, contextStructure: Con
 
 function getSectionStatusLabel(
   section: BriefingSectionKey,
+  integratedBriefing: IntegratedBriefing,
   sectionState: Record<BriefingSectionKey, { isSaved: boolean; isDirty: boolean; isEditing: boolean }>
 ) {
   const state = sectionState[section];
+  const hasAnyValueInSection = Boolean(
+    BRIEFING_SECTIONS.find((item) => item.key === section)?.fields.some(
+      (field) => String(integratedBriefing[field.key] || '').trim().length > 0
+    )
+  );
+
   if (state.isEditing) return 'Editando';
   if (state.isDirty) return 'Alterado apos o ultimo save';
   if (state.isSaved) return 'Salvo no Supabase';
+  if (hasAnyValueInSection) return 'Rascunho salvo (faltam campos obrigatorios)';
   return 'Nao salvo';
 }
 
@@ -91,7 +99,7 @@ export function BriefingPanel({
           section={section}
           collapsedPanels={collapsedPanels}
           integratedBriefing={integratedBriefing}
-          saveStateLabel={getSectionStatusLabel(section.key, sectionState)}
+          saveStateLabel={getSectionStatusLabel(section.key, integratedBriefing, sectionState)}
           isEditing={sectionState[section.key].isEditing}
           savingSection={savingSection}
           onTogglePanel={onTogglePanel}

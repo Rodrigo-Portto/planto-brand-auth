@@ -254,11 +254,6 @@ export default async function handler(
         integrated_briefing_saved_at: null,
       };
 
-      const isComplete = isSectionComplete(section, mergedRow as IntegratedBriefing);
-      if (!isComplete) {
-        return res.status(400).json({ error: `Preencha todos os campos de ${section === 'brand_core' ? 'Brand Core' : 'Human Core'} antes de salvar.` });
-      }
-
       const saved = await upsertById<BrandContextResponseRecord>('brand_context_responses', userId, mergedRow);
       const profile = (await fetchOneById<Profile>('user_profiles', userId)) || {};
       const editorialLine = await fetchOneByColumn<EditorialLineRecord>('editorial_lines', 'user_id', userId);
