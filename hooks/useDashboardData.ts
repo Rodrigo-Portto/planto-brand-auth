@@ -5,7 +5,6 @@ import { createDefaultEditorialLineRecord } from '../lib/domain/editorialLine';
 import { isSessionTokenInvalidMessage } from '../lib/domain/session';
 import type {
   Attachment,
-  ContextStructure,
   DailyNote,
   DashboardPayload,
   EditorialLineRecord,
@@ -34,7 +33,6 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
     is_editorial_line_saved: false,
     is_ready_for_final_save: false,
   });
-  const [contextStructure, setContextStructure] = useState<ContextStructure | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [entries, setEntries] = useState<GptEntry[]>([]);
   const [tokens, setTokens] = useState<GptToken[]>([]);
@@ -66,7 +64,6 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
           is_ready_for_final_save: false,
         }
       );
-      setContextStructure(data.context_structure || null);
       setAttachments(data.attachments || []);
       setEntries(data.gpt_entries || []);
       setTokens(data.gpt_tokens || []);
@@ -97,7 +94,6 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
     entries,
     tokens,
     formProgress,
-    contextStructure,
     legacyDocuments,
     dailyNotes,
     loading,
@@ -107,7 +103,6 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
     setIntegratedBriefing,
     setEditorialLine,
     setFormProgress,
-    setContextStructure,
     setAttachments,
     setEntries,
     setTokens,

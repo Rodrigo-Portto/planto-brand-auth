@@ -138,18 +138,10 @@ export default function DashboardPage() {
   const integratedBriefingForm = useIntegratedBriefingForm({
     initialIntegratedBriefing: dashboardData.integratedBriefing,
     initialFormProgress: dashboardData.formProgress,
-    initialContextStructure: dashboardData.contextStructure,
     token,
     onSaved: (data, message) => {
       dashboardData.setIntegratedBriefing(data.integrated_briefing || {});
       dashboardData.setFormProgress(data.form_progress);
-      if (typeof data.context_structure !== 'undefined') {
-        dashboardData.setContextStructure(data.context_structure || null);
-      } else {
-        dashboardData.setContextStructure((current) =>
-          current ? { ...current, generation_status: 'pending', generation_error: null } : current
-        );
-      }
       showSavedNotice(message || 'Briefing salvo');
     },
     onError: handleDashboardError,
@@ -161,9 +153,6 @@ export default function DashboardPage() {
     onSaved: (data, message) => {
       dashboardData.setEditorialLine(data.editorial_line);
       dashboardData.setFormProgress(data.form_progress);
-      dashboardData.setContextStructure((current) =>
-        current ? { ...current, generation_status: 'pending', generation_error: null } : current
-      );
       showSavedNotice(message || 'Linha editorial salva');
     },
     onError: handleDashboardError,

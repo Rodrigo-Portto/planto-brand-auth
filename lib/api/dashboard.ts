@@ -1,6 +1,5 @@
 import type {
   BriefingFormResponseRecord,
-  ContextStructure,
   DailyNote,
   DailyNoteData,
   DashboardPayload,
@@ -60,12 +59,10 @@ export async function finalizeIntegratedBriefing(
 ): Promise<{
   integrated_briefing: BriefingFormResponseRecord;
   form_progress: FormProgress;
-  context_structure: ContextStructure | null;
 }> {
   return requestJson<{
     integrated_briefing: BriefingFormResponseRecord;
     form_progress: FormProgress;
-    context_structure: ContextStructure | null;
   }>('/api/save', {
     method: 'POST',
     accessToken,
@@ -74,19 +71,6 @@ export async function finalizeIntegratedBriefing(
       payload: {},
     } satisfies SaveResourceRequest<Record<string, never>>,
   });
-}
-
-export async function triggerContextGeneration(
-  accessToken: string
-): Promise<{ form_progress: FormProgress; context_structure: ContextStructure | null }> {
-  return requestJson<{ form_progress: FormProgress; context_structure: ContextStructure | null }>(
-    '/api/context/generate',
-    {
-      method: 'POST',
-      accessToken,
-      body: {},
-    }
-  );
 }
 
 export async function saveEditorialLine(

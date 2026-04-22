@@ -68,7 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const userId = auth.user.id;
 
   try {
-    const [profile, integratedBriefingRows, editorialLine, contextStructure, attachments, gptTokens, legacyDocuments, dailyNotes] =
+    const [profile, integratedBriefingRows, editorialLine, attachments, gptTokens, legacyDocuments, dailyNotes] =
       await Promise.all([
         fetchOneById<DashboardPayload['profile']>('user_profiles', 'id', userId),
         fetchMany<DashboardPayload['forms']['integrated_briefing']['response_rows'][number]>(
@@ -76,7 +76,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           'Falha ao buscar respostas do briefing.'
         ),
         fetchOneById<DashboardPayload['editorial_line']>('editorial_lines', 'user_id', userId),
-        fetchOneById<DashboardPayload['context_structure']>('brand_context_structures', 'user_id', userId),
         fetchMany<DashboardPayload['attachments'][number]>(
           `/rest/v1/user_attachments?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`,
           'Falha ao buscar anexos.'
@@ -123,7 +122,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const formProgress = buildFormProgress({
       profile_completed_at: isProfileComplete(resolvedProfile) ? (resolvedProfile as DashboardPayload['profile'] & { updated_at?: string | null }).updated_at || new Date().toISOString() : null,
       briefing_saved_at: isBriefingComplete(normalizedBriefing.briefing_blocks) ? getLatestBriefingUpdateAt(normalizedBriefing.response_rows) : null,
-      integrated_briefing_saved_at: contextStructure?.generated_at || null,
+      integrated_briefing_saved_at: normalizedBriefing.integrated_briefing_saved_at || null,
       editorial_line_saved_at: resolvedEditorialLine.updated_at || resolvedEditorialLine.created_at || null,
     });
 
@@ -138,7 +137,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       form_progress: formProgress,
       editorial_line: resolvedEditorialLine,
-      context_structure: contextStructure,
       attachments,
       gpt_entries: [],
       gpt_tokens: gptTokens,

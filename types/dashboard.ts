@@ -174,7 +174,6 @@ export interface DashboardPayload {
   };
   form_progress: FormProgress;
   editorial_line: EditorialLineRecord;
-  context_structure: ContextStructure | null;
   attachments: Attachment[];
   gpt_entries: GptEntry[];
   gpt_tokens: GptToken[];
@@ -272,8 +271,6 @@ export interface TokenCreatePayload {
   token_meta?: GptToken | null;
 }
 
-export type ContextGenerationStatus = 'pending' | 'processing' | 'completed' | 'failed';
-
 export interface FormProgress {
   profile_completed_at?: string | null;
   briefing_saved_at?: string | null;
@@ -283,18 +280,4 @@ export interface FormProgress {
   is_briefing_saved: boolean;
   is_editorial_line_saved: boolean;
   is_ready_for_final_save: boolean;
-}
-
-export interface ContextStructure {
-  user_id: string;
-  generation_status: ContextGenerationStatus;
-  generation_error?: string | null;
-  model?: string | null;
-  prompt_version?: string | null;
-  schema_json?: Record<string, unknown> | null;
-  source_profile_updated_at?: string | null;
-  source_briefing_saved_at?: string | null;
-  source_editorial_line_saved_at?: string | null;
-  generated_at?: string | null;
-  updated_at?: string | null;
 }

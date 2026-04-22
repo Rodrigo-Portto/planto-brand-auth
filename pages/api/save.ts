@@ -17,7 +17,7 @@ import {
   createDefaultEditorialLineRecord,
   normalizeEditorialLineRows,
 } from '../../lib/domain/editorialLine';
-import { generateAndPersistContext, markContextStructurePending } from '../../lib/server/contextGeneration';
+import { generateAndPersistContext } from '../../lib/server/contextGeneration';
 import type {
   BriefingFormResponseRecord,
   BriefingResponseRow,
@@ -328,11 +328,6 @@ export default async function handler(
         editorial_line_saved_at: currentEditorialLine?.updated_at || currentEditorialLine?.created_at || null,
       });
 
-      await markContextStructurePending({
-        userId,
-        progress,
-      }).catch(() => null);
-
       return res.status(200).json({
         success: true,
         profile: resolvedProfile,
@@ -353,8 +348,6 @@ export default async function handler(
       const profile = (await fetchOneById<Profile>('user_profiles', userId)) || {};
       const editorialLine = await fetchOneByColumn<EditorialLineRecord>('editorial_lines', 'user_id', userId);
       const progress = buildProgressWithEditorialLine(profile, saved, editorialLine);
-
-      await markContextStructurePending({ userId, progress }).catch(() => null);
 
       return res.status(200).json({
         success: true,
@@ -379,7 +372,7 @@ export default async function handler(
         return res.status(400).json({ error: 'Perfil, briefing e linha editorial precisam estar salvos antes do contexto integrado.' });
       }
 
-      const contextStructure = await generateAndPersistContext({
+      const generatedContext = await generateAndPersistContext({
         userId,
         profile,
         integratedBriefing,
@@ -391,9 +384,8 @@ export default async function handler(
         integrated_briefing: integratedBriefing,
         form_progress: buildFormProgress({
           ...progress,
-          integrated_briefing_saved_at: contextStructure?.generated_at || new Date().toISOString(),
+          integrated_briefing_saved_at: generatedContext.generated_at || new Date().toISOString(),
         }),
-        context_structure: contextStructure,
       });
     }
 
@@ -409,8 +401,6 @@ export default async function handler(
       });
       const normalizedSaved = createDefaultEditorialLineRecord(saved, userId);
       const progress = buildProgressWithEditorialLine(profile, integratedBriefing, normalizedSaved);
-
-      await markContextStructurePending({ userId, progress }).catch(() => null);
 
       return res.status(200).json({
         success: true,

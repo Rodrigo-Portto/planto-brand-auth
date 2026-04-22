@@ -1,18 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { finalizeIntegratedBriefing, saveIntegratedBriefing } from '../lib/api/dashboard';
 import { normalizeBriefingBlocks, normalizeBriefingRecord } from '../lib/domain/briefing';
-import type { BriefingFormResponseRecord, ContextStructure, FormProgress } from '../types/dashboard';
+import type { BriefingFormResponseRecord, FormProgress } from '../types/dashboard';
 
 interface UseIntegratedBriefingFormOptions {
   initialIntegratedBriefing: BriefingFormResponseRecord;
   initialFormProgress: FormProgress;
-  initialContextStructure: ContextStructure | null;
   token: string;
   onSaved: (
     result: {
       integrated_briefing: BriefingFormResponseRecord;
       form_progress: FormProgress;
-      context_structure?: ContextStructure | null;
     },
     message?: string
   ) => void;
@@ -26,7 +24,6 @@ function stringifyBlocks(value: BriefingFormResponseRecord['briefing_blocks']) {
 export function useIntegratedBriefingForm({
   initialIntegratedBriefing,
   initialFormProgress,
-  initialContextStructure,
   token,
   onSaved,
   onError,
@@ -38,7 +35,6 @@ export function useIntegratedBriefingForm({
     normalizeBriefingRecord(initialIntegratedBriefing)
   );
   const [formProgress, setFormProgress] = useState<FormProgress>(initialFormProgress);
-  const [contextStructure, setContextStructure] = useState<ContextStructure | null>(initialContextStructure);
   const [savingBriefing, setSavingBriefing] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -53,10 +49,6 @@ export function useIntegratedBriefingForm({
   useEffect(() => {
     setFormProgress(initialFormProgress);
   }, [initialFormProgress]);
-
-  useEffect(() => {
-    setContextStructure(initialContextStructure);
-  }, [initialContextStructure]);
 
   const isDirty = useMemo(
     () =>
@@ -85,9 +77,6 @@ export function useIntegratedBriefingForm({
       setIntegratedBriefing(normalized);
       setLastSavedIntegratedBriefing(normalized);
       setFormProgress(data.form_progress || formProgress);
-      setContextStructure((current) =>
-        current ? { ...current, generation_status: 'pending', generation_error: null } : current
-      );
       onSaved(
         {
           ...data,
@@ -113,7 +102,6 @@ export function useIntegratedBriefingForm({
       setIntegratedBriefing(normalized);
       setLastSavedIntegratedBriefing(normalized);
       setFormProgress(data.form_progress || formProgress);
-      setContextStructure(data.context_structure || null);
       onSaved(
         {
           ...data,
@@ -132,7 +120,6 @@ export function useIntegratedBriefingForm({
     integratedBriefing,
     setIntegratedBriefing,
     formProgress,
-    contextStructure,
     isEditing,
     isDirty,
     savingBriefing,
