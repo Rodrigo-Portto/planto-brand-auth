@@ -22,31 +22,53 @@ export interface Profile {
   avatar_url?: string | null;
 }
 
-export interface IntegratedBriefing {
-  oferta_central?: string | null;
-  processo_mecanismo?: string | null;
-  capacidade_real?: string | null;
-  limites_restricoes?: string | null;
-  resultados_percebidos?: string | null;
-  provas_credibilidade?: string | null;
-  diferenciacao_real?: string | null;
-  crencas_visao_mundo?: string | null;
-  experiencia_consistente?: string | null;
-  presenca_profissional?: string | null;
-  publico_prioritario?: string | null;
-  momento_busca?: string | null;
-  tentativas_anteriores?: string | null;
-  queixa_declarada?: string | null;
-  dor_profunda?: string | null;
-  desejos_transformacao?: string | null;
-  tensoes_contradicoes?: string | null;
-  criterios_confianca?: string | null;
-  objecoes_desalinhamentos?: string | null;
-  linguagem_repertorio?: string | null;
+export interface BriefingFormBlock {
+  title: string;
+  description: string;
+  questions: string[];
 }
 
-export interface BrandContextResponseRecord extends IntegratedBriefing, Partial<FormProgress> {
+export interface BriefingFormConfig {
+  form_id: string;
+  intro: string;
+  blocks: BriefingFormBlock[];
+}
+
+export interface BriefingFormAnswerSet {
+  title: string;
+  description: string;
+  questions: string[];
+  answers: string[];
+}
+
+export interface BriefingResponseValueJson {
+  form_id: string;
+  block_title: string;
+  block_description: string;
+  question: string;
+  block_index: number;
+  question_index: number;
+}
+
+export interface BriefingResponseRow {
   id?: string;
+  user_id?: string | null;
+  form_type?: string | null;
+  field_key?: string | null;
+  question_order?: number | null;
+  value_text?: string | null;
+  value_json?: BriefingResponseValueJson | null;
+  form_version?: string | null;
+  response_status?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface BriefingFormResponseRecord extends Partial<FormProgress> {
+  id?: string;
+  briefing_form_id?: string | null;
+  briefing_blocks?: BriefingFormAnswerSet[] | null;
+  response_rows?: BriefingResponseRow[] | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -148,7 +170,7 @@ export interface DashboardPayload {
   user: UserSummary | null;
   profile: Profile;
   forms: {
-    integrated_briefing: BrandContextResponseRecord;
+    integrated_briefing: BriefingFormResponseRecord;
   };
   form_progress: FormProgress;
   editorial_line: EditorialLineRecord;
@@ -162,8 +184,6 @@ export interface DashboardPayload {
 
 export type SaveResourceName =
   | 'profile'
-  | 'brand_core'
-  | 'human_core'
   | 'integrated_briefing'
   | 'integrated_briefing_finalize'
   | 'editorial_line'
@@ -186,22 +206,6 @@ export interface LibraryPanelLink {
   key: string;
   label: string;
   targetId: string;
-}
-
-export interface BriefingFieldDefinition {
-  key: keyof IntegratedBriefing;
-  number: string;
-  title: string;
-  prompt: string;
-  description: string;
-}
-
-export interface BriefingSectionDefinition {
-  key: BriefingSectionKey;
-  title: string;
-  focus: string;
-  collapseKey: keyof CollapsedPanels;
-  fields: BriefingFieldDefinition[];
 }
 
 export interface EntryEditorState {
@@ -268,19 +272,15 @@ export interface TokenCreatePayload {
   token_meta?: GptToken | null;
 }
 
-export type BriefingSectionKey = 'brand_core' | 'human_core';
-
 export type ContextGenerationStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface FormProgress {
   profile_completed_at?: string | null;
-  brand_core_saved_at?: string | null;
-  human_core_saved_at?: string | null;
+  briefing_saved_at?: string | null;
   editorial_line_saved_at?: string | null;
   integrated_briefing_saved_at?: string | null;
   is_profile_complete: boolean;
-  is_brand_core_saved: boolean;
-  is_human_core_saved: boolean;
+  is_briefing_saved: boolean;
   is_editorial_line_saved: boolean;
   is_ready_for_final_save: boolean;
 }
@@ -293,8 +293,7 @@ export interface ContextStructure {
   prompt_version?: string | null;
   schema_json?: Record<string, unknown> | null;
   source_profile_updated_at?: string | null;
-  source_brand_core_saved_at?: string | null;
-  source_human_core_saved_at?: string | null;
+  source_briefing_saved_at?: string | null;
   source_editorial_line_saved_at?: string | null;
   generated_at?: string | null;
   updated_at?: string | null;

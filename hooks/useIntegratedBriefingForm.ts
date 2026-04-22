@@ -1,22 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { finalizeIntegratedBriefing, saveBriefingSection } from '../lib/api/dashboard';
-import { getFieldsForSection } from '../lib/domain/briefing';
-import type {
-  BrandContextResponseRecord,
-  BriefingSectionKey,
-  ContextStructure,
-  FormProgress,
-  IntegratedBriefing,
-} from '../types/dashboard';
+import { finalizeIntegratedBriefing, saveIntegratedBriefing } from '../lib/api/dashboard';
+import { normalizeBriefingBlocks, normalizeBriefingRecord } from '../lib/domain/briefing';
+import type { BriefingFormResponseRecord, ContextStructure, FormProgress } from '../types/dashboard';
 
 interface UseIntegratedBriefingFormOptions {
-  initialIntegratedBriefing: BrandContextResponseRecord;
+  initialIntegratedBriefing: BriefingFormResponseRecord;
   initialFormProgress: FormProgress;
   initialContextStructure: ContextStructure | null;
   token: string;
   onSaved: (
     result: {
-      integrated_briefing: BrandContextResponseRecord;
+      integrated_briefing: BriefingFormResponseRecord;
       form_progress: FormProgress;
       context_structure?: ContextStructure | null;
     },
@@ -25,12 +19,8 @@ interface UseIntegratedBriefingFormOptions {
   onError: (message: string) => void;
 }
 
-function hasDiffForSection(
-  current: IntegratedBriefing,
-  baseline: BrandContextResponseRecord,
-  section: BriefingSectionKey
-): boolean {
-  return getFieldsForSection(section).some((field) => (current[field] || '') !== (baseline[field] || ''));
+function stringifyBlocks(value: BriefingFormResponseRecord['briefing_blocks']) {
+  return JSON.stringify(normalizeBriefingBlocks(value));
 }
 
 export function useIntegratedBriefingForm({
@@ -41,22 +31,23 @@ export function useIntegratedBriefingForm({
   onSaved,
   onError,
 }: UseIntegratedBriefingFormOptions) {
-  const [integratedBriefing, setIntegratedBriefing] = useState<IntegratedBriefing>(initialIntegratedBriefing);
-  const [lastSavedIntegratedBriefing, setLastSavedIntegratedBriefing] =
-    useState<BrandContextResponseRecord>(initialIntegratedBriefing);
+  const [integratedBriefing, setIntegratedBriefing] = useState<BriefingFormResponseRecord>(
+    normalizeBriefingRecord(initialIntegratedBriefing)
+  );
+  const [lastSavedIntegratedBriefing, setLastSavedIntegratedBriefing] = useState<BriefingFormResponseRecord>(
+    normalizeBriefingRecord(initialIntegratedBriefing)
+  );
   const [formProgress, setFormProgress] = useState<FormProgress>(initialFormProgress);
   const [contextStructure, setContextStructure] = useState<ContextStructure | null>(initialContextStructure);
-  const [savingSection, setSavingSection] = useState<BriefingSectionKey | null>(null);
+  const [savingBriefing, setSavingBriefing] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
-  const [sectionEditing, setSectionEditing] = useState<Record<BriefingSectionKey, boolean>>({
-    brand_core: false,
-    human_core: false,
-  });
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    setIntegratedBriefing(initialIntegratedBriefing);
-    setLastSavedIntegratedBriefing(initialIntegratedBriefing);
-    setSectionEditing({ brand_core: false, human_core: false });
+    const normalized = normalizeBriefingRecord(initialIntegratedBriefing);
+    setIntegratedBriefing(normalized);
+    setLastSavedIntegratedBriefing(normalized);
+    setIsEditing(false);
   }, [initialIntegratedBriefing]);
 
   useEffect(() => {
@@ -67,63 +58,48 @@ export function useIntegratedBriefingForm({
     setContextStructure(initialContextStructure);
   }, [initialContextStructure]);
 
-  const sectionState = useMemo(
-    () => ({
-      brand_core: {
-        isSaved: Boolean(formProgress.brand_core_saved_at),
-        isDirty: hasDiffForSection(integratedBriefing, lastSavedIntegratedBriefing, 'brand_core'),
-        isEditing: sectionEditing.brand_core,
-      },
-      human_core: {
-        isSaved: Boolean(formProgress.human_core_saved_at),
-        isDirty: hasDiffForSection(integratedBriefing, lastSavedIntegratedBriefing, 'human_core'),
-        isEditing: sectionEditing.human_core,
-      },
-    }),
-    [
-      formProgress.brand_core_saved_at,
-      formProgress.human_core_saved_at,
-      integratedBriefing,
-      lastSavedIntegratedBriefing,
-      sectionEditing.brand_core,
-      sectionEditing.human_core,
-    ]
+  const isDirty = useMemo(
+    () =>
+      integratedBriefing.briefing_form_id !== lastSavedIntegratedBriefing.briefing_form_id ||
+      stringifyBlocks(integratedBriefing.briefing_blocks) !== stringifyBlocks(lastSavedIntegratedBriefing.briefing_blocks),
+    [integratedBriefing, lastSavedIntegratedBriefing]
   );
 
-  function startSectionEditing(section: BriefingSectionKey) {
-    setSectionEditing((current) => ({ ...current, [section]: true }));
+  function startEditing() {
+    setIsEditing(true);
   }
 
-  function cancelSectionEditing(section: BriefingSectionKey) {
-    const sectionFields = getFieldsForSection(section);
-    setIntegratedBriefing((current) => {
-      const next = { ...current };
-      sectionFields.forEach((field) => {
-        next[field] = lastSavedIntegratedBriefing[field] || '';
-      });
-      return next;
-    });
-    setSectionEditing((current) => ({ ...current, [section]: false }));
+  function cancelEditing() {
+    setIntegratedBriefing(normalizeBriefingRecord(lastSavedIntegratedBriefing));
+    setIsEditing(false);
   }
 
-  async function saveSection(section: BriefingSectionKey) {
+  async function saveBriefing() {
     if (!token) return;
 
-    setSavingSection(section);
+    setSavingBriefing(true);
     try {
-      const data = await saveBriefingSection(token, section, integratedBriefing);
-      setIntegratedBriefing(data.integrated_briefing || integratedBriefing);
-      setLastSavedIntegratedBriefing(data.integrated_briefing || lastSavedIntegratedBriefing);
+      const payload = normalizeBriefingRecord(integratedBriefing);
+      const data = await saveIntegratedBriefing(token, payload);
+      const normalized = normalizeBriefingRecord(data.integrated_briefing);
+      setIntegratedBriefing(normalized);
+      setLastSavedIntegratedBriefing(normalized);
       setFormProgress(data.form_progress || formProgress);
       setContextStructure((current) =>
         current ? { ...current, generation_status: 'pending', generation_error: null } : current
       );
-      onSaved(data, section === 'brand_core' ? 'Brand Core salvo' : 'Human Core salvo');
-      setSectionEditing((current) => ({ ...current, [section]: false }));
+      onSaved(
+        {
+          ...data,
+          integrated_briefing: normalized,
+        },
+        'Briefing salvo'
+      );
+      setIsEditing(false);
     } catch (error) {
-      onError(error instanceof Error ? error.message : 'Erro ao salvar seção.');
+      onError(error instanceof Error ? error.message : 'Erro ao salvar briefing.');
     } finally {
-      setSavingSection(null);
+      setSavingBriefing(false);
     }
   }
 
@@ -133,11 +109,18 @@ export function useIntegratedBriefingForm({
     setFinalizing(true);
     try {
       const data = await finalizeIntegratedBriefing(token);
-      setIntegratedBriefing(data.integrated_briefing || integratedBriefing);
-      setLastSavedIntegratedBriefing(data.integrated_briefing || lastSavedIntegratedBriefing);
+      const normalized = normalizeBriefingRecord(data.integrated_briefing);
+      setIntegratedBriefing(normalized);
+      setLastSavedIntegratedBriefing(normalized);
       setFormProgress(data.form_progress || formProgress);
       setContextStructure(data.context_structure || null);
-      onSaved(data, 'Briefing integrado processado');
+      onSaved(
+        {
+          ...data,
+          integrated_briefing: normalized,
+        },
+        'Contexto de marca processado'
+      );
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Erro ao finalizar briefing integrado.');
     } finally {
@@ -150,12 +133,13 @@ export function useIntegratedBriefingForm({
     setIntegratedBriefing,
     formProgress,
     contextStructure,
-    sectionState,
-    startSectionEditing,
-    cancelSectionEditing,
-    savingSection,
+    isEditing,
+    isDirty,
+    savingBriefing,
     savingIntegratedBriefing: finalizing,
-    saveBriefingSection: saveSection,
+    startEditing,
+    cancelEditing,
+    saveBriefing,
     finalizeIntegratedBriefing: finalize,
   };
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchDashboardData } from '../lib/api/dashboard';
+import { normalizeBriefingRecord } from '../lib/domain/briefing';
 import { createDefaultEditorialLineRecord } from '../lib/domain/editorialLine';
 import { isSessionTokenInvalidMessage } from '../lib/domain/session';
 import type {
@@ -23,12 +24,13 @@ interface UseDashboardDataOptions {
 export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOptions) {
   const [user, setUser] = useState<UserSummary | null>(null);
   const [profile, setProfile] = useState<Profile>({});
-  const [integratedBriefing, setIntegratedBriefing] = useState<DashboardPayload['forms']['integrated_briefing']>({});
+  const [integratedBriefing, setIntegratedBriefing] = useState<DashboardPayload['forms']['integrated_briefing']>(
+    normalizeBriefingRecord({})
+  );
   const [editorialLine, setEditorialLine] = useState<EditorialLineRecord>(createDefaultEditorialLineRecord());
   const [formProgress, setFormProgress] = useState<FormProgress>({
     is_profile_complete: false,
-    is_brand_core_saved: false,
-    is_human_core_saved: false,
+    is_briefing_saved: false,
     is_editorial_line_saved: false,
     is_ready_for_final_save: false,
   });
@@ -54,13 +56,12 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
       const data = await fetchDashboardData(token);
       setUser(data.user || null);
       setProfile(data.profile || {});
-      setIntegratedBriefing(data.forms?.integrated_briefing || {});
+      setIntegratedBriefing(normalizeBriefingRecord(data.forms?.integrated_briefing || {}));
       setEditorialLine(createDefaultEditorialLineRecord(data.editorial_line, data.user?.id || ''));
       setFormProgress(
         data.form_progress || {
           is_profile_complete: false,
-          is_brand_core_saved: false,
-          is_human_core_saved: false,
+          is_briefing_saved: false,
           is_editorial_line_saved: false,
           is_ready_for_final_save: false,
         }

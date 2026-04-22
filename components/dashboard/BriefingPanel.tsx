@@ -1,30 +1,22 @@
-import { BRIEFING_SECTIONS } from '../../lib/domain/briefing';
+import { hasBriefingAnyContent } from '../../lib/domain/briefing';
 import type {
-  BriefingSectionKey,
-  CollapsedPanels,
+  BriefingFormResponseRecord,
   DashboardStyles,
   DashboardThemeColors,
   FormProgress,
-  IntegratedBriefing,
 } from '../../types/dashboard';
+import { CheckIcon } from './icons';
 import { BriefingIntro } from './briefing/BriefingIntro';
-import { BriefingSectionCard } from './briefing/BriefingSectionCard';
 
 interface BriefingPanelProps {
   styles: DashboardStyles;
   theme: DashboardThemeColors;
-  integratedBriefing: IntegratedBriefing;
-  collapsedPanels: CollapsedPanels;
+  integratedBriefing: BriefingFormResponseRecord;
   saving: boolean;
-  savingSection: BriefingSectionKey | null;
   formProgress: FormProgress;
   brandContextCollapsed: boolean;
-  sectionState: Record<BriefingSectionKey, { isSaved: boolean; isDirty: boolean; isEditing: boolean }>;
-  onTogglePanel: (key: keyof CollapsedPanels) => void;
-  onFieldChange: (key: keyof IntegratedBriefing, value: string) => void;
-  onStartSectionEdit: (section: BriefingSectionKey) => void;
-  onCancelSectionEdit: (section: BriefingSectionKey) => void;
-  onSaveSection: (section: BriefingSectionKey) => void;
+  onAnswerChange: (blockIndex: number, questionIndex: number, value: string) => void;
+  isEditing: boolean;
   onSaveIntegratedBriefing: () => void;
 }
 
@@ -40,77 +32,77 @@ function shouldEnableContextButton(formProgress: FormProgress) {
 
   const latestSourceUpdate = Math.max(
     toTimeValue(formProgress.profile_completed_at),
-    toTimeValue(formProgress.brand_core_saved_at),
-    toTimeValue(formProgress.human_core_saved_at),
+    toTimeValue(formProgress.briefing_saved_at),
     toTimeValue(formProgress.editorial_line_saved_at)
   );
 
   return latestSourceUpdate > integratedSavedAt;
 }
 
-function getSectionStatusLabel(
-  section: BriefingSectionKey,
-  integratedBriefing: IntegratedBriefing,
-  sectionState: Record<BriefingSectionKey, { isSaved: boolean; isDirty: boolean; isEditing: boolean }>
-) {
-  const state = sectionState[section];
-  const hasAnyValueInSection = Boolean(
-    BRIEFING_SECTIONS.find((item) => item.key === section)?.fields.some(
-      (field) => String(integratedBriefing[field.key] || '').trim().length > 0
-    )
-  );
-
-  if (state.isEditing) return 'Editando';
-  if (state.isDirty) return 'Alterado apos o ultimo save';
-  if (state.isSaved) return '';
-  if (hasAnyValueInSection) return 'Rascunho salvo (faltam campos obrigatorios)';
-  return 'Nao salvo';
-}
-
 export function BriefingPanel({
   styles,
   theme,
   integratedBriefing,
-  collapsedPanels,
   saving,
-  savingSection,
   formProgress,
   brandContextCollapsed,
-  sectionState,
-  onTogglePanel,
-  onFieldChange,
-  onStartSectionEdit,
-  onCancelSectionEdit,
-  onSaveSection,
+  onAnswerChange,
+  isEditing,
   onSaveIntegratedBriefing,
 }: BriefingPanelProps) {
   const canUpdateContext = shouldEnableContextButton(formProgress);
-  const hasSavedContext = Boolean(formProgress.integrated_briefing_saved_at);
-  const contextButtonLabel = hasSavedContext ? 'Atualizar contexto de marca' : 'Salvar contexto de marca';
+  const contextButtonLabel = 'Processar respostas';
+  const briefingBlocks = integratedBriefing.briefing_blocks || [];
+  const isCompleted = formProgress.is_briefing_saved;
+  const hasDraft = hasBriefingAnyContent(briefingBlocks);
+  const statusColor = isCompleted ? '#22a055' : hasDraft ? '#9aa4b2' : '#c5ccd6';
+  const statusBackground = isCompleted ? 'rgba(34, 160, 85, 0.18)' : 'rgba(148, 163, 184, 0.18)';
 
   return (
     <section id="formularios-panel" style={{ ...styles.centerPanel, padding: 0 }}>
       <BriefingIntro styles={styles} collapsed={brandContextCollapsed} />
 
-      {BRIEFING_SECTIONS.map((section) => (
-        <BriefingSectionCard
-          key={section.key}
-          styles={styles}
-          theme={theme}
-          section={section}
-          collapsedPanels={collapsedPanels}
-          integratedBriefing={integratedBriefing}
-          saveStateLabel={getSectionStatusLabel(section.key, integratedBriefing, sectionState)}
-          showCompletedCheck={sectionState[section.key].isSaved && !sectionState[section.key].isDirty}
-          isEditing={sectionState[section.key].isEditing}
-          savingSection={savingSection}
-          onTogglePanel={onTogglePanel}
-          onFieldChange={onFieldChange}
-          onStartEdit={onStartSectionEdit}
-          onCancelEdit={onCancelSectionEdit}
-          onSaveSection={onSaveSection}
-        />
-      ))}
+      <div style={{ display: 'grid', gap: 18 }}>
+        {briefingBlocks.map((block, blockIndex) => (
+          <article
+            key={`${block.title}-${blockIndex}`}
+            style={{
+              border: `1px solid ${theme.border}`,
+              borderRadius: 18,
+              padding: '18px',
+              background: '#ffffff',
+              display: 'grid',
+              gap: 14,
+            }}
+          >
+            <div style={{ display: 'grid', gap: 8 }}>
+              <h3 style={{ ...styles.fieldHeading, margin: 0 }}>{`${blockIndex + 1}. ${block.title}`}</h3>
+              <p style={{ ...styles.fieldDescription, margin: 0 }}>{block.description}</p>
+            </div>
+
+            <div style={{ display: 'grid', gap: 12 }}>
+              {block.questions.map((question, questionIndex) => (
+                <div
+                  key={`${block.title}-${questionIndex}`}
+                  style={{
+                    display: 'grid',
+                    gap: 8,
+                  }}
+                >
+                  <p style={{ ...styles.fieldPrompt, marginBottom: 10 }}>{question}</p>
+                  <textarea
+                    style={styles.textarea}
+                    rows={4}
+                    value={block.answers[questionIndex] || ''}
+                    disabled={!isEditing}
+                    onChange={(event) => onAnswerChange(blockIndex, questionIndex, event.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
 
       <div style={{ display: 'grid', gap: 10 }}>
         <button

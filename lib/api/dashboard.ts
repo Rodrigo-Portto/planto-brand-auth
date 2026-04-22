@@ -1,5 +1,5 @@
 import type {
-  BrandContextResponseRecord,
+  BriefingFormResponseRecord,
   ContextStructure,
   DailyNote,
   DailyNoteData,
@@ -7,7 +7,6 @@ import type {
   EditorialLineRecord,
   FormProgress,
   GptEntry,
-  IntegratedBriefing,
   LoginPayload,
   Profile,
   SaveResourceRequest,
@@ -42,30 +41,29 @@ export async function saveProfile(
   });
 }
 
-export async function saveBriefingSection(
+export async function saveIntegratedBriefing(
   accessToken: string,
-  resource: 'brand_core' | 'human_core',
-  integratedBriefing: IntegratedBriefing
-): Promise<{ integrated_briefing: BrandContextResponseRecord; form_progress: FormProgress }> {
-  return requestJson<{ integrated_briefing: BrandContextResponseRecord; form_progress: FormProgress }>('/api/save', {
+  integratedBriefing: BriefingFormResponseRecord
+): Promise<{ integrated_briefing: BriefingFormResponseRecord; form_progress: FormProgress }> {
+  return requestJson<{ integrated_briefing: BriefingFormResponseRecord; form_progress: FormProgress }>('/api/save', {
     method: 'POST',
     accessToken,
     body: {
-      resource,
+      resource: 'integrated_briefing',
       payload: integratedBriefing,
-    } satisfies SaveResourceRequest<IntegratedBriefing>,
+    } satisfies SaveResourceRequest<BriefingFormResponseRecord>,
   });
 }
 
 export async function finalizeIntegratedBriefing(
   accessToken: string
 ): Promise<{
-  integrated_briefing: BrandContextResponseRecord;
+  integrated_briefing: BriefingFormResponseRecord;
   form_progress: FormProgress;
   context_structure: ContextStructure | null;
 }> {
   return requestJson<{
-    integrated_briefing: BrandContextResponseRecord;
+    integrated_briefing: BriefingFormResponseRecord;
     form_progress: FormProgress;
     context_structure: ContextStructure | null;
   }>('/api/save', {
@@ -89,20 +87,6 @@ export async function triggerContextGeneration(
       body: {},
     }
   );
-}
-
-export async function saveIntegratedBriefing(
-  accessToken: string,
-  integratedBriefing: IntegratedBriefing
-): Promise<{ integrated_briefing: BrandContextResponseRecord }> {
-  return requestJson<{ integrated_briefing: BrandContextResponseRecord }>('/api/save', {
-    method: 'POST',
-    accessToken,
-    body: {
-      resource: 'integrated_briefing',
-      payload: integratedBriefing,
-    } satisfies SaveResourceRequest<IntegratedBriefing>,
-  });
 }
 
 export async function saveEditorialLine(

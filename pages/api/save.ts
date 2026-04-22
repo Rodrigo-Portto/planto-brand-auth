@@ -1,11 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import {
-  INTEGRATED_BRIEFING_FIELDS,
+  BRIEFING_FORM_CONFIG,
   PROFILE_FIELDS,
+  buildBriefingRowsFromRecord,
+  getLatestBriefingUpdateAt,
   buildFormProgress,
-  getFieldsForSection,
+  isBriefingComplete,
   isProfileComplete,
-  isSectionComplete,
+  normalizeBriefingRecord,
 } from '../../lib/domain/briefing';
 import {
   EDITORIAL_LINE_FIELDS,
@@ -17,13 +19,13 @@ import {
 } from '../../lib/domain/editorialLine';
 import { generateAndPersistContext, markContextStructurePending } from '../../lib/server/contextGeneration';
 import type {
-  BrandContextResponseRecord,
+  BriefingFormResponseRecord,
+  BriefingResponseRow,
   DailyNote,
   DailyNoteData,
   EditorialLineRecord,
   EditorialLineRow,
   GptEntry,
-  IntegratedBriefing,
   Profile,
 } from '../../types/dashboard';
 import {
@@ -88,19 +90,63 @@ async function fetchOneByColumn<T>(table: string, column: string, value: string)
   return Array.isArray(data) && data.length ? (data[0] as T) : null;
 }
 
+async function fetchManyByColumn<T>(table: string, column: string, value: string): Promise<T[]> {
+  const { response, data } = await supabaseRest(
+    `/rest/v1/${table}?${column}=eq.${encodeURIComponent(value)}&select=*`
+  );
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(data, `Falha ao buscar ${table}.`));
+  }
+  return Array.isArray(data) ? (data as T[]) : [];
+}
+
 async function fetchOneById<T>(table: string, userId: string): Promise<T | null> {
   return fetchOneByColumn<T>(table, 'id', userId);
 }
 
+async function archiveActiveBriefingRows(userId: string) {
+  const { response, data } = await supabaseRest(
+    `/rest/v1/brand_context_responses?user_id=eq.${encodeURIComponent(userId)}&form_type=eq.${encodeURIComponent(BRIEFING_FORM_CONFIG.form_id)}&response_status=eq.active`,
+    {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: {
+        response_status: 'archived',
+        updated_at: new Date().toISOString(),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(data, 'Falha ao arquivar respostas anteriores do briefing.'));
+  }
+}
+
+async function insertBriefingRows(rows: BriefingResponseRow[]) {
+  if (!rows.length) return [];
+
+  const { response, data } = await supabaseRest('/rest/v1/brand_context_responses', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: rows,
+  });
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(data, 'Falha ao salvar respostas do briefing.'));
+  }
+
+  return Array.isArray(data) ? (data as BriefingResponseRow[]) : [];
+}
+
 function buildProgressWithEditorialLine(
   profile: Profile,
-  integratedBriefing: BrandContextResponseRecord,
+  integratedBriefing: BriefingFormResponseRecord,
   editorialLine: EditorialLineRecord | null
 ) {
   return buildFormProgress({
-    profile_completed_at: isProfileComplete(profile) ? integratedBriefing.profile_completed_at || null : null,
-    brand_core_saved_at: integratedBriefing.brand_core_saved_at || null,
-    human_core_saved_at: integratedBriefing.human_core_saved_at || null,
+    profile_completed_at: isProfileComplete(profile) ? (profile as Profile & { updated_at?: string | null }).updated_at || new Date().toISOString() : null,
+    briefing_saved_at:
+      isBriefingComplete(integratedBriefing.briefing_blocks) ? getLatestBriefingUpdateAt(integratedBriefing.response_rows) : null,
     integrated_briefing_saved_at: integratedBriefing.integrated_briefing_saved_at || null,
     editorial_line_saved_at: editorialLine?.updated_at || editorialLine?.created_at || null,
   });
@@ -263,16 +309,23 @@ export default async function handler(
       const saved = await upsertById<Profile>('user_profiles', userId, pickFields<Profile>(payload, PROFILE_FIELD_KEYS));
       const resolvedProfile = await resolveProfileAvatarUrl(saved);
       const profileCompletedAt = isProfileComplete(saved)
-        ? payload?.profile_completed_at || new Date().toISOString()
+        ? ((saved as Profile & { updated_at?: string | null }).updated_at || new Date().toISOString())
         : null;
 
-      await upsertById<BrandContextResponseRecord>('brand_context_responses', userId, {
-        profile_completed_at: profileCompletedAt,
+      const currentBriefingRows = await fetchManyByColumn<BriefingResponseRow>('brand_context_responses', 'user_id', userId);
+      const currentBriefing = normalizeBriefingRecord({
+        briefing_form_id: BRIEFING_FORM_CONFIG.form_id,
+        response_rows: currentBriefingRows.filter(
+          (row) => row.form_type === BRIEFING_FORM_CONFIG.form_id && row.response_status === 'active'
+        ),
       });
+      const currentEditorialLine = await fetchOneByColumn<EditorialLineRecord>('editorial_lines', 'user_id', userId);
 
       const progress = buildFormProgress({
         profile_completed_at: profileCompletedAt,
-        editorial_line_saved_at: (await fetchOneByColumn<EditorialLineRecord>('editorial_lines', 'user_id', userId))?.updated_at || null,
+        briefing_saved_at: isBriefingComplete(currentBriefing.briefing_blocks) ? getLatestBriefingUpdateAt(currentBriefing.response_rows) : null,
+        integrated_briefing_saved_at: null,
+        editorial_line_saved_at: currentEditorialLine?.updated_at || currentEditorialLine?.created_at || null,
       });
 
       await markContextStructurePending({
@@ -287,19 +340,16 @@ export default async function handler(
       });
     }
 
-    if (resource === 'brand_core' || resource === 'human_core') {
-      const section = resource;
-      const fields = getFieldsForSection(section);
-      const sectionPayload = pickFields<IntegratedBriefing>(payload, fields);
-      const mergedRow = {
-        ...sectionPayload,
-        ...(section === 'brand_core'
-          ? { brand_core_saved_at: isSectionComplete('brand_core', sectionPayload as IntegratedBriefing) ? new Date().toISOString() : null }
-          : { human_core_saved_at: isSectionComplete('human_core', sectionPayload as IntegratedBriefing) ? new Date().toISOString() : null }),
-        integrated_briefing_saved_at: null,
-      };
+    if (resource === 'integrated_briefing') {
+      const normalizedPayload = normalizeBriefingRecord(payload as Partial<BriefingFormResponseRecord> | null);
+      const rowsToInsert = buildBriefingRowsFromRecord(userId, normalizedPayload);
 
-      const saved = await upsertById<BrandContextResponseRecord>('brand_context_responses', userId, mergedRow);
+      await archiveActiveBriefingRows(userId);
+      const insertedRows = await insertBriefingRows(rowsToInsert);
+      const saved = normalizeBriefingRecord({
+        briefing_form_id: BRIEFING_FORM_CONFIG.form_id,
+        response_rows: insertedRows,
+      });
       const profile = (await fetchOneById<Profile>('user_profiles', userId)) || {};
       const editorialLine = await fetchOneByColumn<EditorialLineRecord>('editorial_lines', 'user_id', userId);
       const progress = buildProgressWithEditorialLine(profile, saved, editorialLine);
@@ -313,45 +363,35 @@ export default async function handler(
       });
     }
 
-    if (resource === 'integrated_briefing') {
-      const saved = await upsertById<IntegratedBriefing>(
-        'brand_context_responses',
-        userId,
-        pickFields<IntegratedBriefing>(payload, INTEGRATED_BRIEFING_FIELDS)
-      );
-      return res.status(200).json({ success: true, integrated_briefing: saved });
-    }
-
     if (resource === 'integrated_briefing_finalize') {
       const profile = (await fetchOneById<Profile>('user_profiles', userId)) || {};
-      const integratedBriefing = ((await fetchOneById<BrandContextResponseRecord>('brand_context_responses', userId)) ||
-        {}) as BrandContextResponseRecord;
+      const integratedBriefingRows = await fetchManyByColumn<BriefingResponseRow>('brand_context_responses', 'user_id', userId);
+      const integratedBriefing = normalizeBriefingRecord({
+        briefing_form_id: BRIEFING_FORM_CONFIG.form_id,
+        response_rows: integratedBriefingRows.filter(
+          (row) => row.form_type === BRIEFING_FORM_CONFIG.form_id && row.response_status === 'active'
+        ),
+      });
       const editorialLine = await fetchOneByColumn<EditorialLineRecord>('editorial_lines', 'user_id', userId);
       const progress = buildProgressWithEditorialLine(profile, integratedBriefing, editorialLine);
 
       if (!progress.is_ready_for_final_save) {
-        return res
-          .status(400)
-          .json({ error: 'Perfil, linha editorial, Brand Core e Human Core precisam estar salvos antes do briefing integrado.' });
+        return res.status(400).json({ error: 'Perfil, briefing e linha editorial precisam estar salvos antes do contexto integrado.' });
       }
-
-      const finalizedBriefing = await upsertById<BrandContextResponseRecord>('brand_context_responses', userId, {
-        integrated_briefing_saved_at: new Date().toISOString(),
-      });
 
       const contextStructure = await generateAndPersistContext({
         userId,
         profile,
-        integratedBriefing: finalizedBriefing,
+        integratedBriefing,
         editorialLine: createDefaultEditorialLineRecord(editorialLine, userId),
       });
 
       return res.status(200).json({
         success: true,
-        integrated_briefing: finalizedBriefing,
+        integrated_briefing: integratedBriefing,
         form_progress: buildFormProgress({
           ...progress,
-          integrated_briefing_saved_at: finalizedBriefing.integrated_briefing_saved_at || null,
+          integrated_briefing_saved_at: contextStructure?.generated_at || new Date().toISOString(),
         }),
         context_structure: contextStructure,
       });
@@ -360,8 +400,13 @@ export default async function handler(
     if (resource === 'editorial_line') {
       const saved = await upsertByUserId<EditorialLineRecord>('editorial_lines', userId, parseEditorialLinePayload(payload));
       const profile = (await fetchOneById<Profile>('user_profiles', userId)) || {};
-      const integratedBriefing =
-        ((await fetchOneById<BrandContextResponseRecord>('brand_context_responses', userId)) || {}) as BrandContextResponseRecord;
+      const integratedBriefingRows = await fetchManyByColumn<BriefingResponseRow>('brand_context_responses', 'user_id', userId);
+      const integratedBriefing = normalizeBriefingRecord({
+        briefing_form_id: BRIEFING_FORM_CONFIG.form_id,
+        response_rows: integratedBriefingRows.filter(
+          (row) => row.form_type === BRIEFING_FORM_CONFIG.form_id && row.response_status === 'active'
+        ),
+      });
       const normalizedSaved = createDefaultEditorialLineRecord(saved, userId);
       const progress = buildProgressWithEditorialLine(profile, integratedBriefing, normalizedSaved);
 

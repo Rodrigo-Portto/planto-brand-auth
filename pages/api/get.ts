@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createDefaultEditorialLineRecord } from '../../lib/domain/editorialLine';
 import type { DashboardPayload } from '../../types/dashboard';
-import { buildFormProgress } from '../../lib/domain/briefing';
+import { BRIEFING_FORM_CONFIG, buildFormProgress, getLatestBriefingUpdateAt, isBriefingComplete, isProfileComplete, normalizeBriefingRecord } from '../../lib/domain/briefing';
 import {
   BRAND_LIBRARY_BUCKET,
   createSignedStorageUrl,
@@ -68,10 +68,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const userId = auth.user.id;
 
   try {
-    const [profile, integratedBriefing, editorialLine, contextStructure, attachments, gptTokens, legacyDocuments, dailyNotes] =
+    const [profile, integratedBriefingRows, editorialLine, contextStructure, attachments, gptTokens, legacyDocuments, dailyNotes] =
       await Promise.all([
         fetchOneById<DashboardPayload['profile']>('user_profiles', 'id', userId),
-        fetchOneById<DashboardPayload['forms']['integrated_briefing']>('brand_context_responses', 'id', userId),
+        fetchMany<DashboardPayload['forms']['integrated_briefing']['response_rows'][number]>(
+          `/rest/v1/brand_context_responses?user_id=eq.${encodeURIComponent(userId)}&form_type=eq.${encodeURIComponent(BRIEFING_FORM_CONFIG.form_id)}&response_status=eq.active&select=*&order=question_order.asc`,
+          'Falha ao buscar respostas do briefing.'
+        ),
         fetchOneById<DashboardPayload['editorial_line']>('editorial_lines', 'user_id', userId),
         fetchOneById<DashboardPayload['context_structure']>('brand_context_structures', 'user_id', userId),
         fetchMany<DashboardPayload['attachments'][number]>(
@@ -112,9 +115,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     }
 
+    const normalizedBriefing = normalizeBriefingRecord({
+      briefing_form_id: BRIEFING_FORM_CONFIG.form_id,
+      response_rows: integratedBriefingRows || [],
+    });
     const resolvedEditorialLine = createDefaultEditorialLineRecord(editorialLine, userId);
     const formProgress = buildFormProgress({
-      ...(integratedBriefing || null),
+      profile_completed_at: isProfileComplete(resolvedProfile) ? (resolvedProfile as DashboardPayload['profile'] & { updated_at?: string | null }).updated_at || new Date().toISOString() : null,
+      briefing_saved_at: isBriefingComplete(normalizedBriefing.briefing_blocks) ? getLatestBriefingUpdateAt(normalizedBriefing.response_rows) : null,
+      integrated_briefing_saved_at: contextStructure?.generated_at || null,
       editorial_line_saved_at: resolvedEditorialLine.updated_at || resolvedEditorialLine.created_at || null,
     });
 
@@ -125,7 +134,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       profile: resolvedProfile,
       forms: {
-        integrated_briefing: integratedBriefing || {},
+        integrated_briefing: normalizedBriefing,
       },
       form_progress: formProgress,
       editorial_line: resolvedEditorialLine,

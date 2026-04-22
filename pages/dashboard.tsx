@@ -14,6 +14,7 @@ import { ProfilePanel } from '../components/dashboard/ProfilePanel';
 import { TokenPanel } from '../components/dashboard/TokenPanel';
 import {
   CalendarIcon,
+  CheckIcon,
   ChevronIcon,
   ClipboardListIcon,
   CloseIcon,
@@ -317,7 +318,7 @@ export default function DashboardPage() {
 
   function renderMainPanelBody() {
     const collapsedCount =
-      Number(brandContextCollapsed) + Number(collapsedPanels.brandCore) + Number(collapsedPanels.humanCore);
+      Number(brandContextCollapsed);
     const viewPadding = isCompact ? '10px' : '22px';
     const formsScrollStyle =
       layoutPrefs.mainTab === 'forms'
@@ -348,22 +349,30 @@ export default function DashboardPage() {
             styles={styles}
             theme={theme}
             integratedBriefing={integratedBriefingForm.integratedBriefing}
-            collapsedPanels={collapsedPanels}
             saving={integratedBriefingForm.savingIntegratedBriefing}
-            savingSection={integratedBriefingForm.savingSection}
             formProgress={integratedBriefingForm.formProgress}
             brandContextCollapsed={brandContextCollapsed}
-            sectionState={integratedBriefingForm.sectionState}
-            onTogglePanel={togglePanel}
-            onFieldChange={(key, value) =>
-              integratedBriefingForm.setIntegratedBriefing((current) => ({
-                ...current,
-                [key]: value,
-              }))
+            isEditing={integratedBriefingForm.isEditing}
+            onAnswerChange={(blockIndex, questionIndex, value) =>
+              integratedBriefingForm.setIntegratedBriefing((current) => {
+                const briefingBlocks = (current.briefing_blocks || []).map((block, currentBlockIndex) => {
+                  if (currentBlockIndex !== blockIndex) return block;
+
+                  const answers = [...block.answers];
+                  answers[questionIndex] = value;
+
+                  return {
+                    ...block,
+                    answers,
+                  };
+                });
+
+                return {
+                  ...current,
+                  briefing_blocks: briefingBlocks,
+                };
+              })
             }
-            onStartSectionEdit={integratedBriefingForm.startSectionEditing}
-            onCancelSectionEdit={integratedBriefingForm.cancelSectionEditing}
-            onSaveSection={integratedBriefingForm.saveBriefingSection}
             onSaveIntegratedBriefing={integratedBriefingForm.finalizeIntegratedBriefing}
           />
         ) : layoutPrefs.mainTab === 'editorial' ? (
@@ -607,15 +616,74 @@ export default function DashboardPage() {
         ) : null}
       </>
     ) : layoutPrefs.mainTab === 'forms' ? (
-      <button
-        type="button"
-        style={styles.cardIconButton}
-        onClick={() => setBrandContextCollapsed((current) => !current)}
-        aria-label={brandContextCollapsed ? 'Expandir diretriz do questionário' : 'Recolher diretriz do questionário'}
-        title={brandContextCollapsed ? 'Expandir diretriz do questionário' : 'Recolher diretriz do questionário'}
-      >
-        <ChevronIcon collapsed={brandContextCollapsed} color={theme.textStrong} />
-      </button>
+      <>
+        <span
+          aria-label={
+            integratedBriefingForm.formProgress.is_briefing_saved
+              ? 'Briefing completo e salvo'
+              : 'Briefing ainda não concluído'
+          }
+          title={
+            integratedBriefingForm.formProgress.is_briefing_saved
+              ? 'Briefing completo e salvo'
+              : 'Briefing ainda não concluído'
+          }
+          style={{
+            ...styles.cardIconButton,
+            cursor: 'default',
+            background: integratedBriefingForm.formProgress.is_briefing_saved
+              ? 'rgba(34, 160, 85, 0.18)'
+              : 'rgba(148, 163, 184, 0.18)',
+          }}
+        >
+          <CheckIcon
+            color={integratedBriefingForm.formProgress.is_briefing_saved ? '#22a055' : '#9aa4b2'}
+          />
+        </span>
+        {integratedBriefingForm.isEditing ? (
+          <>
+            <button
+              type="button"
+              style={styles.cardIconButton}
+              onClick={integratedBriefingForm.saveBriefing}
+              disabled={integratedBriefingForm.savingBriefing}
+              aria-label="Salvar briefing"
+              title={integratedBriefingForm.savingBriefing ? 'Salvando...' : 'Salvar briefing'}
+            >
+              <SaveIcon color={theme.textStrong} />
+            </button>
+            <button
+              type="button"
+              style={styles.cardIconButton}
+              onClick={integratedBriefingForm.cancelEditing}
+              disabled={integratedBriefingForm.savingBriefing}
+              aria-label="Cancelar edição do briefing"
+              title="Cancelar edição do briefing"
+            >
+              <CloseIcon color={theme.textStrong} />
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            style={styles.cardIconButton}
+            onClick={integratedBriefingForm.startEditing}
+            aria-label="Editar briefing"
+            title="Editar briefing"
+          >
+            <PencilIcon color={theme.textStrong} />
+          </button>
+        )}
+        <button
+          type="button"
+          style={styles.cardIconButton}
+          onClick={() => setBrandContextCollapsed((current) => !current)}
+          aria-label={brandContextCollapsed ? 'Expandir diretriz do questionário' : 'Recolher diretriz do questionário'}
+          title={brandContextCollapsed ? 'Expandir diretriz do questionário' : 'Recolher diretriz do questionário'}
+        >
+          <ChevronIcon collapsed={brandContextCollapsed} color={theme.textStrong} />
+        </button>
+      </>
     ) : layoutPrefs.mainTab === 'daily_notes' ? (
       <button
         type="button"
@@ -689,7 +757,7 @@ export default function DashboardPage() {
             const titles: Record<typeof layoutPrefs.mainTab, string> = {
               forms: 'Contexto de Marca',
               editorial: 'Editorial',
-              gpt_entries: 'Entradas GPT',
+              gpt_entries: 'Documentos GPT',
               daily_notes: 'Notas diárias',
               profile: 'Perfil',
             };
