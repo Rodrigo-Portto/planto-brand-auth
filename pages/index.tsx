@@ -29,9 +29,8 @@ export default function HomePage() {
       const raw = window.localStorage.getItem(REMEMBER_ACCESS_KEY);
       if (!raw) return;
 
-      const remembered = JSON.parse(raw) as { email?: string; password?: string; remember?: boolean };
+      const remembered = JSON.parse(raw) as { email?: string; remember?: boolean };
       if (remembered?.email) setEmail(remembered.email);
-      if (remembered?.password) setPassword(remembered.password);
       setRememberAccess(Boolean(remembered?.remember));
     } catch {
       window.localStorage.removeItem(REMEMBER_ACCESS_KEY);
@@ -55,7 +54,6 @@ export default function HomePage() {
         REMEMBER_ACCESS_KEY,
         JSON.stringify({
           email,
-          password,
           remember: true,
         })
       );
