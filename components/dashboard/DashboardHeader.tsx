@@ -1,5 +1,5 @@
 import type { DashboardStyles, DashboardThemeColors, ThemeMode } from '../../types/dashboard';
-import { LogOutIcon, MoonIcon, PanelLeftIcon, PanelRightIcon, SunIcon } from './icons';
+import { LogOutIcon, MoonIcon, PanelLeftIcon, SunIcon } from './icons';
 
 interface DashboardHeaderProps {
   appName: string;
@@ -7,9 +7,7 @@ interface DashboardHeaderProps {
   styles: DashboardStyles;
   theme: DashboardThemeColors;
   navCollapsed: boolean;
-  supportCollapsed: boolean;
   onToggleNavPanel: () => void;
-  onToggleSupportPanel: () => void;
   onToggleTheme: () => void;
   onLogout: () => void;
 }
@@ -20,9 +18,7 @@ export function DashboardHeader({
   styles,
   theme,
   navCollapsed,
-  supportCollapsed,
   onToggleNavPanel,
-  onToggleSupportPanel,
   onToggleTheme,
   onLogout,
 }: DashboardHeaderProps) {
@@ -43,15 +39,6 @@ export function DashboardHeader({
           title={navCollapsed ? 'Expandir painel esquerdo' : 'Recolher painel esquerdo'}
         >
           <PanelLeftIcon color={theme.text} />
-        </button>
-        <button
-          onClick={onToggleSupportPanel}
-          style={styles.iconOnlyButton}
-          type="button"
-          aria-label={supportCollapsed ? 'Expandir painel direito' : 'Recolher painel direito'}
-          title={supportCollapsed ? 'Expandir painel direito' : 'Recolher painel direito'}
-        >
-          <PanelRightIcon color={theme.text} />
         </button>
         <button
           onClick={onToggleTheme}

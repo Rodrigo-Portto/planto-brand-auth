@@ -43,6 +43,18 @@ async function fetchMany<T>(path: string, fallback: string): Promise<T[]> {
   return Array.isArray(data) ? (data as T[]) : [];
 }
 
+async function fetchManyByUser<T>(table: string, userId: string, orderBy: string, fallback: string): Promise<T[]> {
+  const path = `/rest/v1/${table}?user_id=eq.${encodeURIComponent(userId)}&select=*&order=${orderBy}`;
+  const { response, data } = await supabaseRest(path);
+  if (!response.ok) {
+    if (isMissingTableError(data, table)) {
+      return [];
+    }
+    throw new Error(extractErrorMessage(data, fallback));
+  }
+  return Array.isArray(data) ? (data as T[]) : [];
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse<DashboardPayload | { error: string }>) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Método não permitido.' });
@@ -56,7 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const userId = auth.user.id;
 
   try {
-    const [profile, integratedBriefing, editorialLine, contextStructure, attachments, gptEntries, gptTokens, legacyDocuments] =
+    const [profile, integratedBriefing, editorialLine, contextStructure, attachments, gptEntries, gptTokens, legacyDocuments, dailyNotes] =
       await Promise.all([
         fetchOneById<DashboardPayload['profile']>('user_profiles', 'id', userId),
         fetchOneById<DashboardPayload['forms']['integrated_briefing']>('brand_context_responses', 'id', userId),
@@ -77,6 +89,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         fetchMany<DashboardPayload['legacy_documents'][number]>(
           `/rest/v1/brand_documents?user_id=eq.${encodeURIComponent(userId)}&select=*&order=updated_at.desc`,
           'Falha ao buscar documentos legados.'
+        ),
+        fetchManyByUser<DashboardPayload['daily_notes'][number]>(
+          'daily_notes',
+          userId,
+          'note_date.desc,created_at.desc',
+          'Falha ao buscar notas diarias.'
         ),
       ]);
 
@@ -120,6 +138,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       gpt_entries: gptEntries,
       gpt_tokens: gptTokens,
       legacy_documents: legacyDocuments,
+      daily_notes: dailyNotes,
     });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Erro ao carregar dados.' });

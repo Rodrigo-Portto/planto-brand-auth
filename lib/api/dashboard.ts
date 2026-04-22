@@ -1,6 +1,8 @@
 import type {
   BrandContextResponseRecord,
   ContextStructure,
+  DailyNote,
+  DailyNoteData,
   DashboardPayload,
   EditorialLineRecord,
   FormProgress,
@@ -202,5 +204,54 @@ export async function createToken(accessToken: string): Promise<TokenCreatePaylo
     method: 'POST',
     accessToken,
     body: {},
+  });
+}
+
+export async function createDailyNote(
+  accessToken: string,
+  note: {
+    note_date: string;
+    note_data: DailyNoteData;
+  }
+): Promise<{ note: DailyNote | null }> {
+  return requestJson<{ note: DailyNote | null }>('/api/save', {
+    method: 'POST',
+    accessToken,
+    body: {
+      resource: 'daily_note',
+      action: 'create',
+      payload: note,
+    } satisfies SaveResourceRequest<typeof note>,
+  });
+}
+
+export async function updateDailyNote(
+  accessToken: string,
+  note: {
+    id: string;
+    note_date: string;
+    note_data: DailyNoteData;
+  }
+): Promise<{ note: DailyNote | null }> {
+  return requestJson<{ note: DailyNote | null }>('/api/save', {
+    method: 'POST',
+    accessToken,
+    body: {
+      resource: 'daily_note',
+      action: 'update',
+      payload: note,
+    } satisfies SaveResourceRequest<typeof note>,
+  });
+}
+
+export async function deleteDailyNote(accessToken: string, id: string): Promise<{ success: boolean }> {
+  return requestJson<{ success: boolean }>('/api/save', {
+    method: 'POST',
+    accessToken,
+    body: {
+      resource: 'daily_note',
+      action: 'delete',
+      payload: { id },
+    } satisfies SaveResourceRequest<{ id: string }>,
   });
 }

@@ -129,6 +129,21 @@ export interface LegacyDocument {
   updated_at?: string | null;
 }
 
+export interface DailyNoteData {
+  title?: string | null;
+  content?: string | null;
+  tag?: string | null;
+}
+
+export interface DailyNote {
+  id: string;
+  user_id: string;
+  note_date: string;
+  note_data?: DailyNoteData | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
 export interface DashboardPayload {
   user: UserSummary | null;
   profile: Profile;
@@ -142,6 +157,7 @@ export interface DashboardPayload {
   gpt_entries: GptEntry[];
   gpt_tokens: GptToken[];
   legacy_documents: LegacyDocument[];
+  daily_notes: DailyNote[];
 }
 
 export type SaveResourceName =
@@ -152,7 +168,8 @@ export type SaveResourceName =
   | 'integrated_briefing_finalize'
   | 'editorial_line'
   | 'gpt_entry'
-  | 'legacy_document';
+  | 'legacy_document'
+  | 'daily_note';
 
 export interface SaveResourceRequest<TPayload = unknown> {
   resource: SaveResourceName;

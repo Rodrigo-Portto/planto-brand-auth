@@ -3,6 +3,8 @@ import { useRouter } from 'next/router';
 import { BriefingPanel } from '../components/dashboard/BriefingPanel';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { DashboardShell } from '../components/dashboard/DashboardShell';
+import { DailyNoteModal } from '../components/dashboard/DailyNoteModal';
+import { DailyNotesPanel } from '../components/dashboard/DailyNotesPanel';
 import { EditorialLinePanel } from '../components/dashboard/EditorialLinePanel';
 import { GptEntriesPanel } from '../components/dashboard/GptEntriesPanel';
 import { KnowledgePanel } from '../components/dashboard/KnowledgePanel';
@@ -10,13 +12,15 @@ import { LibraryQuickNav } from '../components/dashboard/LibraryQuickNav';
 import { MonthlyCalendarPanel } from '../components/dashboard/MonthlyCalendarPanel';
 import { ProfilePanel } from '../components/dashboard/ProfilePanel';
 import { TokenPanel } from '../components/dashboard/TokenPanel';
-import { CloseIcon, PencilIcon, SaveIcon } from '../components/dashboard/icons';
+import { ChevronIcon, CloseIcon, PencilIcon, PlusIcon, SaveIcon } from '../components/dashboard/icons';
+import { useCollapsedPanels } from '../hooks/useCollapsedPanels';
 import {
   useDashboardLayoutPrefs,
   type DashboardCardId,
 } from '../hooks/useDashboardLayoutPrefs';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useDashboardSession } from '../hooks/useDashboardSession';
+import { useDailyNotes } from '../hooks/useDailyNotes';
 import { useGptEntries } from '../hooks/useGptEntries';
 import { useGptToken } from '../hooks/useGptToken';
 import { useEditorialLineForm } from '../hooks/useEditorialLineForm';
@@ -32,6 +36,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { token, sessionReady, resetSession, logout } = useDashboardSession(router);
   const { themeMode, toggleTheme } = useThemeMode();
+  const { collapsedPanels, togglePanel } = useCollapsedPanels();
   const layoutPrefs = useDashboardLayoutPrefs();
 
   const [notice, setNotice] = useState('');
@@ -40,7 +45,7 @@ export default function DashboardPage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [profileEditing, setProfileEditing] = useState(false);
   const [navPanelCollapsed, setNavPanelCollapsed] = useState(false);
-  const [supportPanelCollapsed, setSupportPanelCollapsed] = useState(false);
+  const [brandContextCollapsed, setBrandContextCollapsed] = useState(false);
 
   const theme = themeTokens[themeMode];
   const styles = useMemo(() => createDashboardStyles(theme, viewportWidth), [theme, viewportWidth]);
@@ -51,18 +56,15 @@ export default function DashboardPage() {
     if (isCompact) return 'minmax(0, 1fr)';
 
     const hasNav = !navPanelCollapsed;
-    const hasSupport = !supportPanelCollapsed;
 
     if (isWide) {
-      if (hasNav && hasSupport) return 'minmax(210px, 280px) minmax(0, 1fr) minmax(250px, 320px)';
-      if (hasNav && !hasSupport) return 'minmax(210px, 280px) minmax(0, 1fr)';
-      if (!hasNav && hasSupport) return 'minmax(0, 1fr) minmax(250px, 320px)';
+      if (hasNav) return 'minmax(210px, 280px) minmax(0, 1fr)';
       return 'minmax(0, 1fr)';
     }
 
-    if (hasNav || hasSupport) return 'minmax(0, 1.7fr) minmax(280px, 1fr)';
+    if (hasNav) return 'minmax(0, 1.7fr) minmax(280px, 1fr)';
     return 'minmax(0, 1fr)';
-  }, [isCompact, isWide, navPanelCollapsed, supportPanelCollapsed]);
+  }, [isCompact, isWide, navPanelCollapsed]);
 
   function showError(message: string) {
     setNotice('');
@@ -167,6 +169,14 @@ export default function DashboardPage() {
     onError: showError,
   });
 
+  const dailyNotes = useDailyNotes({
+    initialNotes: dashboardData.dailyNotes,
+    token,
+    onSaved: showSavedNotice,
+    onError: showError,
+    onCreated: () => layoutPrefs.setMainTab('daily_notes'),
+  });
+
   const greetingName = useMemo(() => {
     const fullName = [profileForm.profile?.name, profileForm.profile?.surname].filter(Boolean).join(' ').trim();
     if (fullName) return fullName;
@@ -237,18 +247,33 @@ export default function DashboardPage() {
   }
 
   function renderMainPanelBody() {
+    const collapsedCount =
+      Number(brandContextCollapsed) + Number(collapsedPanels.brandCore) + Number(collapsedPanels.humanCore);
+    const formsScrollStyle =
+      layoutPrefs.mainTab === 'forms'
+        ? {
+            ...styles.mainPanelScroll,
+            maxHeight: 'none',
+            overflowY: 'visible' as const,
+            minHeight: isCompact ? 'auto' : `calc(100vh - ${180 + collapsedCount * 36}px)`,
+          }
+        : styles.mainPanelScroll;
+
     return (
-      <div style={styles.mainPanelScroll} data-planto-scrollbar="sidebar">
+      <div style={formsScrollStyle} data-planto-scrollbar="sidebar">
         {layoutPrefs.mainTab === 'forms' ? (
           <BriefingPanel
             styles={styles}
             theme={theme}
             integratedBriefing={integratedBriefingForm.integratedBriefing}
+            collapsedPanels={collapsedPanels}
             saving={integratedBriefingForm.savingIntegratedBriefing}
             savingSection={integratedBriefingForm.savingSection}
             formProgress={integratedBriefingForm.formProgress}
             contextStructure={integratedBriefingForm.contextStructure}
+            brandContextCollapsed={brandContextCollapsed}
             sectionState={integratedBriefingForm.sectionState}
+            onTogglePanel={togglePanel}
             onFieldChange={(key, value) =>
               integratedBriefingForm.setIntegratedBriefing((current) => ({
                 ...current,
@@ -291,6 +316,15 @@ export default function DashboardPage() {
             onCancelEntryChanges={gptEntries.cancelEntryChanges}
             onSaveEntryChanges={gptEntries.saveEntryChanges}
             onDeleteEntry={gptEntries.deleteEntry}
+          />
+        ) : layoutPrefs.mainTab === 'daily_notes' ? (
+          <DailyNotesPanel
+            styles={styles}
+            theme={theme}
+            notes={dailyNotes.notes}
+            deletingId={dailyNotes.deletingId}
+            onEdit={dailyNotes.openEdit}
+            onDelete={dailyNotes.removeNote}
           />
         ) : (
           <section id="perfil-panel" style={{ ...styles.centerPanel, padding: 0, gap: 0 }}>
@@ -380,19 +414,16 @@ export default function DashboardPage() {
         );
       }
 
-      return null;
-    });
-  }
-
-  function renderSupportZoneCards() {
-    const cards = layoutPrefs.cardOrder.support;
-
-    return cards.map((cardId) => {
       if (cardId === 'calendar') {
         return renderCardChrome(
           cardId,
           'Calendário',
-          <MonthlyCalendarPanel styles={styles} theme={theme} />,
+          <MonthlyCalendarPanel
+            styles={styles}
+            theme={theme}
+            notedDates={dailyNotes.notedDates}
+            onSelectDate={dailyNotes.openCreateByDate}
+          />,
           undefined,
           false
         );
@@ -438,6 +469,26 @@ export default function DashboardPage() {
           </button>
         ) : null}
       </>
+    ) : layoutPrefs.mainTab === 'forms' ? (
+      <button
+        type="button"
+        style={styles.cardIconButton}
+        onClick={() => setBrandContextCollapsed((current) => !current)}
+        aria-label={brandContextCollapsed ? 'Expandir diretriz do questionário' : 'Recolher diretriz do questionário'}
+        title={brandContextCollapsed ? 'Expandir diretriz do questionário' : 'Recolher diretriz do questionário'}
+      >
+        <ChevronIcon collapsed={brandContextCollapsed} color={theme.textStrong} />
+      </button>
+    ) : layoutPrefs.mainTab === 'daily_notes' ? (
+      <button
+        type="button"
+        style={styles.cardIconButton}
+        onClick={dailyNotes.openCreateToday}
+        aria-label="Adicionar nota diária"
+        title="Adicionar nota diária"
+      >
+        <PlusIcon color={theme.textStrong} />
+      </button>
     ) : undefined;
 
   const isLoading = !sessionReady || dashboardData.loading;
@@ -452,9 +503,7 @@ export default function DashboardPage() {
           styles={styles}
           theme={theme}
           navCollapsed={navPanelCollapsed}
-          supportCollapsed={supportPanelCollapsed}
           onToggleNavPanel={() => setNavPanelCollapsed((current) => !current)}
-          onToggleSupportPanel={() => setSupportPanelCollapsed((current) => !current)}
           onToggleTheme={toggleTheme}
           onLogout={logout}
         />
@@ -494,24 +543,29 @@ export default function DashboardPage() {
               forms: 'Questionários',
               editorial: 'Editorial',
               gpt_entries: 'Entradas GPT',
+              daily_notes: 'Notas diárias',
               profile: 'Perfil',
             };
             return renderCardChrome(cardId, titles[layoutPrefs.mainTab], renderMainPanelBody(), mainHeaderActions);
           })}
         </main>
-
-        {!supportPanelCollapsed ? (
-          <aside
-            style={{
-              ...styles.zoneSupport,
-              gridColumn: isWide ? (navPanelCollapsed ? '2' : '3') : isCompact ? '1' : '2',
-            }}
-            data-planto-scrollbar="sidebar"
-          >
-            {renderSupportZoneCards()}
-          </aside>
-        ) : null}
       </section>
+      <DailyNoteModal
+        styles={styles}
+        theme={theme}
+        open={dailyNotes.isModalOpen}
+        saving={dailyNotes.saving}
+        isEditing={dailyNotes.isEditing}
+        noteDate={dailyNotes.draft.note_date}
+        title={dailyNotes.draft.title}
+        content={dailyNotes.draft.content}
+        tag={dailyNotes.draft.tag}
+        onTitleChange={(value) => dailyNotes.setDraftField('title', value)}
+        onContentChange={(value) => dailyNotes.setDraftField('content', value)}
+        onTagChange={(value) => dailyNotes.setDraftField('tag', value)}
+        onCancel={dailyNotes.closeModal}
+        onSave={dailyNotes.saveDraft}
+      />
     </DashboardShell>
   );
 }

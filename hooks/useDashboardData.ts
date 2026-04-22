@@ -4,6 +4,7 @@ import { createDefaultEditorialLineRecord } from '../lib/domain/editorialLine';
 import type {
   Attachment,
   ContextStructure,
+  DailyNote,
   DashboardPayload,
   EditorialLineRecord,
   FormProgress,
@@ -35,6 +36,7 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
   const [entries, setEntries] = useState<GptEntry[]>([]);
   const [tokens, setTokens] = useState<GptToken[]>([]);
   const [legacyDocuments, setLegacyDocuments] = useState<DashboardPayload['legacy_documents']>([]);
+  const [dailyNotes, setDailyNotes] = useState<DailyNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -67,6 +69,7 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
       setEntries(data.gpt_entries || []);
       setTokens(data.gpt_tokens || []);
       setLegacyDocuments(data.legacy_documents || []);
+      setDailyNotes(data.daily_notes || []);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro ao carregar dados.';
       if (message.toLowerCase().includes('token')) {
@@ -94,6 +97,7 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
     formProgress,
     contextStructure,
     legacyDocuments,
+    dailyNotes,
     loading,
     error,
     refresh,
@@ -105,5 +109,6 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
     setAttachments,
     setEntries,
     setTokens,
+    setDailyNotes,
   };
 }

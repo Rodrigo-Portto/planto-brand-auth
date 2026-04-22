@@ -1,22 +1,22 @@
 import type { ReactNode } from 'react';
 import type { DashboardStyles } from '../../types/dashboard';
+import type { DashboardMainTab } from '../../hooks/useDashboardLayoutPrefs';
 import { CalendarIcon, ClipboardListIcon, NotesIcon, UserIcon } from './icons';
-
-type CentralView = 'forms' | 'editorial' | 'gpt_entries' | 'profile';
 
 interface LibraryQuickNavProps {
   styles: DashboardStyles;
-  activeView: CentralView;
+  activeView: DashboardMainTab;
   collapsed?: boolean;
   iconColor: string;
-  onChangeView: (view: CentralView) => void;
+  onChangeView: (view: DashboardMainTab) => void;
 }
 
-const NAV_ITEMS: Array<{ key: CentralView; label: string; icon: (color: string) => ReactNode }> = [
+const NAV_ITEMS: Array<{ key: DashboardMainTab; label: string; icon: (color: string) => ReactNode }> = [
+  { key: 'profile', label: 'Perfil', icon: (color) => <UserIcon color={color} /> },
   { key: 'forms', label: 'Questionários', icon: (color) => <ClipboardListIcon color={color} /> },
   { key: 'editorial', label: 'Editorial', icon: (color) => <CalendarIcon color={color} /> },
+  { key: 'daily_notes', label: 'Notas diárias', icon: (color) => <NotesIcon color={color} /> },
   { key: 'gpt_entries', label: 'Entradas GPT', icon: (color) => <NotesIcon color={color} /> },
-  { key: 'profile', label: 'Perfil', icon: (color) => <UserIcon color={color} /> },
 ];
 
 export function LibraryQuickNav({ styles, activeView, collapsed = false, iconColor, onChangeView }: LibraryQuickNavProps) {

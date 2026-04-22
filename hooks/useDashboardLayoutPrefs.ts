@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type DashboardMainTab = 'forms' | 'editorial' | 'gpt_entries' | 'profile';
+export type DashboardMainTab = 'forms' | 'editorial' | 'gpt_entries' | 'profile' | 'daily_notes';
 export type DashboardLayoutZone = 'nav' | 'main' | 'support';
 export type DashboardCardId = 'nav_links' | 'session_actions' | 'main_content' | 'profile' | 'calendar' | 'knowledge' | 'token';
 
@@ -23,17 +23,17 @@ const DEFAULT_LAYOUT_PREFS: DashboardLayoutPrefsState = {
     token: false,
   },
   cardOrder: {
-    nav: ['nav_links', 'knowledge', 'token'],
+    nav: ['nav_links', 'calendar', 'knowledge', 'token'],
     main: ['main_content'],
-    support: ['calendar'],
+    support: [],
   },
   mainTab: 'forms',
 };
 
 const ZONE_CARD_IDS: Record<DashboardLayoutZone, DashboardCardId[]> = {
-  nav: ['nav_links', 'knowledge', 'token'],
+  nav: ['nav_links', 'calendar', 'knowledge', 'token'],
   main: ['main_content'],
-  support: ['calendar'],
+  support: [],
 };
 
 function sanitizeCardOrder(zone: DashboardLayoutZone, value: unknown): DashboardCardId[] {
@@ -71,7 +71,11 @@ function normalizePrefs(value: unknown): DashboardLayoutPrefsState {
   };
 
   const mainTab: DashboardMainTab =
-    raw.mainTab === 'forms' || raw.mainTab === 'editorial' || raw.mainTab === 'gpt_entries' || raw.mainTab === 'profile'
+    raw.mainTab === 'forms' ||
+    raw.mainTab === 'editorial' ||
+    raw.mainTab === 'gpt_entries' ||
+    raw.mainTab === 'profile' ||
+    raw.mainTab === 'daily_notes'
       ? raw.mainTab
       : DEFAULT_LAYOUT_PREFS.mainTab;
 

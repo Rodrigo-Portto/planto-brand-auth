@@ -4,6 +4,8 @@ import type { DashboardStyles, DashboardThemeColors } from '../../types/dashboar
 interface MonthlyCalendarPanelProps {
   styles: DashboardStyles;
   theme: DashboardThemeColors;
+  notedDates?: string[];
+  onSelectDate?: (date: Date) => void;
 }
 
 function startOfMonth(date: Date) {
@@ -18,9 +20,18 @@ function sameDate(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-export function MonthlyCalendarPanel({ styles, theme }: MonthlyCalendarPanelProps) {
+function toIsoDate(date: Date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function MonthlyCalendarPanel({ styles, theme, notedDates = [], onSelectDate }: MonthlyCalendarPanelProps) {
   const [cursor, setCursor] = useState(() => startOfMonth(new Date()));
   const today = new Date();
+
+  const notedDateKeys = useMemo(() => new Set(notedDates), [notedDates]);
 
   const monthLabel = useMemo(
     () => cursor.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
@@ -71,24 +82,51 @@ export function MonthlyCalendarPanel({ styles, theme }: MonthlyCalendarPanelProp
           ))}
 
           {days.map((cell, index) => {
-            const isToday = cell.date ? sameDate(cell.date, today) : false;
+            if (!cell.date || !cell.day) {
+              return <div key={`${cell.day || 'empty'}-${index}`} style={{ minHeight: '34px' }} />;
+            }
+
+            const isToday = sameDate(cell.date, today);
+            const dateKey = toIsoDate(cell.date);
+            const hasNotes = notedDateKeys.has(dateKey);
+
             return (
-              <div
-                key={`${cell.day || 'empty'}-${index}`}
+              <button
+                key={`${cell.day}-${index}`}
+                type="button"
+                onClick={() => onSelectDate?.(cell.date as Date)}
                 style={{
                   minHeight: '34px',
                   borderRadius: '6px',
                   border: `1px solid ${isToday ? theme.borderAccent : theme.border}`,
-                  background: cell.day ? (isToday ? theme.accentSoft : theme.shellMuted) : 'transparent',
-                  color: cell.day ? theme.text : theme.textMuted,
+                  background: isToday ? theme.accentSoft : theme.shellMuted,
+                  color: theme.text,
                   display: 'grid',
                   placeItems: 'center',
                   fontSize: '0.82rem',
                   fontWeight: isToday ? 700 : 500,
+                  position: 'relative',
+                  cursor: 'pointer',
+                  padding: 0,
                 }}
+                aria-label={`Adicionar nota para ${cell.date.toLocaleDateString('pt-BR')}`}
+                title="Adicionar nota"
               >
-                {cell.day || ''}
-              </div>
+                {cell.day}
+                {hasNotes ? (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      bottom: '4px',
+                      right: '4px',
+                      width: '5px',
+                      height: '5px',
+                      borderRadius: '999px',
+                      background: theme.accent,
+                    }}
+                  />
+                ) : null}
+              </button>
             );
           })}
         </div>

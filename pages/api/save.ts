@@ -18,6 +18,8 @@ import {
 import { generateAndPersistContext, markContextStructurePending } from '../../lib/server/contextGeneration';
 import type {
   BrandContextResponseRecord,
+  DailyNote,
+  DailyNoteData,
   EditorialLineRecord,
   EditorialLineRow,
   GptEntry,
@@ -147,6 +149,30 @@ function parseEditorialLinePayload(payload: unknown) {
         }
       )
     ),
+  };
+}
+
+function parseDailyNotePayload(payload: unknown) {
+  const input = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
+  const noteDate = String(input.note_date || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(noteDate)) {
+    throw new Error('Data da nota invalida. Use o formato YYYY-MM-DD.');
+  }
+
+  const rawData = input.note_data && typeof input.note_data === 'object' ? (input.note_data as Record<string, unknown>) : {};
+  const noteData: DailyNoteData = {
+    title: String(rawData.title || '').trim(),
+    content: String(rawData.content || '').trim(),
+    tag: String(rawData.tag || '').trim(),
+  };
+
+  if (!noteData.title || !noteData.content) {
+    throw new Error('Titulo e conteudo da nota sao obrigatorios.');
+  }
+
+  return {
+    note_date: noteDate,
+    note_data: noteData,
   };
 }
 
@@ -406,6 +432,78 @@ export default async function handler(
       }
 
       return res.status(200).json({ success: true, document: Array.isArray(data) ? data[0] : null });
+    }
+
+    if (resource === 'daily_note') {
+      if (action === 'delete') {
+        const noteId = String(payload?.id || '').trim();
+        if (!noteId) {
+          return res.status(400).json({ error: 'ID da nota e obrigatorio para exclusao.' });
+        }
+
+        const { response, data } = await supabaseRest(
+          `/rest/v1/daily_notes?id=eq.${encodeURIComponent(noteId)}&user_id=eq.${encodeURIComponent(userId)}`,
+          {
+            method: 'DELETE',
+            headers: { Prefer: 'return=representation' },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(extractErrorMessage(data, 'Falha ao excluir nota diaria.'));
+        }
+
+        return res.status(200).json({ success: true });
+      }
+
+      if (action === 'update') {
+        const noteId = String(payload?.id || '').trim();
+        if (!noteId) {
+          return res.status(400).json({ error: 'ID da nota e obrigatorio para edicao.' });
+        }
+
+        const parsed = parseDailyNotePayload(payload);
+        const row = {
+          note_date: parsed.note_date,
+          note_data: parsed.note_data,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { response, data } = await supabaseRest(
+          `/rest/v1/daily_notes?id=eq.${encodeURIComponent(noteId)}&user_id=eq.${encodeURIComponent(userId)}`,
+          {
+            method: 'PATCH',
+            headers: { Prefer: 'return=representation' },
+            body: row,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(extractErrorMessage(data, 'Falha ao atualizar nota diaria.'));
+        }
+
+        return res.status(200).json({ success: true, note: Array.isArray(data) ? (data[0] as DailyNote) : null });
+      }
+
+      const parsed = parseDailyNotePayload(payload);
+      const row = {
+        user_id: userId,
+        note_date: parsed.note_date,
+        note_data: parsed.note_data,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { response, data } = await supabaseRest('/rest/v1/daily_notes', {
+        method: 'POST',
+        headers: { Prefer: 'return=representation' },
+        body: row,
+      });
+
+      if (!response.ok) {
+        throw new Error(extractErrorMessage(data, 'Falha ao salvar nota diaria.'));
+      }
+
+      return res.status(200).json({ success: true, note: Array.isArray(data) ? (data[0] as DailyNote) : null });
     }
 
     return res.status(400).json({ error: `Resource nao suportado: ${resource}` });
