@@ -249,8 +249,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         return res.status(400).json({ error: normalizeMessage(error, 'Falha ao criar conta.') });
       }
 
-      if (data.session) {
-        await supabase.auth.signOut();
+      if (data.session || data.user?.email_confirmed_at) {
+        if (data.session) {
+          await supabase.auth.signOut();
+        }
+
+        return res.status(201).json({
+          success: true,
+          user: data.user
+            ? {
+                id: data.user.id,
+                email: data.user.email,
+              }
+            : undefined,
+          message: 'Conta criada. Faça login para continuar.',
+        });
       }
 
       return res.status(202).json({

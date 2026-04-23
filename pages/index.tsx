@@ -10,6 +10,7 @@ import {
 import { getServerAuthenticatedUser } from '../lib/supabase/server';
 
 const REMEMBER_ACCESS_KEY = 'planto_remember_access_v1';
+const EMAIL_CONFIRMATION_ENABLED = false;
 
 type MessageTone = 'error' | 'success' | 'info';
 type AuthAction = 'login' | 'signup' | 'resend' | 'forgot' | '';
@@ -107,7 +108,7 @@ export default function HomePage() {
     try {
       persistRememberedEmail();
       const data = await signupWithEmailPassword(email, password);
-      showMessage(data.message || 'Conta criada. Confirme o e-mail para entrar.', 'success');
+      showMessage(data.message || 'Conta criada. Faça login para continuar.', 'success');
     } catch (error) {
       showMessage(error instanceof Error ? error.message : 'Falha ao criar conta.', 'error');
     } finally {
@@ -216,14 +217,16 @@ export default function HomePage() {
             </div>
 
             <div style={styles.linkActions}>
-              <button
-                type="button"
-                disabled={Boolean(loadingAction)}
-                style={styles.linkButton}
-                onClick={handleResendConfirmation}
-              >
-                {loadingAction === 'resend' ? 'Reenviando...' : 'Reenviar confirmação'}
-              </button>
+              {EMAIL_CONFIRMATION_ENABLED ? (
+                <button
+                  type="button"
+                  disabled={Boolean(loadingAction)}
+                  style={styles.linkButton}
+                  onClick={handleResendConfirmation}
+                >
+                  {loadingAction === 'resend' ? 'Reenviando...' : 'Reenviar confirmação'}
+                </button>
+              ) : null}
               <button
                 type="button"
                 disabled={Boolean(loadingAction)}
