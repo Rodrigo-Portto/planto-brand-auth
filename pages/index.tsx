@@ -1,9 +1,18 @@
-import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
+import type { GetServerSidePropsContext } from 'next';
 import { useRouter } from 'next/router';
-import { loginWithEmailPassword } from '../lib/api/dashboard';
-import { getStoredAccessToken, persistSession } from '../lib/domain/session';
+import {
+  loginWithEmailPassword,
+  requestPasswordReset,
+  resendConfirmationEmail,
+  signupWithEmailPassword,
+} from '../lib/api/dashboard';
+import { getServerAuthenticatedUser } from '../lib/supabase/server';
 
 const REMEMBER_ACCESS_KEY = 'planto_remember_access_v1';
+
+type MessageTone = 'error' | 'success' | 'info';
+type AuthAction = 'login' | 'signup' | 'resend' | 'forgot' | '';
 
 export default function HomePage() {
   const router = useRouter();
@@ -11,18 +20,12 @@ export default function HomePage() {
   const [password, setPassword] = useState('');
   const [rememberAccess, setRememberAccess] = useState(false);
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [messageTone, setMessageTone] = useState<MessageTone>('info');
+  const [loadingAction, setLoadingAction] = useState<AuthAction>('');
   const [viewportWidth, setViewportWidth] = useState(1280);
 
   const isCompact = viewportWidth < 760;
   const styles = createStyles(isCompact);
-
-  useEffect(() => {
-    const token = getStoredAccessToken();
-    if (token) {
-      router.replace('/dashboard');
-    }
-  }, [router]);
 
   useEffect(() => {
     try {
@@ -44,11 +47,7 @@ export default function HomePage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
-    setMessage('');
-
+  function persistRememberedEmail() {
     if (rememberAccess) {
       window.localStorage.setItem(
         REMEMBER_ACCESS_KEY,
@@ -57,32 +56,102 @@ export default function HomePage() {
           remember: true,
         })
       );
-    } else {
-      window.localStorage.removeItem(REMEMBER_ACCESS_KEY);
+      return;
     }
 
-    try {
-      const data = await loginWithEmailPassword(email, password);
+    window.localStorage.removeItem(REMEMBER_ACCESS_KEY);
+  }
 
-      if (data?.session?.access_token) {
-        persistSession(data);
-        setMessage('Acesso liberado. Redirecionando...');
+  function showMessage(nextMessage: string, tone: MessageTone) {
+    setMessage(nextMessage);
+    setMessageTone(tone);
+  }
+
+  async function handleLogin() {
+    if (!email || !password) {
+      showMessage('Informe e-mail e senha para entrar.', 'error');
+      return;
+    }
+
+    setLoadingAction('login');
+    setMessage('');
+
+    try {
+      persistRememberedEmail();
+      const data = await loginWithEmailPassword(email, password);
+      if (data.success) {
+        showMessage('Acesso liberado. Redirecionando...', 'success');
         window.setTimeout(() => {
           void router.push('/dashboard');
-        }, 500);
+        }, 400);
         return;
       }
 
-      if (data?.requires_confirmation) {
-        setMessage('Conta criada. Confirme o e-mail para entrar.');
-        return;
-      }
-
-      setMessage(`Erro: ${data?.error || 'Não foi possível autenticar.'}`);
+      showMessage(data.message || data.error || 'Não foi possível autenticar.', 'error');
     } catch (error) {
-      setMessage(`Erro: ${error instanceof Error ? error.message : 'Falha ao autenticar.'}`);
+      showMessage(error instanceof Error ? error.message : 'Falha ao autenticar.', 'error');
     } finally {
-      setLoading(false);
+      setLoadingAction('');
+    }
+  }
+
+  async function handleSignup() {
+    if (!email || !password) {
+      showMessage('Informe e-mail e senha para criar a conta.', 'error');
+      return;
+    }
+
+    setLoadingAction('signup');
+    setMessage('');
+
+    try {
+      persistRememberedEmail();
+      const data = await signupWithEmailPassword(email, password);
+      showMessage(data.message || 'Conta criada. Confirme o e-mail para entrar.', 'success');
+    } catch (error) {
+      showMessage(error instanceof Error ? error.message : 'Falha ao criar conta.', 'error');
+    } finally {
+      setLoadingAction('');
+    }
+  }
+
+  async function handleResendConfirmation() {
+    if (!email) {
+      showMessage('Informe o e-mail para reenviar a confirmação.', 'error');
+      return;
+    }
+
+    setLoadingAction('resend');
+    setMessage('');
+
+    try {
+      persistRememberedEmail();
+      const data = await resendConfirmationEmail(email);
+      showMessage(data.message || 'Se a conta estiver pendente, enviamos um novo e-mail.', 'info');
+    } catch (error) {
+      showMessage(error instanceof Error ? error.message : 'Falha ao reenviar confirmação.', 'error');
+    } finally {
+      setLoadingAction('');
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!email) {
+      showMessage('Informe o e-mail para recuperar a senha.', 'error');
+      return;
+    }
+
+    setLoadingAction('forgot');
+    setMessage('');
+
+    try {
+      persistRememberedEmail();
+      const data = await requestPasswordReset(email);
+      showMessage(data.message || 'Se o e-mail existir, enviamos um link de recuperação.', 'info');
+    } catch (error) {
+      showMessage(error instanceof Error ? error.message : 'Falha ao solicitar recuperação de senha.', 'error');
+    } finally {
+      setLoadingAction('');
     }
   }
 
@@ -93,15 +162,16 @@ export default function HomePage() {
           <p style={styles.kicker}>Planttô</p>
           <h1 style={styles.title}>Hub de marca com foco no essencial.</h1>
           <p style={styles.subtitle}>
-            Entre para acessar seu questionários estrategicos, linha editorial e entradas do GPT, prontos para o trabalho continuo.
+            Entre para acessar seus questionários estratégicos, linha editorial e documentos GPT, com autenticação por
+            e-mail e recuperação de senha integrada.
           </p>
         </section>
 
         <section style={styles.card}>
-          <h2 style={styles.cardTitle}>Entrar</h2>
-          <p style={styles.cardSubtitle}>Use seu e-mail e senha para acessar o dashboard.</p>
+          <h2 style={styles.cardTitle}>Acessar conta</h2>
+          <p style={styles.cardSubtitle}>Use seu e-mail e senha para entrar ou criar a conta pela primeira vez.</p>
 
-          <form onSubmit={handleSubmit} style={styles.form}>
+          <div style={styles.form}>
             <label style={styles.label}>
               E-mail
               <input
@@ -109,7 +179,7 @@ export default function HomePage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="voce@exemplo.com"
-                required
+                autoComplete="email"
                 style={styles.input}
               />
             </label>
@@ -121,7 +191,7 @@ export default function HomePage() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 minLength={6}
-                required
+                autoComplete="current-password"
                 style={styles.input}
               />
             </label>
@@ -133,15 +203,39 @@ export default function HomePage() {
                 onChange={(event) => setRememberAccess(event.target.checked)}
                 style={styles.checkbox}
               />
-              <span>Lembrar acesso</span>
+              <span>Lembrar e-mail neste navegador</span>
             </label>
 
-            <button type="submit" disabled={loading} style={styles.button}>
-              {loading ? 'Entrando...' : 'Entrar ou criar conta'}
-            </button>
-          </form>
+            <div style={styles.primaryActions}>
+              <button type="button" disabled={Boolean(loadingAction)} style={styles.button} onClick={handleLogin}>
+                {loadingAction === 'login' ? 'Entrando...' : 'Entrar'}
+              </button>
+              <button type="button" disabled={Boolean(loadingAction)} style={styles.secondaryButton} onClick={handleSignup}>
+                {loadingAction === 'signup' ? 'Criando...' : 'Criar conta'}
+              </button>
+            </div>
 
-          {message ? <p style={styles.message}>{message}</p> : null}
+            <div style={styles.linkActions}>
+              <button
+                type="button"
+                disabled={Boolean(loadingAction)}
+                style={styles.linkButton}
+                onClick={handleResendConfirmation}
+              >
+                {loadingAction === 'resend' ? 'Reenviando...' : 'Reenviar confirmação'}
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(loadingAction)}
+                style={styles.linkButton}
+                onClick={handleForgotPassword}
+              >
+                {loadingAction === 'forgot' ? 'Enviando...' : 'Esqueci minha senha'}
+              </button>
+            </div>
+          </div>
+
+          {message ? <p style={messageStyle(styles, messageTone)}>{message}</p> : null}
         </section>
       </div>
     </main>
@@ -260,8 +354,13 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       width: '100%',
       minWidth: 0,
     },
-    button: {
+    primaryActions: {
+      display: 'grid',
+      gridTemplateColumns: isCompact ? 'minmax(0, 1fr)' : 'repeat(2, minmax(0, 1fr))',
+      gap: '10px',
       marginTop: '4px',
+    },
+    button: {
       border: '1px solid var(--planto-light-border-strong)',
       borderRadius: '8px',
       padding: '10px',
@@ -271,15 +370,78 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       cursor: 'pointer',
       width: '100%',
     },
+    secondaryButton: {
+      border: '1px solid var(--planto-light-border-strong)',
+      borderRadius: '8px',
+      padding: '10px',
+      background: 'var(--planto-light-surface)',
+      color: 'var(--planto-light-text-strong)',
+      fontWeight: 650,
+      cursor: 'pointer',
+      width: '100%',
+    },
+    linkActions: {
+      display: 'grid',
+      gap: '8px',
+      marginTop: '2px',
+    },
+    linkButton: {
+      border: 'none',
+      padding: 0,
+      background: 'transparent',
+      color: 'var(--planto-light-accent-muted)',
+      fontWeight: 600,
+      textAlign: 'left',
+      cursor: 'pointer',
+    },
     message: {
       marginTop: '8px',
       fontSize: typeScale.body,
-      color: 'var(--planto-light-danger-text)',
-      background: 'var(--planto-light-danger-bg)',
       border: '1px solid var(--planto-light-border)',
       borderRadius: '8px',
       padding: '8px 10px',
       wordBreak: 'break-word',
     },
+  };
+}
+
+function messageStyle(styles: Record<string, CSSProperties>, tone: MessageTone): CSSProperties {
+  if (tone === 'success') {
+    return {
+      ...styles.message,
+      color: 'var(--planto-light-success-text)',
+      background: 'var(--planto-light-success-bg)',
+    };
+  }
+
+  if (tone === 'info') {
+    return {
+      ...styles.message,
+      color: 'var(--planto-light-text)',
+      background: 'var(--planto-light-accent-soft)',
+    };
+  }
+
+  return {
+    ...styles.message,
+    color: 'var(--planto-light-danger-text)',
+    background: 'var(--planto-light-danger-bg)',
+  };
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const user = await getServerAuthenticatedUser(context.req, context.res);
+
+  if (user) {
+    return {
+      redirect: {
+        destination: '/dashboard',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
   };
 }

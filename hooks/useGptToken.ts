@@ -4,7 +4,6 @@ import type { GptToken } from '../types/dashboard';
 
 interface UseGptTokenOptions {
   initialTokens: GptToken[];
-  token: string;
   onSaved: (message?: string) => void;
   onError: (message: string) => void;
 }
@@ -17,7 +16,7 @@ function findVisibleToken(tokens: GptToken[]): string {
   );
 }
 
-export function useGptToken({ initialTokens, token, onSaved, onError }: UseGptTokenOptions) {
+export function useGptToken({ initialTokens, onSaved, onError }: UseGptTokenOptions) {
   const [createdToken, setCreatedToken] = useState('');
   const [tokenCopied, setTokenCopied] = useState(false);
   const [savingToken, setSavingToken] = useState(false);
@@ -31,7 +30,7 @@ export function useGptToken({ initialTokens, token, onSaved, onError }: UseGptTo
     setSavingToken(true);
 
     try {
-      const data = await createToken(token);
+      const data = await createToken();
       setCreatedToken(data.token || '');
       setTokenCopied(false);
       onSaved();

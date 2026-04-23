@@ -1,7 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
 import { createHash } from 'crypto';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { createSupabaseServerClient } from '../../lib/supabase/server';
 import type { LoginPayload } from '../../types/dashboard';
-import { SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY, SUPABASE_URL, extractErrorMessage, supabaseRest } from './_lib/supabase';
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../lib/supabase/shared';
+import { extractErrorMessage, supabaseRest } from './_lib/supabase';
 
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_BLOCK_MS = 30 * 60 * 1000;
@@ -15,31 +17,21 @@ interface LoginAttemptRow {
   blocked_until?: string | null;
 }
 
-async function seedUserProfile(user: { id: string; email?: string | null }) {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !user?.id) return;
+type AuthResponse = LoginPayload & {
+  success?: boolean;
+};
 
-  await fetch(`${SUPABASE_URL}/rest/v1/user_profiles?on_conflict=id`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: SUPABASE_SERVICE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-      Prefer: 'resolution=merge-duplicates,return=minimal',
-    },
-    body: JSON.stringify({
-      id: user.id,
-      email: user.email || null,
-      updated_at: new Date().toISOString(),
-    }),
-  });
+function buildAbsoluteUrl(req: NextApiRequest, path: string) {
+  const protoHeader = String(req.headers['x-forwarded-proto'] || '').split(',')[0]?.trim();
+  const proto = protoHeader || 'http';
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0]?.trim();
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${proto}://${host}${normalizedPath}`;
 }
 
-function buildHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-  };
+function buildEmailRedirectUrl(req: NextApiRequest, nextPath: string) {
+  const next = encodeURIComponent(nextPath.startsWith('/') ? nextPath : `/${nextPath}`);
+  return buildAbsoluteUrl(req, `/auth/confirm?next=${next}`);
 }
 
 function hashValue(input: string): string {
@@ -61,11 +53,7 @@ function getClientIp(req: NextApiRequest): string {
 }
 
 function getLimiterKeys(email: string, ip: string) {
-  return [
-    hashValue(`email:${email}`),
-    hashValue(`ip:${ip}`),
-    hashValue(`combo:${email}:${ip}`),
-  ];
+  return [hashValue(`email:${email}`), hashValue(`ip:${ip}`), hashValue(`combo:${email}:${ip}`)];
 }
 
 async function getLoginAttemptRow(key: string): Promise<LoginAttemptRow | null> {
@@ -100,13 +88,10 @@ async function upsertLoginAttemptRow(
 }
 
 async function clearLoginAttemptRow(key: string) {
-  const { response, data } = await supabaseRest(
-    `/rest/v1/auth_login_attempts?limiter_key=eq.${encodeURIComponent(key)}`,
-    {
-      method: 'DELETE',
-      headers: { Prefer: 'return=minimal' },
-    }
-  );
+  const { response, data } = await supabaseRest(`/rest/v1/auth_login_attempts?limiter_key=eq.${encodeURIComponent(key)}`, {
+    method: 'DELETE',
+    headers: { Prefer: 'return=minimal' },
+  });
 
   if (!response.ok) {
     throw new Error(extractErrorMessage(data, 'Falha ao limpar limite de login.'));
@@ -169,92 +154,193 @@ async function registerSuccessfulLogin(keys: string[]) {
   }
 }
 
-function normalizeSession(data: Record<string, any>): LoginPayload | null {
-  if (!data?.access_token || !data?.user?.id) return null;
-  return {
-    user: {
-      id: data.user.id,
-      email: data.user.email,
-    },
-    session: {
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
-      expires_in: data.expires_in,
-      token_type: data.token_type,
-    },
-  };
+function normalizeMessage(error: unknown, fallback: string) {
+  if (typeof error === 'string' && error.trim()) return error;
+  if (error && typeof error === 'object') {
+    const maybe = error as Record<string, unknown>;
+    if (typeof maybe.message === 'string' && maybe.message) return maybe.message;
+    if (typeof maybe.error_description === 'string' && maybe.error_description) return maybe.error_description;
+    if (typeof maybe.error === 'string' && maybe.error) return maybe.error;
+    if (typeof maybe.msg === 'string' && maybe.msg) return maybe.msg;
+  }
+  return fallback;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<LoginPayload | { error: string }>) {
+function isEmailConfirmationError(message: string) {
+  const normalized = message.toLowerCase();
+  return normalized.includes('email not confirmed') || normalized.includes('confirm');
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse<AuthResponse | { error: string; requires_confirmation?: boolean }>) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido.' });
-  }
-
-  const email = String(req.body?.email || '')
-    .trim()
-    .toLowerCase();
-  const password = String(req.body?.password || '');
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
   }
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return res.status(500).json({ error: 'Configuração do Supabase ausente.' });
   }
 
+  const action = String(req.body?.action || '').trim();
+  const email = String(req.body?.email || '')
+    .trim()
+    .toLowerCase();
+  const password = String(req.body?.password || '');
+
+  const supabase = createSupabaseServerClient(req, res);
+
   try {
-    const limiterKeys = getLimiterKeys(email, getClientIp(req));
+    if (action === 'login') {
+      if (!email || !password) {
+        return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
+      }
 
-    const limiterState = await assertLoginNotRateLimited(limiterKeys);
-    if (limiterState.blocked) {
-      res.setHeader('Retry-After', String(limiterState.retryAfter));
-      return res.status(429).json({ error: 'Muitas tentativas de login. Tente novamente em alguns minutos.' });
+      const limiterKeys = getLimiterKeys(email, getClientIp(req));
+      const limiterState = await assertLoginNotRateLimited(limiterKeys);
+      if (limiterState.blocked) {
+        res.setHeader('Retry-After', String(limiterState.retryAfter));
+        return res.status(429).json({ error: 'Muitas tentativas de login. Tente novamente em alguns minutos.' });
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error || !data.user) {
+        const message = normalizeMessage(error, 'Credenciais inválidas.');
+        if (isEmailConfirmationError(message)) {
+          await registerFailedLoginAttempt(limiterKeys);
+          return res.status(401).json({
+            error: 'Conta pendente de confirmação. Reenvie o e-mail de confirmação para continuar.',
+            requires_confirmation: true,
+          });
+        }
+
+        await registerFailedLoginAttempt(limiterKeys);
+        return res.status(401).json({ error: 'Credenciais inválidas.' });
+      }
+
+      await registerSuccessfulLogin(limiterKeys);
+
+      return res.status(200).json({
+        success: true,
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+        },
+        message: 'Acesso liberado.',
+      });
     }
 
-    const headers = buildHeaders();
+    if (action === 'signup') {
+      if (!email || !password) {
+        return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
+      }
 
-    const loginRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ email, password }),
-    });
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: buildEmailRedirectUrl(req, '/dashboard'),
+        },
+      });
 
-    const loginData = (await loginRes.json().catch(() => ({}))) as Record<string, any>;
-    const loginSession = normalizeSession(loginData);
+      if (error) {
+        return res.status(400).json({ error: normalizeMessage(error, 'Falha ao criar conta.') });
+      }
 
-    if (loginSession) {
-      await registerSuccessfulLogin(limiterKeys);
-      await seedUserProfile(loginSession.user || { id: '', email: null });
-      return res.status(200).json(loginSession);
-    }
+      if (data.session) {
+        await supabase.auth.signOut();
+      }
 
-    const signupRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ email, password }),
-    });
-
-    const signupData = (await signupRes.json().catch(() => ({}))) as Record<string, any>;
-    const signupSession = normalizeSession(signupData);
-
-    if (signupSession) {
-      await registerSuccessfulLogin(limiterKeys);
-      await seedUserProfile(signupSession.user || { id: '', email: null });
-      return res.status(200).json(signupSession);
-    }
-
-    if (signupData?.user?.id && !signupData?.access_token) {
-      await registerSuccessfulLogin(limiterKeys);
-      await seedUserProfile({ id: signupData.user.id, email: signupData.user.email || email });
       return res.status(202).json({
+        success: true,
         requires_confirmation: true,
         message: 'Conta criada. Confirme o e-mail para entrar.',
       });
     }
 
-    await registerFailedLoginAttempt(limiterKeys);
-    return res.status(401).json({ error: 'Credenciais inválidas ou conta pendente de confirmação.' });
+    if (action === 'resend_confirmation') {
+      if (!email) {
+        return res.status(400).json({ error: 'E-mail é obrigatório.' });
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: buildEmailRedirectUrl(req, '/dashboard'),
+        },
+      });
+
+      if (error) {
+        return res.status(400).json({ error: normalizeMessage(error, 'Falha ao reenviar confirmação.') });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Se a conta estiver pendente, enviamos um novo e-mail de confirmação.',
+      });
+    }
+
+    if (action === 'forgot_password') {
+      if (!email) {
+        return res.status(400).json({ error: 'E-mail é obrigatório.' });
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: buildEmailRedirectUrl(req, '/auth/reset-password'),
+      });
+
+      if (error) {
+        return res.status(400).json({ error: normalizeMessage(error, 'Falha ao enviar recuperação de senha.') });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Se o e-mail existir, enviamos um link para redefinir sua senha.',
+      });
+    }
+
+    if (action === 'logout') {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        return res.status(400).json({ error: normalizeMessage(error, 'Falha ao encerrar a sessão.') });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Sessão encerrada.',
+      });
+    }
+
+    if (action === 'update_password') {
+      if (!password) {
+        return res.status(400).json({ error: 'Informe a nova senha.' });
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return res.status(401).json({ error: 'Sessão expirada. Faça login novamente.' });
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password,
+      });
+
+      if (error) {
+        return res.status(400).json({ error: normalizeMessage(error, 'Falha ao atualizar a senha.') });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Senha atualizada com sucesso.',
+      });
+    }
+
+    return res.status(400).json({ error: `Ação não suportada: ${action || 'vazia'}.` });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Erro interno.' });
   }

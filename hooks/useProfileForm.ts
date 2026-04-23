@@ -4,12 +4,11 @@ import type { Profile } from '../types/dashboard';
 
 interface UseProfileFormOptions {
   initialProfile: Profile;
-  token: string;
   onSaved: (result: { profile: Profile }, message?: string) => void;
   onError: (message: string) => void;
 }
 
-export function useProfileForm({ initialProfile, token, onSaved, onError }: UseProfileFormOptions) {
+export function useProfileForm({ initialProfile, onSaved, onError }: UseProfileFormOptions) {
   const [profile, setProfile] = useState<Profile>(initialProfile);
   const [lastSavedProfile, setLastSavedProfile] = useState<Profile>(initialProfile);
   const [saving, setSaving] = useState(false);
@@ -20,11 +19,9 @@ export function useProfileForm({ initialProfile, token, onSaved, onError }: UseP
   }, [initialProfile]);
 
   async function save() {
-    if (!token) return;
-
     setSaving(true);
     try {
-      const data = await saveProfile(token, profile);
+      const data = await saveProfile(profile);
       const nextProfile = data.profile || profile;
       setProfile(nextProfile);
       setLastSavedProfile(nextProfile);

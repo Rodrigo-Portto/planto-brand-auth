@@ -80,7 +80,7 @@ export default async function handler(
     return res.status(405).json({ error: 'Metodo nao permitido.' });
   }
 
-  const auth = await getAuthenticatedUser(req);
+  const auth = await getAuthenticatedUser(req, res);
   if (!auth.ok) {
     return res.status(auth.status).json({ error: auth.error });
   }

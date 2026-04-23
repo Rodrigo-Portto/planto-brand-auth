@@ -5,14 +5,12 @@ import type { Attachment } from '../types/dashboard';
 
 interface UseKnowledgeUploadsOptions {
   initialAttachments: Attachment[];
-  token: string;
   onSaved: (message?: string) => void;
   onError: (message: string) => void;
 }
 
 export function useKnowledgeUploads({
   initialAttachments,
-  token,
   onSaved,
   onError,
 }: UseKnowledgeUploadsOptions) {
@@ -40,7 +38,7 @@ export function useKnowledgeUploads({
 
     try {
       const buffer = await selectedFile.arrayBuffer();
-      const data = await uploadKnowledgeFile(token, {
+      const data = await uploadKnowledgeFile({
         filename: selectedFile.name,
         mime_type: selectedFile.type || 'application/octet-stream',
         file_size: selectedFile.size,
@@ -75,7 +73,7 @@ export function useKnowledgeUploads({
     setDeletingAttachmentId(id);
 
     try {
-      await deleteKnowledgeFile(token, id);
+      await deleteKnowledgeFile(id);
       setAttachments((current) => current.filter((attachment) => attachment.id !== id));
       onSaved('Arquivo excluido');
     } catch (error) {

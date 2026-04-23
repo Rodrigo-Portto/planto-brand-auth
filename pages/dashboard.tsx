@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
+import type { GetServerSidePropsContext } from 'next';
 import { useRouter } from 'next/router';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { DashboardShell } from '../components/dashboard/DashboardShell';
@@ -14,13 +15,14 @@ import { useKnowledgeUploads } from '../hooks/useKnowledgeUploads';
 import { useProfileForm } from '../hooks/useProfileForm';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { uploadAvatar } from '../lib/api/dashboard';
+import { getServerAuthenticatedUser } from '../lib/supabase/server';
 import { createDashboardStyles, themeTokens } from '../lib/domain/dashboardTheme';
 import { prepareAvatarUpload } from '../lib/domain/dashboardUtils';
 import { isSessionTokenInvalidMessage } from '../lib/domain/session';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { token, sessionReady, resetSession, logout } = useDashboardSession(router);
+  const { sessionReady, resetSession, logout } = useDashboardSession(router);
   const { themeMode, toggleTheme } = useThemeMode();
 
   const [notice, setNotice] = useState('');
@@ -71,7 +73,6 @@ export default function DashboardPage() {
   }, [resetSession, router]);
 
   const dashboardData = useDashboardData({
-    token,
     onTokenInvalid: handleTokenInvalid,
   });
 
@@ -83,7 +84,6 @@ export default function DashboardPage() {
 
   const profileForm = useProfileForm({
     initialProfile: dashboardData.profile,
-    token,
     onSaved: (data, message) => {
       dashboardData.setProfile(data.profile || {});
       showSavedNotice(message || 'Perfil salvo');
@@ -93,14 +93,12 @@ export default function DashboardPage() {
 
   const knowledgeUploads = useKnowledgeUploads({
     initialAttachments: dashboardData.attachments,
-    token,
     onSaved: showSavedNotice,
     onError: handleDashboardError,
   });
 
   const gptToken = useGptToken({
     initialTokens: dashboardData.tokens,
-    token,
     onSaved: showSavedNotice,
     onError: handleDashboardError,
   });
@@ -129,7 +127,7 @@ export default function DashboardPage() {
 
     try {
       const prepared = await prepareAvatarUpload(file);
-      const data = await uploadAvatar(token, {
+      const data = await uploadAvatar({
         filename: prepared.filename,
         mime_type: prepared.mimeType || 'application/octet-stream',
         base64: prepared.base64,
@@ -296,4 +294,21 @@ export default function DashboardPage() {
       </section>
     </DashboardShell>
   );
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const user = await getServerAuthenticatedUser(context.req, context.res);
+
+  if (!user) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
 }

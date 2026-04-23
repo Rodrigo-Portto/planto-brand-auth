@@ -1,20 +1,15 @@
-import type { NextApiRequest } from 'next';
+import type { User } from '@supabase/supabase-js';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { createSupabaseServerClient } from '../../../lib/supabase/server';
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../../lib/supabase/shared';
 
-export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-export const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+export { SUPABASE_ANON_KEY, SUPABASE_URL };
 export const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
 export const BRAND_LIBRARY_BUCKET = 'brand-library';
 
-interface AuthenticatedUser {
-  id: string;
-  email?: string | null;
-  [key: string]: unknown;
-}
-
 interface AuthResult {
   ok: boolean;
-  user?: AuthenticatedUser;
-  accessToken?: string;
+  user?: User;
   status?: number;
   error?: string;
 }
@@ -35,42 +30,26 @@ function parseJsonSafe(text: string): unknown {
   }
 }
 
-export function getBearerToken(req: NextApiRequest): string {
-  const header = req.headers.authorization || '';
-  if (!header.startsWith('Bearer ')) return '';
-  return header.slice(7).trim();
-}
-
-export async function getAuthenticatedUser(req: NextApiRequest): Promise<AuthResult> {
-  const token = getBearerToken(req);
-  if (!token) {
-    return { ok: false, status: 401, error: 'Bearer token ausente.' };
-  }
-
+export async function getAuthenticatedUser(req: NextApiRequest, res: NextApiResponse): Promise<AuthResult> {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return { ok: false, status: 500, error: 'Configuração do Supabase incompleta.' };
   }
 
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-    method: 'GET',
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const supabase = createSupabaseServerClient(req, res);
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
-  const text = await response.text();
-  const data = parseJsonSafe(text) as AuthenticatedUser | null;
-
-  if (!response.ok || !data?.id) {
+  if (error || !user?.id) {
     return {
       ok: false,
       status: 401,
-      error: ((data as Record<string, unknown> | null)?.msg as string) || ((data as Record<string, unknown> | null)?.message as string) || 'Token inválido ou expirado.',
+      error: error?.message || 'Token inválido ou expirado.',
     };
   }
 
-  return { ok: true, user: data, accessToken: token };
+  return { ok: true, user };
 }
 
 export async function supabaseRest(path: string, options: SupabaseRestOptions = {}) {

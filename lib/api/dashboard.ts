@@ -10,20 +10,55 @@ import { requestJson } from './client';
 export async function loginWithEmailPassword(email: string, password: string): Promise<LoginPayload> {
   return requestJson<LoginPayload>('/api/auth', {
     method: 'POST',
-    body: { email, password },
+    body: { action: 'login', email, password },
   });
 }
 
-export async function fetchDashboardData(accessToken: string): Promise<DashboardPayload> {
+export async function signupWithEmailPassword(email: string, password: string): Promise<LoginPayload> {
+  return requestJson<LoginPayload>('/api/auth', {
+    method: 'POST',
+    body: { action: 'signup', email, password },
+  });
+}
+
+export async function resendConfirmationEmail(email: string): Promise<LoginPayload> {
+  return requestJson<LoginPayload>('/api/auth', {
+    method: 'POST',
+    body: { action: 'resend_confirmation', email },
+  });
+}
+
+export async function requestPasswordReset(email: string): Promise<LoginPayload> {
+  return requestJson<LoginPayload>('/api/auth', {
+    method: 'POST',
+    body: { action: 'forgot_password', email },
+  });
+}
+
+export async function logoutSession(): Promise<LoginPayload> {
+  return requestJson<LoginPayload>('/api/auth', {
+    method: 'POST',
+    body: { action: 'logout' },
+  });
+}
+
+export async function updatePassword(password: string): Promise<LoginPayload> {
+  return requestJson<LoginPayload>('/api/auth', {
+    method: 'POST',
+    body: { action: 'update_password', password },
+  });
+}
+
+export async function fetchDashboardData(): Promise<DashboardPayload> {
   return requestJson<DashboardPayload>('/api/get', {
-    accessToken,
+    authRequired: true,
   });
 }
 
-export async function saveProfile(accessToken: string, profile: Profile): Promise<{ profile: Profile }> {
+export async function saveProfile(profile: Profile): Promise<{ profile: Profile }> {
   return requestJson<{ profile: Profile }>('/api/save', {
     method: 'POST',
-    accessToken,
+    authRequired: true,
     body: {
       resource: 'profile',
       payload: profile,
@@ -32,7 +67,6 @@ export async function saveProfile(accessToken: string, profile: Profile): Promis
 }
 
 export async function uploadKnowledgeFile(
-  accessToken: string,
   payload: {
     filename: string;
     mime_type: string;
@@ -43,21 +77,20 @@ export async function uploadKnowledgeFile(
 ): Promise<{ attachment?: DashboardPayload['attachments'][number] }> {
   return requestJson<{ attachment?: DashboardPayload['attachments'][number] }>('/api/upload', {
     method: 'POST',
-    accessToken,
+    authRequired: true,
     body: payload,
   });
 }
 
-export async function deleteKnowledgeFile(accessToken: string, id: string): Promise<{ success: boolean }> {
+export async function deleteKnowledgeFile(id: string): Promise<{ success: boolean }> {
   return requestJson<{ success: boolean }>('/api/upload', {
     method: 'DELETE',
-    accessToken,
+    authRequired: true,
     body: { id },
   });
 }
 
 export async function uploadAvatar(
-  accessToken: string,
   payload: {
     filename: string;
     mime_type: string;
@@ -66,15 +99,15 @@ export async function uploadAvatar(
 ): Promise<{ avatar_url?: string; profile?: Profile }> {
   return requestJson<{ avatar_url?: string; profile?: Profile }>('/api/avatar', {
     method: 'POST',
-    accessToken,
+    authRequired: true,
     body: payload,
   });
 }
 
-export async function createToken(accessToken: string): Promise<TokenCreatePayload> {
+export async function createToken(): Promise<TokenCreatePayload> {
   return requestJson<TokenCreatePayload>('/api/token', {
     method: 'POST',
-    accessToken,
+    authRequired: true,
     body: {},
   });
 }

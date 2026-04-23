@@ -4,11 +4,10 @@ import { isSessionTokenInvalidMessage } from '../lib/domain/session';
 import type { Attachment, DashboardPayload, GptToken, LegacyDocument, Profile, UserSummary } from '../types/dashboard';
 
 interface UseDashboardDataOptions {
-  token: string;
   onTokenInvalid: () => void;
 }
 
-export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOptions) {
+export function useDashboardData({ onTokenInvalid }: UseDashboardDataOptions) {
   const [user, setUser] = useState<UserSummary | null>(null);
   const [profile, setProfile] = useState<Profile>({});
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -23,18 +22,13 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
   }, [onTokenInvalid]);
 
   const refresh = useCallback(async (options?: { silent?: boolean }) => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
     if (!options?.silent) {
       setLoading(true);
     }
     setError('');
 
     try {
-      const data: DashboardPayload = await fetchDashboardData(token);
+      const data: DashboardPayload = await fetchDashboardData();
       setUser(data.user || null);
       setProfile(data.profile || {});
       setAttachments(data.attachments || []);
@@ -52,7 +46,7 @@ export function useDashboardData({ token, onTokenInvalid }: UseDashboardDataOpti
         setLoading(false);
       }
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     void refresh();

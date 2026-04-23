@@ -264,6 +264,7 @@ export interface DashboardThemeColors {
 export type DashboardStyles = Record<string, CSSProperties>;
 
 export interface LoginPayload {
+  success?: boolean;
   user?: UserSummary;
   session?: {
     access_token: string;

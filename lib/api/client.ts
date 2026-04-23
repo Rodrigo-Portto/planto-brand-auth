@@ -1,7 +1,7 @@
 interface RequestJsonOptions {
   method?: string;
   body?: unknown;
-  accessToken?: string;
+  authRequired?: boolean;
   headers?: HeadersInit;
 }
 
@@ -23,7 +23,6 @@ export async function requestJson<T>(path: string, options: RequestJsonOptions =
   const headers: HeadersInit = {
     ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
     ...(options.headers || {}),
-    ...(options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {}),
   };
 
   const response = await fetch(path, {
@@ -40,7 +39,7 @@ export async function requestJson<T>(path: string, options: RequestJsonOptions =
   const data = (await parseJsonSafe<T & { error?: string }>(response)) as T & { error?: string };
 
   if (!response.ok) {
-    if (options.accessToken && (response.status === 401 || response.status === 403)) {
+    if (options.authRequired && (response.status === 401 || response.status === 403)) {
       throw new Error('Sessão expirada. Faça login novamente.');
     }
 

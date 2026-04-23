@@ -11,7 +11,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<TokenListPayload | TokenCreatePayload | { success: boolean } | { error: string }>
 ) {
-  const auth = await getAuthenticatedUser(req);
+  const auth = await getAuthenticatedUser(req, res);
   if (!auth.ok) {
     return res.status(auth.status).json({ error: auth.error });
   }

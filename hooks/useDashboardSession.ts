@@ -1,35 +1,30 @@
 import { useEffect, useState } from 'react';
 import type { NextRouter } from 'next/router';
-import { clearStoredSession, getStoredAccessToken } from '../lib/domain/session';
+import { logoutSession } from '../lib/api/dashboard';
 
 export function useDashboardSession(router: NextRouter) {
-  const [token, setToken] = useState('');
   const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    const accessToken = getStoredAccessToken();
-    if (!accessToken) {
-      router.replace('/');
-      setSessionReady(true);
-      return;
-    }
-
-    setToken(accessToken);
     setSessionReady(true);
-  }, [router]);
+  }, []);
 
   function resetSession() {
-    clearStoredSession();
-    setToken('');
+    setSessionReady(true);
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      await logoutSession();
+    } catch {
+      // We still clear the client flow even if the server session is gone.
+    }
+
     resetSession();
-    router.push('/');
+    await router.push('/');
   }
 
   return {
-    token,
     sessionReady,
     resetSession,
     logout,
