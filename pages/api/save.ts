@@ -15,6 +15,7 @@ import {
   EDITORIAL_LINE_MIN_SLOTS,
   createEditorialLineSlots,
   createDefaultEditorialLineRecord,
+  createEditorialLineRecordFromEntries,
   normalizeEditorialLineRows,
 } from '../../lib/domain/editorialLine';
 import type {
@@ -24,6 +25,7 @@ import type {
   DailyNoteData,
   EditorialLineRecord,
   EditorialLineRow,
+  EditorialSystemEntry,
   GptEntry,
   Profile,
 } from '../../types/dashboard';
@@ -99,6 +101,63 @@ async function fetchManyByColumn<T>(table: string, column: string, value: string
     throw new Error(extractErrorMessage(data, `Falha ao buscar ${table}.`));
   }
   return Array.isArray(data) ? (data as T[]) : [];
+}
+
+async function fetchEditorialSystemRecord(userId: string): Promise<EditorialLineRecord> {
+  const { response, data } = await supabaseRest(
+    `/rest/v1/editorial_system?user_id=eq.${encodeURIComponent(userId)}&status=eq.active&select=*&order=sort_order.asc.nullslast,created_at.asc`
+  );
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(data, 'Falha ao buscar sistema editorial.'));
+  }
+  return createEditorialLineRecordFromEntries(Array.isArray(data) ? (data as EditorialSystemEntry[]) : [], userId);
+}
+
+async function replaceEditorialSystemEntries(userId: string, rows: EditorialLineRow[]): Promise<EditorialLineRecord> {
+  const timestamp = new Date().toISOString();
+
+  const { response: deleteResponse, data: deleteData } = await supabaseRest(
+    `/rest/v1/editorial_system?user_id=eq.${encodeURIComponent(userId)}&status=eq.active`,
+    {
+      method: 'DELETE',
+      headers: { Prefer: 'return=minimal' },
+    }
+  );
+
+  if (!deleteResponse.ok) {
+    throw new Error(extractErrorMessage(deleteData, 'Falha ao substituir sistema editorial.'));
+  }
+
+  const entries = rows.map((row, index) => ({
+    ...(row.id ? { id: row.id } : {}),
+    user_id: userId,
+    title: row.title,
+    tension: row.tension,
+    objective: row.objective,
+    core_message: row.core_message,
+    primary_metric: row.primary_metric,
+    format: row.format,
+    audience_moment: row.audience_moment,
+    estrategic_role: row.estrategic_role,
+    proof_type: row.proof_type,
+    cta_type: row.cta_type,
+    status: row.status || 'active',
+    sort_order: index + 1,
+    source_knowledge_item_ids: row.source_knowledge_item_ids || null,
+    updated_at: timestamp,
+  }));
+
+  const { response, data } = await supabaseRest('/rest/v1/editorial_system', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: entries,
+  });
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(data, 'Falha ao salvar sistema editorial.'));
+  }
+
+  return createEditorialLineRecordFromEntries(Array.isArray(data) ? (data as EditorialSystemEntry[]) : [], userId);
 }
 
 async function fetchOneById<T>(table: string, userId: string): Promise<T | null> {
@@ -219,13 +278,22 @@ function parseEditorialLinePayload(payload: unknown) {
         },
         {
           slot: row.slot,
-          titulo: '',
-          objetivo: '',
-          metrica: '',
-          territorio: '',
-          tensao: '',
-          mensagem: '',
-          formato: '',
+          id: row.id || null,
+          title: '',
+          tension: '',
+          objective: '',
+          core_message: '',
+          primary_metric: '',
+          format: '',
+          audience_moment: '',
+          estrategic_role: '',
+          proof_type: '',
+          cta_type: '',
+          status: row.status || 'active',
+          sort_order: row.sort_order || Number(row.slot),
+          source_knowledge_item_ids: row.source_knowledge_item_ids || null,
+          created_at: row.created_at || null,
+          updated_at: row.updated_at || null,
         }
       )
     ),
@@ -353,7 +421,7 @@ export default async function handler(
           (row) => row.form_type === BRIEFING_FORM_CONFIG.form_id && row.response_status === 'active'
         ),
       });
-      const currentEditorialLine = await fetchOneByColumn<EditorialLineRecord>('editorial_lines', 'user_id', userId);
+      const currentEditorialLine = await fetchEditorialSystemRecord(userId);
 
       const progress = buildFormProgress({
         profile_completed_at: profileCompletedAt,
@@ -380,7 +448,7 @@ export default async function handler(
         response_rows: insertedRows,
       });
       const profile = (await fetchOneById<Profile>('user_profiles', userId)) || {};
-      const editorialLine = await fetchOneByColumn<EditorialLineRecord>('editorial_lines', 'user_id', userId);
+      const editorialLine = await fetchEditorialSystemRecord(userId);
       const progress = buildProgressWithEditorialLine(profile, saved, editorialLine);
 
       return res.status(200).json({
@@ -399,7 +467,7 @@ export default async function handler(
           (row) => row.form_type === BRIEFING_FORM_CONFIG.form_id && row.response_status === 'active'
         ),
       });
-      const editorialLine = await fetchOneByColumn<EditorialLineRecord>('editorial_lines', 'user_id', userId);
+      const editorialLine = await fetchEditorialSystemRecord(userId);
       const progress = buildProgressWithEditorialLine(profile, integratedBriefing, editorialLine);
 
       if (!progress.is_ready_for_final_save) {
@@ -419,7 +487,8 @@ export default async function handler(
     }
 
     if (resource === 'editorial_line') {
-      const saved = await upsertByUserId<EditorialLineRecord>('editorial_lines', userId, parseEditorialLinePayload(payload));
+      const parsed = parseEditorialLinePayload(payload);
+      const saved = await replaceEditorialSystemEntries(userId, parsed.rows);
       const profile = (await fetchOneById<Profile>('user_profiles', userId)) || {};
       const integratedBriefingRows = await fetchManyByColumn<BriefingResponseRow>('brand_context_responses', 'user_id', userId);
       const integratedBriefing = normalizeBriefingRecord({

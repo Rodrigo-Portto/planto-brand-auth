@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createDefaultEditorialLineRecord } from '../../lib/domain/editorialLine';
-import type { DashboardPayload } from '../../types/dashboard';
+import { createEditorialLineRecordFromEntries } from '../../lib/domain/editorialLine';
+import type { DashboardPayload, EditorialSystemEntry } from '../../types/dashboard';
 import { BRIEFING_FORM_CONFIG, buildFormProgress, getLatestBriefingUpdateAt, isBriefingComplete, isProfileComplete, normalizeBriefingRecord } from '../../lib/domain/briefing';
 import {
   BRAND_LIBRARY_BUCKET,
@@ -27,9 +27,6 @@ async function fetchOneById<T>(table: string, idColumn: string, idValue: string)
     `/rest/v1/${table}?${idColumn}=eq.${encodeURIComponent(idValue)}&select=*&limit=1`
   );
   if (!response.ok) {
-    if (table === 'editorial_lines' && isMissingTableError(data, table)) {
-      return null;
-    }
     throw new Error(extractErrorMessage(data, `Falha ao buscar ${table}.`));
   }
   return Array.isArray(data) && data.length ? (data[0] as T) : null;
@@ -68,14 +65,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const userId = auth.user.id;
 
   try {
-    const [profile, integratedBriefingRows, editorialLine, attachments, gptTokens, legacyDocuments, dailyNotes] =
+    const [profile, integratedBriefingRows, editorialSystemEntries, attachments, gptTokens, legacyDocuments, dailyNotes] =
       await Promise.all([
         fetchOneById<DashboardPayload['profile']>('user_profiles', 'id', userId),
         fetchMany<DashboardPayload['forms']['integrated_briefing']['response_rows'][number]>(
           `/rest/v1/brand_context_responses?user_id=eq.${encodeURIComponent(userId)}&form_type=eq.${encodeURIComponent(BRIEFING_FORM_CONFIG.form_id)}&response_status=eq.active&select=*&order=question_order.asc`,
           'Falha ao buscar respostas do briefing.'
         ),
-        fetchOneById<DashboardPayload['editorial_line']>('editorial_lines', 'user_id', userId),
+        fetchMany<EditorialSystemEntry>(
+          `/rest/v1/editorial_system?user_id=eq.${encodeURIComponent(userId)}&status=eq.active&select=*&order=sort_order.asc.nullslast,created_at.asc`,
+          'Falha ao buscar sistema editorial.'
+        ),
         fetchMany<DashboardPayload['attachments'][number]>(
           `/rest/v1/user_attachments?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`,
           'Falha ao buscar anexos.'
@@ -118,7 +118,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       briefing_form_id: BRIEFING_FORM_CONFIG.form_id,
       response_rows: integratedBriefingRows || [],
     });
-    const resolvedEditorialLine = createDefaultEditorialLineRecord(editorialLine, userId);
+    const resolvedEditorialLine = createEditorialLineRecordFromEntries(editorialSystemEntries, userId);
     const formProgress = buildFormProgress({
       profile_completed_at: isProfileComplete(resolvedProfile) ? (resolvedProfile as DashboardPayload['profile'] & { updated_at?: string | null }).updated_at || new Date().toISOString() : null,
       briefing_saved_at: isBriefingComplete(normalizedBriefing.briefing_blocks) ? getLatestBriefingUpdateAt(normalizedBriefing.response_rows) : null,

@@ -19,13 +19,16 @@ interface EditorialLinePanelProps {
 }
 
 const COLUMNS: Array<{ key: keyof EditorialLineRow; label: string; width: string }> = [
-  { key: 'titulo', label: 'Título', width: '14%' },
-  { key: 'objetivo', label: 'Objetivo', width: '14%' },
-  { key: 'metrica', label: 'Métrica', width: '12%' },
-  { key: 'territorio', label: 'Território', width: '14%' },
-  { key: 'tensao', label: 'Tensão', width: '16%' },
-  { key: 'mensagem', label: 'Mensagem', width: '18%' },
-  { key: 'formato', label: 'Formato', width: '12%' },
+  { key: 'title', label: 'Título', width: '11%' },
+  { key: 'tension', label: 'Tensão', width: '11%' },
+  { key: 'objective', label: 'Objetivo', width: '11%' },
+  { key: 'core_message', label: 'Mensagem central', width: '13%' },
+  { key: 'primary_metric', label: 'Métrica', width: '10%' },
+  { key: 'format', label: 'Formato', width: '10%' },
+  { key: 'audience_moment', label: 'Momento da audiência', width: '12%' },
+  { key: 'estrategic_role', label: 'Papel estratégico', width: '12%' },
+  { key: 'proof_type', label: 'Prova', width: '5%' },
+  { key: 'cta_type', label: 'CTA', width: '5%' },
 ];
 
 function createCellBaseStyle(theme: DashboardThemeColors, width: string): CSSProperties {
@@ -146,7 +149,7 @@ export function EditorialLinePanel({
             {editorialLine.rows.map((row) => (
               <tr key={row.slot}>
                 {COLUMNS.map((column) => {
-                  const cellValue = row[column.key] || '';
+                  const cellValue = String(row[column.key] || '');
 
                   return (
                     <td key={`${row.slot}-${column.key}`} style={createCellBaseStyle(theme, column.width)}>

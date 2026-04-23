@@ -87,18 +87,47 @@ export interface Attachment {
 
 export interface EditorialLineRow {
   slot: string;
-  titulo: string;
-  objetivo: string;
-  metrica: string;
-  territorio: string;
-  tensao: string;
-  mensagem: string;
-  formato: string;
+  id?: string | null;
+  title: string;
+  tension: string;
+  objective: string;
+  core_message: string;
+  primary_metric: string;
+  format: string;
+  audience_moment: string;
+  estrategic_role: string;
+  proof_type: string;
+  cta_type: string;
+  status?: string | null;
+  sort_order?: number | null;
+  source_knowledge_item_ids?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface EditorialLineRecord {
   user_id: string;
   rows: EditorialLineRow[];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface EditorialSystemEntry {
+  id?: string | null;
+  user_id: string;
+  title?: string | null;
+  tension?: string | null;
+  objective?: string | null;
+  core_message?: string | null;
+  primary_metric?: string | null;
+  format?: string | null;
+  audience_moment?: string | null;
+  estrategic_role?: string | null;
+  proof_type?: string | null;
+  cta_type?: string | null;
+  status?: string | null;
+  sort_order?: number | null;
+  source_knowledge_item_ids?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
