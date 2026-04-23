@@ -17,7 +17,6 @@ import {
   createDefaultEditorialLineRecord,
   normalizeEditorialLineRows,
 } from '../../lib/domain/editorialLine';
-import { generateAndPersistContext } from '../../lib/server/contextGeneration';
 import type {
   BriefingFormResponseRecord,
   BriefingResponseRow,
@@ -35,6 +34,8 @@ import {
   extractStoragePathFromAvatarValue,
   getAuthenticatedUser,
   supabaseRest,
+  SUPABASE_SERVICE_KEY,
+  SUPABASE_URL,
 } from './_lib/supabase';
 
 const PROFILE_FIELD_KEYS = PROFILE_FIELDS.map((field) => field.key);
@@ -136,6 +137,39 @@ async function insertBriefingRows(rows: BriefingResponseRow[]) {
   }
 
   return Array.isArray(data) ? (data as BriefingResponseRow[]) : [];
+}
+
+async function processBrandBriefing(userId: string) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    throw new Error('Variáveis do Supabase ausentes no servidor.');
+  }
+
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/process-brand-briefing`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_SERVICE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+    },
+    body: JSON.stringify({ user_id: userId }),
+  });
+
+  const text = await response.text();
+  let data: Record<string, unknown> = {};
+
+  if (text) {
+    try {
+      data = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      throw new Error('A function process-brand-briefing retornou uma resposta inválida.');
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(data, 'Falha ao processar briefing.'));
+  }
+
+  return data;
 }
 
 function buildProgressWithEditorialLine(
@@ -372,19 +406,14 @@ export default async function handler(
         return res.status(400).json({ error: 'Perfil, briefing e linha editorial precisam estar salvos antes do contexto integrado.' });
       }
 
-      const generatedContext = await generateAndPersistContext({
-        userId,
-        profile,
-        integratedBriefing,
-        editorialLine: createDefaultEditorialLineRecord(editorialLine, userId),
-      });
+      await processBrandBriefing(userId);
 
       return res.status(200).json({
         success: true,
         integrated_briefing: integratedBriefing,
         form_progress: buildFormProgress({
           ...progress,
-          integrated_briefing_saved_at: generatedContext.generated_at || new Date().toISOString(),
+          integrated_briefing_saved_at: new Date().toISOString(),
         }),
       });
     }
