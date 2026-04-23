@@ -21,10 +21,14 @@ export function DashboardShell({
     <main style={styles.page}>
       <div style={styles.pageShell}>
         {header || null}
-        {notice ? <div style={styles.notice}>{notice}</div> : null}
-        {errorMessage ? <div style={styles.errorBanner}>{errorMessage}</div> : null}
         {loading ? <p style={styles.loader}>Carregando...</p> : children}
       </div>
+      {notice || errorMessage ? (
+        <div style={styles.toastViewport}>
+          {notice ? <div style={styles.notice}>{notice}</div> : null}
+          {errorMessage ? <div style={styles.errorBanner}>{errorMessage}</div> : null}
+        </div>
+      ) : null}
     </main>
   );
 }

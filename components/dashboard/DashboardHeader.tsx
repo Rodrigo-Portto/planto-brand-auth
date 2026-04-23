@@ -26,8 +26,8 @@ export function DashboardHeader({
   const initial = String(greetingName || 'U').trim().charAt(0).toUpperCase() || 'U';
   const headerIconButtonStyle = {
     ...styles.iconOnlyButton,
-    border: 'none',
-    background: 'transparent',
+    border: `1px solid ${theme.border}`,
+    background: theme.name === 'light' ? 'rgba(255,255,255,0.68)' : 'rgba(12, 22, 18, 0.72)',
     width: '42px',
     minWidth: '42px',
     height: '42px',
@@ -43,16 +43,17 @@ export function DashboardHeader({
       <div style={styles.headerLeading}>
         <div
           style={{
-            width: '34px',
-            height: '34px',
+            width: '42px',
+            height: '42px',
             borderRadius: '999px',
-            border: `1px solid ${theme.borderStrong}`,
+            border: `1px solid ${theme.borderAccent}`,
             background: theme.shellRaised,
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
-            flex: '0 0 34px',
+            flex: '0 0 42px',
+            boxShadow: theme.name === 'light' ? '0 10px 24px rgba(13, 35, 24, 0.12)' : '0 10px 24px rgba(0, 0, 0, 0.28)',
           }}
         >
           {avatarUrl ? (

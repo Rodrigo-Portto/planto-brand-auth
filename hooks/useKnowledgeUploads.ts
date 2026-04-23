@@ -65,6 +65,13 @@ export function useKnowledgeUploads({
   async function deleteAttachment(id: string) {
     if (!id || deletingAttachmentId) return;
 
+    const attachment = attachments.find((item) => item.id === id);
+    const confirmed = window.confirm(
+      `Tem certeza que deseja excluir${attachment?.filename ? ` o arquivo "${attachment.filename}"` : ' este arquivo'}?`
+    );
+
+    if (!confirmed) return;
+
     setDeletingAttachmentId(id);
 
     try {

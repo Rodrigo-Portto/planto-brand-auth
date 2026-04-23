@@ -1,70 +1,75 @@
 :root {
   color-scheme: light dark;
 
-  --planto-bg: #0f0f0e;
-  --planto-surface: #1a1a19;
-  --planto-text: #f2f1ee;
-  --planto-muted: #a6a39b;
-  --planto-accent: #f2f1ee;
-  --planto-danger: #c76363;
+  --planto-bg: #07110d;
+  --planto-surface: #0d1713;
+  --planto-text: #e9fff3;
+  --planto-muted: #82a394;
+  --planto-accent: #3ddc84;
+  --planto-danger: #ff6e6e;
 
-  --planto-light-bg: #f5f0e8;
-  --planto-light-surface: #f4efe7;
-  --planto-light-text: #2b261f;
-  --planto-light-muted: #75695a;
-  --planto-light-accent: #22211f;
-  --planto-light-danger: #b24141;
+  --planto-light-bg: #edf5f0;
+  --planto-light-surface: #f4fbf7;
+  --planto-light-text: #112019;
+  --planto-light-muted: #5d7668;
+  --planto-light-accent: #0f7a47;
+  --planto-light-danger: #d14c4c;
 
-  --planto-page-bg: var(--planto-bg);
-  --planto-surface-muted: #20201f;
-  --planto-surface-raised: #262625;
-  --planto-border: #2e2d2b;
-  --planto-border-strong: #44433f;
-  --planto-border-accent: #58564f;
-  --planto-text-strong: #fffdf8;
-  --planto-accent-text: #121210;
-  --planto-accent-soft: #252523;
-  --planto-accent-muted: #d7d4ca;
-  --planto-danger-bg: #2a1a1a;
-  --planto-danger-text: #ffc9c9;
-  --planto-success-bg: #20201e;
-  --planto-success-text: #f2f1ee;
-  --planto-error-bg: #2a1a1a;
-  --planto-error-text: #ffc9c9;
-  --planto-overlay: rgba(0, 0, 0, 0.45);
-  --planto-input-bg: #131312;
-  --planto-token-bg: #111111;
-  --planto-focus: #8f8880;
-  --planto-hover-surface: #242322;
-  --planto-selection: rgba(242, 241, 238, 0.18);
-  --planto-table-grid: #3a3835;
-  --planto-nav-active: #2d2b28;
+  --planto-page-bg:
+    radial-gradient(circle at top left, rgba(61, 220, 132, 0.16), transparent 28%),
+    radial-gradient(circle at top right, rgba(24, 120, 73, 0.18), transparent 24%),
+    linear-gradient(180deg, #07110d 0%, #060c0a 100%);
+  --planto-surface-muted: rgba(13, 23, 19, 0.82);
+  --planto-surface-raised: rgba(17, 30, 25, 0.96);
+  --planto-border: rgba(96, 162, 126, 0.16);
+  --planto-border-strong: rgba(96, 162, 126, 0.28);
+  --planto-border-accent: rgba(61, 220, 132, 0.44);
+  --planto-text-strong: #f4fff8;
+  --planto-accent-text: #031109;
+  --planto-accent-soft: rgba(15, 72, 46, 0.34);
+  --planto-accent-muted: #82f0b1;
+  --planto-danger-bg: rgba(92, 19, 19, 0.62);
+  --planto-danger-text: #ffd1d1;
+  --planto-success-bg: rgba(8, 38, 24, 0.92);
+  --planto-success-text: #d8ffe8;
+  --planto-error-bg: rgba(74, 18, 18, 0.92);
+  --planto-error-text: #ffe0e0;
+  --planto-overlay: rgba(2, 7, 5, 0.62);
+  --planto-input-bg: rgba(7, 17, 13, 0.88);
+  --planto-token-bg: rgba(4, 14, 10, 0.96);
+  --planto-focus: #52de8f;
+  --planto-hover-surface: rgba(15, 28, 22, 0.96);
+  --planto-selection: rgba(61, 220, 132, 0.2);
+  --planto-table-grid: rgba(93, 145, 114, 0.28);
+  --planto-nav-active: rgba(15, 72, 46, 0.28);
 
-  --planto-light-page-bg: var(--planto-light-bg);
-  --planto-light-view-bg: #ffffff;
-  --planto-light-surface-muted: #f0ebe3;
-  --planto-light-surface-raised: #ece6dc;
-  --planto-light-border: #d7cec0;
-  --planto-light-border-strong: #c8bcac;
-  --planto-light-border-accent: #b29f89;
-  --planto-light-text-strong: #12110f;
-  --planto-light-accent-text: #fffdf8;
-  --planto-light-accent-soft: #f2ece2;
-  --planto-light-accent-muted: #463e33;
-  --planto-light-danger-bg: #f8e0de;
-  --planto-light-danger-text: #8e2e2e;
-  --planto-light-success-bg: #efebe3;
-  --planto-light-success-text: #342d24;
-  --planto-light-error-bg: #f8e0de;
-  --planto-light-error-text: #8e2e2e;
-  --planto-light-overlay: rgba(0, 0, 0, 0.08);
-  --planto-light-input-bg: #fffdf8;
-  --planto-light-token-bg: #f0e8d8;
-  --planto-light-focus: #9f8866;
-  --planto-light-hover-surface: #eee7db;
-  --planto-light-selection: rgba(34, 33, 31, 0.12);
-  --planto-light-table-grid: #cdbda1;
-  --planto-light-nav-active: #ece5d9;
+  --planto-light-page-bg:
+    radial-gradient(circle at top left, rgba(61, 220, 132, 0.14), transparent 22%),
+    linear-gradient(180deg, #eff8f2 0%, #e8f2ed 100%);
+  --planto-light-view-bg: rgba(255, 255, 255, 0.9);
+  --planto-light-surface-muted: rgba(247, 251, 248, 0.82);
+  --planto-light-surface-raised: rgba(255, 255, 255, 0.94);
+  --planto-light-border: rgba(16, 64, 40, 0.09);
+  --planto-light-border-strong: rgba(16, 64, 40, 0.16);
+  --planto-light-border-accent: rgba(15, 122, 71, 0.28);
+  --planto-light-text-strong: #08140e;
+  --planto-light-accent-text: #f3fff8;
+  --planto-light-accent-soft: rgba(61, 220, 132, 0.12);
+  --planto-light-accent-muted: #0f7a47;
+  --planto-light-danger-bg: rgba(255, 232, 232, 0.96);
+  --planto-light-danger-text: #9a3434;
+  --planto-light-success-bg: rgba(226, 255, 238, 0.94);
+  --planto-light-success-text: #0f5e39;
+  --planto-light-error-bg: rgba(255, 232, 232, 0.96);
+  --planto-light-error-text: #9a3434;
+  --planto-light-overlay: rgba(7, 17, 13, 0.08);
+  --planto-light-input-bg: rgba(255, 255, 255, 0.92);
+  --planto-light-token-bg: rgba(237, 251, 242, 0.98);
+  --planto-light-focus: #0f7a47;
+  --planto-light-hover-surface: rgba(245, 251, 247, 0.96);
+  --planto-light-selection: rgba(15, 122, 71, 0.14);
+  --planto-light-table-grid: rgba(15, 122, 71, 0.16);
+  --planto-light-nav-active: rgba(61, 220, 132, 0.12);
 }
 
 * {
@@ -86,6 +91,7 @@ body {
   background: var(--planto-light-page-bg);
   color: var(--planto-light-text);
   font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  background-attachment: fixed;
 }
 
 body::selection {
