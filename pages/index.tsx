@@ -14,6 +14,7 @@ const EMAIL_CONFIRMATION_ENABLED = false;
 
 type MessageTone = 'error' | 'success' | 'info';
 type AuthAction = 'login' | 'signup' | 'resend' | 'forgot' | '';
+type AuthMode = 'login' | 'signup';
 
 export default function HomePage() {
   const router = useRouter();
@@ -23,10 +24,27 @@ export default function HomePage() {
   const [message, setMessage] = useState('');
   const [messageTone, setMessageTone] = useState<MessageTone>('info');
   const [loadingAction, setLoadingAction] = useState<AuthAction>('');
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [viewportWidth, setViewportWidth] = useState(1280);
 
   const isCompact = viewportWidth < 760;
   const styles = createStyles(isCompact);
+  const isLoginMode = authMode === 'login';
+  const modeTitle = isLoginMode ? 'Entrar na sua conta' : 'Criar sua conta';
+  const modeSubtitle = isLoginMode
+    ? 'Use seu e-mail e senha para acessar seu ambiente de marca.'
+    : 'Cadastre seu acesso para começar a organizar questionários, documentos e materiais da marca.';
+  const passwordLabel = isLoginMode ? 'Senha' : 'Crie uma senha';
+  const passwordAutoComplete = isLoginMode ? 'current-password' : 'new-password';
+  const primaryButtonLabel = loadingAction === authMode ? (isLoginMode ? 'Entrando...' : 'Criando conta...') : isLoginMode ? 'Entrar' : 'Cadastrar';
+  const primaryHelperText = isLoginMode
+    ? 'Entre com o acesso que você já usa no app.'
+    : 'Ao cadastrar, seu acesso fica pronto para uso logo em seguida.';
+
+  function switchMode(nextMode: AuthMode) {
+    setAuthMode(nextMode);
+    setMessage('');
+  }
 
   useEffect(() => {
     try {
@@ -109,6 +127,7 @@ export default function HomePage() {
       persistRememberedEmail();
       const data = await signupWithEmailPassword(email, password);
       showMessage(data.message || 'Conta criada. Faça login para continuar.', 'success');
+      setAuthMode('login');
     } catch (error) {
       showMessage(error instanceof Error ? error.message : 'Falha ao criar conta.', 'error');
     } finally {
@@ -169,8 +188,29 @@ export default function HomePage() {
         </section>
 
         <section style={styles.card}>
-          <h2 style={styles.cardTitle}>Acessar conta</h2>
-          <p style={styles.cardSubtitle}>Use seu e-mail e senha para entrar ou criar a conta pela primeira vez.</p>
+          <div style={styles.modeToggle}>
+            <button
+              type="button"
+              aria-pressed={isLoginMode}
+              disabled={Boolean(loadingAction)}
+              style={isLoginMode ? styles.modeButtonActive : styles.modeButton}
+              onClick={() => switchMode('login')}
+            >
+              Entrar
+            </button>
+            <button
+              type="button"
+              aria-pressed={!isLoginMode}
+              disabled={Boolean(loadingAction)}
+              style={!isLoginMode ? styles.modeButtonActive : styles.modeButton}
+              onClick={() => switchMode('signup')}
+            >
+              Cadastrar
+            </button>
+          </div>
+
+          <h2 style={styles.cardTitle}>{modeTitle}</h2>
+          <p style={styles.cardSubtitle}>{modeSubtitle}</p>
 
           <div style={styles.form}>
             <label style={styles.label}>
@@ -186,16 +226,18 @@ export default function HomePage() {
             </label>
 
             <label style={styles.label}>
-              Senha
+              {passwordLabel}
               <input
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 minLength={6}
-                autoComplete="current-password"
+                autoComplete={passwordAutoComplete}
                 style={styles.input}
               />
             </label>
+
+            <p style={styles.helperText}>{primaryHelperText}</p>
 
             <label style={styles.rememberRow}>
               <input
@@ -208,16 +250,18 @@ export default function HomePage() {
             </label>
 
             <div style={styles.primaryActions}>
-              <button type="button" disabled={Boolean(loadingAction)} style={styles.button} onClick={handleLogin}>
-                {loadingAction === 'login' ? 'Entrando...' : 'Entrar'}
-              </button>
-              <button type="button" disabled={Boolean(loadingAction)} style={styles.secondaryButton} onClick={handleSignup}>
-                {loadingAction === 'signup' ? 'Criando...' : 'Criar conta'}
+              <button
+                type="button"
+                disabled={Boolean(loadingAction)}
+                style={styles.button}
+                onClick={isLoginMode ? handleLogin : handleSignup}
+              >
+                {primaryButtonLabel}
               </button>
             </div>
 
             <div style={styles.linkActions}>
-              {EMAIL_CONFIRMATION_ENABLED ? (
+              {EMAIL_CONFIRMATION_ENABLED && !isLoginMode ? (
                 <button
                   type="button"
                   disabled={Boolean(loadingAction)}
@@ -227,14 +271,25 @@ export default function HomePage() {
                   {loadingAction === 'resend' ? 'Reenviando...' : 'Reenviar confirmação'}
                 </button>
               ) : null}
-              <button
-                type="button"
-                disabled={Boolean(loadingAction)}
-                style={styles.linkButton}
-                onClick={handleForgotPassword}
-              >
-                {loadingAction === 'forgot' ? 'Enviando...' : 'Esqueci minha senha'}
-              </button>
+              {isLoginMode ? (
+                <button
+                  type="button"
+                  disabled={Boolean(loadingAction)}
+                  style={styles.linkButton}
+                  onClick={handleForgotPassword}
+                >
+                  {loadingAction === 'forgot' ? 'Enviando...' : 'Esqueci minha senha'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={Boolean(loadingAction)}
+                  style={styles.linkButton}
+                  onClick={() => switchMode('login')}
+                >
+                  Já tem acesso? Voltar para entrar
+                </button>
+              )}
             </div>
           </div>
 
@@ -297,6 +352,38 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       display: 'grid',
       gap: '10px',
     },
+    modeToggle: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      gap: '8px',
+      padding: '4px',
+      borderRadius: '10px',
+      background: 'var(--planto-light-input-bg)',
+      border: '1px solid var(--planto-light-border)',
+      marginBottom: '2px',
+    },
+    modeButton: {
+      border: 'none',
+      borderRadius: '8px',
+      padding: '10px 12px',
+      background: 'transparent',
+      color: 'var(--planto-light-muted)',
+      fontWeight: 700,
+      cursor: 'pointer',
+      transition: 'all 120ms ease',
+      width: '100%',
+    },
+    modeButtonActive: {
+      border: '1px solid var(--planto-light-border-strong)',
+      borderRadius: '8px',
+      padding: '10px 12px',
+      background: 'var(--planto-light-text)',
+      color: 'var(--planto-light-accent-text)',
+      fontWeight: 700,
+      cursor: 'pointer',
+      boxShadow: '0 8px 20px rgba(20, 20, 20, 0.08)',
+      width: '100%',
+    },
     title: {
       margin: '0 0 2px',
       fontSize: typeScale.h1,
@@ -323,6 +410,12 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
     form: {
       display: 'grid',
       gap: '10px',
+    },
+    helperText: {
+      margin: '-2px 0 2px',
+      color: 'var(--planto-light-accent-muted)',
+      fontSize: typeScale.small,
+      lineHeight: 1.5,
     },
     label: {
       display: 'grid',
@@ -359,7 +452,7 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
     },
     primaryActions: {
       display: 'grid',
-      gridTemplateColumns: isCompact ? 'minmax(0, 1fr)' : 'repeat(2, minmax(0, 1fr))',
+      gridTemplateColumns: 'minmax(0, 1fr)',
       gap: '10px',
       marginTop: '4px',
     },
@@ -369,16 +462,6 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       padding: '10px',
       background: 'var(--planto-light-text)',
       color: 'var(--planto-light-accent-text)',
-      fontWeight: 650,
-      cursor: 'pointer',
-      width: '100%',
-    },
-    secondaryButton: {
-      border: '1px solid var(--planto-light-border-strong)',
-      borderRadius: '8px',
-      padding: '10px',
-      background: 'var(--planto-light-surface)',
-      color: 'var(--planto-light-text-strong)',
       fontWeight: 650,
       cursor: 'pointer',
       width: '100%',
