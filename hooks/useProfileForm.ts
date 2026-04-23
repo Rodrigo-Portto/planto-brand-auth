@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { saveProfile } from '../lib/api/dashboard';
-import type { FormProgress, Profile } from '../types/dashboard';
+import type { Profile } from '../types/dashboard';
 
 interface UseProfileFormOptions {
   initialProfile: Profile;
   token: string;
-  onSaved: (result: { profile: Profile; form_progress: FormProgress }, message?: string) => void;
+  onSaved: (result: { profile: Profile }, message?: string) => void;
   onError: (message: string) => void;
 }
 

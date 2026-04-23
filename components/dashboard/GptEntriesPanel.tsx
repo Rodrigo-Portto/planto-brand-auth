@@ -1,123 +1,68 @@
+import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
-import type { DashboardStyles, EntryEditorState, GptEntry } from '../../types/dashboard';
+import type { DashboardStyles, LegacyDocument } from '../../types/dashboard';
 
 interface GptEntriesPanelProps {
   styles: DashboardStyles;
-  entries: GptEntry[];
-  selectedEntryId: string;
-  entryEditor: EntryEditorState;
-  saving: boolean;
+  documents: LegacyDocument[];
   containerStyle?: CSSProperties;
-  onOpenEntry: (entry: GptEntry) => void;
-  onEntryEditorChange: (next: EntryEditorState) => void;
-  onCancelEntryChanges: () => void;
-  onSaveEntryChanges: () => void;
-  onDeleteEntry: (id: string) => void;
 }
 
-export function GptEntriesPanel({
-  styles,
-  entries,
-  selectedEntryId,
-  entryEditor,
-  saving,
-  containerStyle,
-  onOpenEntry,
-  onEntryEditorChange,
-  onCancelEntryChanges,
-  onSaveEntryChanges,
-  onDeleteEntry,
-}: GptEntriesPanelProps) {
+function getDocumentTitle(document: LegacyDocument) {
+  return document.title || document.type || document.canvas_kind || 'Documento GPT';
+}
+
+function getDocumentContent(document: LegacyDocument) {
+  return document.content || document.canvas_content || document.canvas_url || '';
+}
+
+function getDocumentMeta(document: LegacyDocument) {
+  const updatedAt = document.updated_at || document.created_at;
+  const formattedDate = updatedAt ? new Date(updatedAt).toLocaleString('pt-BR') : 'Sem data';
+  const format = document.content_format || document.canvas_kind || document.source || 'GPT';
+  return `${format} · ${formattedDate}`;
+}
+
+export function GptEntriesPanel({ styles, documents, containerStyle }: GptEntriesPanelProps) {
+  const [selectedDocumentId, setSelectedDocumentId] = useState('');
+  const selectedDocument = useMemo(() => {
+    if (!documents.length) return null;
+    return documents.find((item) => item.id === selectedDocumentId) || documents[0];
+  }, [documents, selectedDocumentId]);
+
   return (
-    <div id="entradas-gpt-panel" style={containerStyle || styles.rightPanel}>
-      <p style={styles.smallText}>Entradas salvas pelo GPT para esta conta. Selecione uma entrada para abrir e editar.</p>
+    <div id="documentos-gpt-panel" style={containerStyle || styles.rightPanel}>
+      <p style={styles.smallText}>Documentos gravados pelo GPT para esta conta. Visualização somente leitura.</p>
 
       <div style={styles.list}>
-        {entries.length === 0 && <p style={styles.smallText}>Nenhuma entrada salva.</p>}
-        {entries.map((item) => {
-          const isSelected = item.id === selectedEntryId;
+        {documents.length === 0 ? <p style={styles.smallText}>Nenhum documento GPT encontrado.</p> : null}
+        {documents.map((item) => {
+          const itemId = item.id || `${item.type || 'document'}-${item.updated_at || item.created_at || getDocumentTitle(item)}`;
+          const isSelected = selectedDocument ? itemId === (selectedDocument.id || selectedDocumentId) : false;
           return (
             <button
-              key={item.id}
+              key={itemId}
               type="button"
               style={isSelected ? styles.entryButtonActive : styles.entryButton}
-              onClick={() => onOpenEntry(item)}
+              onClick={() => setSelectedDocumentId(itemId)}
             >
               <div style={styles.listItemInline}>
-                <p style={styles.listTitle}>{item.title || 'Sem título'}</p>
-                <span style={styles.entryBadge}>{item.entry_type || 'note'}</span>
+                <p style={styles.listTitle}>{getDocumentTitle(item)}</p>
+                <span style={styles.entryBadge}>{item.type || item.content_format || 'documento'}</span>
               </div>
-              <p style={styles.smallText}>{new Date(item.created_at || '').toLocaleString('pt-BR')}</p>
+              <p style={styles.smallText}>{getDocumentMeta(item)}</p>
             </button>
           );
         })}
       </div>
 
-      {selectedEntryId && (
-        <div style={{ ...styles.cardBlock, ...styles.formCard }}>
-          <h3 style={styles.cardTitle}>Editar entrada</h3>
-          <div style={styles.formCardBody} />
-
-          <label style={styles.label}>
-            Tipo
-            <select
-              style={styles.input}
-              value={entryEditor.entry_type}
-              onChange={(event) =>
-                onEntryEditorChange({
-                  ...entryEditor,
-                  entry_type: event.target.value,
-                })
-              }
-            >
-              <option value="note">note</option>
-              <option value="insight">insight</option>
-              <option value="strategy">strategy</option>
-            </select>
-          </label>
-
-          <label style={styles.label}>
-            Título
-            <input
-              style={styles.input}
-              value={entryEditor.title}
-              onChange={(event) =>
-                onEntryEditorChange({
-                  ...entryEditor,
-                  title: event.target.value,
-                })
-              }
-            />
-          </label>
-
-          <label style={styles.label}>
-            Conteúdo
-            <textarea
-              rows={8}
-              style={styles.textarea}
-              value={entryEditor.content_text}
-              onChange={(event) =>
-                onEntryEditorChange({
-                  ...entryEditor,
-                  content_text: event.target.value,
-                })
-              }
-            />
-          </label>
-
-          <div style={styles.listItemInline}>
-            <button disabled={saving} style={styles.secondaryButton} onClick={onCancelEntryChanges} type="button">
-              Cancelar
-            </button>
-            <button disabled={saving} style={styles.primaryButton} onClick={onSaveEntryChanges} type="button">
-              Salvar alterações
-            </button>
-            <button disabled={saving} style={styles.dangerButton} onClick={() => onDeleteEntry(selectedEntryId)} type="button">
-              Excluir entrada
-            </button>
-          </div>
-        </div>
-      )}
+      {selectedDocument ? (
+        <article style={{ ...styles.cardBlock, ...styles.formCard }}>
+          <h3 style={styles.cardTitle}>{getDocumentTitle(selectedDocument)}</h3>
+          <p style={styles.smallText}>{getDocumentMeta(selectedDocument)}</p>
+          <pre style={styles.documentPreview}>{getDocumentContent(selectedDocument) || 'Documento sem conteúdo textual para preview.'}</pre>
+        </article>
+      ) : null}
     </div>
   );
 }

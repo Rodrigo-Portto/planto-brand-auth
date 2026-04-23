@@ -8,6 +8,9 @@ interface TokenPanelProps {
   createdToken: string;
   tokenCopied: boolean;
   copyingDisabled: boolean;
+  savingToken?: boolean;
+  canGenerateToken?: boolean;
+  onCreateToken?: () => void;
   onCopyToken: () => void;
 }
 
@@ -18,6 +21,9 @@ export function TokenPanel({
   createdToken,
   tokenCopied,
   copyingDisabled,
+  savingToken = false,
+  canGenerateToken = false,
+  onCreateToken,
   onCopyToken,
 }: TokenPanelProps) {
   const tokenPreview = createdToken ? `${createdToken.slice(0, 18)}...` : 'Nenhum token ativo encontrado.';
@@ -26,6 +32,18 @@ export function TokenPanel({
     <div style={styles.cardBlock}>
       {showTitle ? <h2 style={styles.panelTitle}>Token</h2> : null}
       <code style={createdToken ? styles.headerTokenCode : styles.headerTokenHint}>{tokenPreview}</code>
+      {canGenerateToken ? (
+        <button
+          disabled={savingToken}
+          style={styles.primaryButton}
+          onClick={onCreateToken}
+          type="button"
+          aria-label="Gerar token GPT"
+          title="Gerar token GPT"
+        >
+          {savingToken ? 'Gerando...' : 'Gerar token'}
+        </button>
+      ) : null}
       <button
         disabled={copyingDisabled}
         style={{ ...styles.secondaryButton, background: theme.shell }}

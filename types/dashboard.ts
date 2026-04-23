@@ -198,26 +198,12 @@ export interface DailyNote {
 export interface DashboardPayload {
   user: UserSummary | null;
   profile: Profile;
-  forms: {
-    integrated_briefing: BriefingFormResponseRecord;
-  };
-  form_progress: FormProgress;
-  editorial_line: EditorialLineRecord;
   attachments: Attachment[];
-  gpt_entries: GptEntry[];
   gpt_tokens: GptToken[];
   legacy_documents: LegacyDocument[];
-  daily_notes: DailyNote[];
 }
 
-export type SaveResourceName =
-  | 'profile'
-  | 'integrated_briefing'
-  | 'integrated_briefing_finalize'
-  | 'editorial_line'
-  | 'gpt_entry'
-  | 'legacy_document'
-  | 'daily_note';
+export type SaveResourceName = 'profile';
 
 export interface SaveResourceRequest<TPayload = unknown> {
   resource: SaveResourceName;

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { DashboardStyles, DashboardThemeColors, ThemeMode } from '../../types/dashboard';
-import { LogOutIcon, MoonIcon, PanelLeftIcon, SunIcon } from './icons';
+import { LogOutIcon, MoonIcon, SunIcon } from './icons';
 
 interface DashboardHeaderProps {
   greetingName: string;
@@ -8,9 +8,7 @@ interface DashboardHeaderProps {
   themeMode: ThemeMode;
   styles: DashboardStyles;
   theme: DashboardThemeColors;
-  navCollapsed: boolean;
   headerNav?: ReactNode;
-  onToggleNavPanel: () => void;
   onToggleTheme: () => void;
   onLogout: () => void;
 }
@@ -21,9 +19,7 @@ export function DashboardHeader({
   themeMode,
   styles,
   theme,
-  navCollapsed,
   headerNav,
-  onToggleNavPanel,
   onToggleTheme,
   onLogout,
 }: DashboardHeaderProps) {
@@ -77,17 +73,6 @@ export function DashboardHeader({
       <div style={{ ...styles.headerActions, minWidth: 0 }}>
         {headerNav ? <div style={{ minWidth: 0, display: 'flex', alignItems: 'center' }}>{headerNav}</div> : null}
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-          <button
-            onClick={onToggleNavPanel}
-            style={headerIconButtonStyle}
-            type="button"
-            aria-label={navCollapsed ? 'Expandir painel esquerdo' : 'Recolher painel esquerdo'}
-            title={navCollapsed ? 'Expandir painel esquerdo' : 'Recolher painel esquerdo'}
-          >
-            <span style={headerIconGlyphStyle}>
-              <PanelLeftIcon color={theme.text} />
-            </span>
-          </button>
           <button
             onClick={onToggleTheme}
             style={headerIconButtonStyle}
