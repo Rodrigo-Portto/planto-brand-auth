@@ -8,8 +8,8 @@
   --planto-accent: #3ddc84;
   --planto-danger: #ff6e6e;
 
-  --planto-light-bg: #edf5f0;
-  --planto-light-surface: #f4fbf7;
+  --planto-light-bg: #f6f3ed;
+  --planto-light-surface: #fbf9f5;
   --planto-light-text: #112019;
   --planto-light-muted: #5d7668;
   --planto-light-accent: #0f7a47;
@@ -44,8 +44,8 @@
   --planto-nav-active: rgba(15, 72, 46, 0.28);
 
   --planto-light-page-bg:
-    radial-gradient(circle at top left, rgba(61, 220, 132, 0.14), transparent 22%),
-    linear-gradient(180deg, #eff8f2 0%, #e8f2ed 100%);
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.56), transparent 22%),
+    linear-gradient(180deg, #f6f3ed 0%, #f6f3ed 100%);
   --planto-light-view-bg: rgba(255, 255, 255, 0.9);
   --planto-light-surface-muted: rgba(247, 251, 248, 0.82);
   --planto-light-surface-raised: rgba(255, 255, 255, 0.94);

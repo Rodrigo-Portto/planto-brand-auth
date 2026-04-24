@@ -114,6 +114,43 @@ export function KeyIcon({ color }: IconProps) {
   );
 }
 
+export function SparklesIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path d="m12 3.5 1.5 4.2 4.2 1.5-4.2 1.5L12 15l-1.5-4.3L6.3 9.2l4.2-1.5L12 3.5Z" stroke={color} strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="m18.4 13.8.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2ZM5.6 14.5l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9.9-2.4Z" stroke={color} strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function ChatIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path
+        d="M5 6h14a1.5 1.5 0 0 1 1.5 1.5V15A1.5 1.5 0 0 1 19 16.5h-7l-4.5 3v-3H5A1.5 1.5 0 0 1 3.5 15V7.5A1.5 1.5 0 0 1 5 6Z"
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M8 10h8M8 13h5.5" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function FolderIcon({ color }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <path
+        d="M4.5 7.5A1.5 1.5 0 0 1 6 6h4l1.6 1.8H18a1.5 1.5 0 0 1 1.5 1.5v7.2A1.5 1.5 0 0 1 18 18H6a1.5 1.5 0 0 1-1.5-1.5v-9Z"
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M4.8 9.2H19" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function TrashIcon({ color }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">

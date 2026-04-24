@@ -25,6 +25,7 @@ function getDocumentMeta(document: LegacyDocument) {
 
 export function GptEntriesPanel({ styles, documents, containerStyle }: GptEntriesPanelProps) {
   const [selectedDocumentId, setSelectedDocumentId] = useState('');
+  const showDocumentPreview = false;
   const selectedDocument = useMemo(() => {
     if (!documents.length) return null;
     return documents.find((item) => item.id === selectedDocumentId) || documents[0];
@@ -56,7 +57,7 @@ export function GptEntriesPanel({ styles, documents, containerStyle }: GptEntrie
         })}
       </div>
 
-      {selectedDocument ? (
+      {showDocumentPreview && selectedDocument ? (
         <article style={{ ...styles.cardBlock, ...styles.formCard }}>
           <h3 style={styles.cardTitle}>{getDocumentTitle(selectedDocument)}</h3>
           <p style={styles.smallText}>{getDocumentMeta(selectedDocument)}</p>

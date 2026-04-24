@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import type { GetServerSidePropsContext } from 'next';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import {
   loginWithEmailPassword,
@@ -185,6 +186,9 @@ export default function HomePage() {
             Entre para acessar seus questionários estratégicos, linha editorial e documentos GPT, com autenticação por
             e-mail e recuperação de senha integrada.
           </p>
+          <Link href="/convite" style={styles.inlineLink}>
+            Ver convite para testadores
+          </Link>
         </section>
 
         <section style={styles.card}>
@@ -479,6 +483,12 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       fontWeight: 600,
       textAlign: 'left',
       cursor: 'pointer',
+    },
+    inlineLink: {
+      color: 'var(--planto-light-accent-muted)',
+      fontWeight: 700,
+      textDecoration: 'none',
+      width: 'fit-content',
     },
     message: {
       marginTop: '8px',

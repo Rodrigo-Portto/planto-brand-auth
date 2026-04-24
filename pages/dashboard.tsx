@@ -3,11 +3,12 @@ import type { GetServerSidePropsContext } from 'next';
 import { useRouter } from 'next/router';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { DashboardShell } from '../components/dashboard/DashboardShell';
+import { GptAssistantCard } from '../components/dashboard/GptAssistantCard';
 import { GptEntriesPanel } from '../components/dashboard/GptEntriesPanel';
 import { KnowledgePanel } from '../components/dashboard/KnowledgePanel';
 import { ProfilePanel } from '../components/dashboard/ProfilePanel';
 import { TokenPanel } from '../components/dashboard/TokenPanel';
-import { CloseIcon, KeyIcon, PencilIcon, SaveIcon } from '../components/dashboard/icons';
+import { ChatIcon, ChevronIcon, CloseIcon, FolderIcon, KeyIcon, PencilIcon, SaveIcon, SparklesIcon } from '../components/dashboard/icons';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useDashboardSession } from '../hooks/useDashboardSession';
 import { useGptToken } from '../hooks/useGptToken';
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const [viewportWidth, setViewportWidth] = useState(1440);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [profileEditing, setProfileEditing] = useState(false);
+  const [profileCollapsed, setProfileCollapsed] = useState(false);
 
   const theme = themeTokens[themeMode];
   const styles = useMemo(() => createDashboardStyles(theme, viewportWidth), [theme, viewportWidth]);
@@ -178,6 +180,16 @@ export default function DashboardPage() {
       >
         {profileEditing ? <SaveIcon color={theme.textStrong} /> : <PencilIcon color={theme.textStrong} />}
       </button>
+      <button
+        type="button"
+        style={styles.cardIconButton}
+        onClick={() => setProfileCollapsed((current) => !current)}
+        disabled={profileForm.savingProfile || avatarUploading}
+        aria-label={profileCollapsed ? 'Expandir perfil' : 'Recolher perfil'}
+        title={profileCollapsed ? 'Expandir perfil' : 'Recolher perfil'}
+      >
+        <ChevronIcon collapsed={profileCollapsed} color={theme.textStrong} />
+      </button>
       {profileEditing ? (
         <button
           type="button"
@@ -220,28 +232,32 @@ export default function DashboardPage() {
         <div style={styles.singleDashboardMain}>
           {renderCard(
             'Perfil',
-            <ProfilePanel
-              styles={styles}
-              theme={theme}
-              profile={profileForm.profile}
-              editing={profileEditing}
-              showHeader={false}
-              showEditButton={false}
-              saving={profileForm.savingProfile}
-              avatarUploading={avatarUploading}
-              onStartEdit={() => setProfileEditing(true)}
-              onProfileChange={(key, value) =>
-                profileForm.setProfile((current) => ({
-                  ...current,
-                  [key]: value,
-                }))
-              }
-              onSaveProfile={async () => {
-                await profileForm.saveProfile();
-                setProfileEditing(false);
-              }}
-              onAvatarUpload={handleAvatarUpload}
-            />,
+            profileCollapsed ? (
+              <p style={styles.smallText}>Perfil recolhido. Use o botao ao lado de editar para expandir novamente.</p>
+            ) : (
+              <ProfilePanel
+                styles={styles}
+                theme={theme}
+                profile={profileForm.profile}
+                editing={profileEditing}
+                showHeader={false}
+                showEditButton={false}
+                saving={profileForm.savingProfile}
+                avatarUploading={avatarUploading}
+                onStartEdit={() => setProfileEditing(true)}
+                onProfileChange={(key, value) =>
+                  profileForm.setProfile((current) => ({
+                    ...current,
+                    [key]: value,
+                  }))
+                }
+                onSaveProfile={async () => {
+                  await profileForm.saveProfile();
+                  setProfileEditing(false);
+                }}
+                onAvatarUpload={handleAvatarUpload}
+              />
+            ),
             profileActions,
             true
           )}
@@ -253,7 +269,7 @@ export default function DashboardPage() {
               documents={dashboardData.legacyDocuments}
               containerStyle={{ ...styles.centerPanel, padding: 0 }}
             />,
-            undefined,
+            <FolderIcon color={theme.textStrong} />,
             true
           )}
         </div>
@@ -271,7 +287,8 @@ export default function DashboardPage() {
               onSelectedFileChange={knowledgeUploads.setSelectedFile}
               onUpload={knowledgeUploads.uploadKnowledgeFile}
               onDeleteAttachment={knowledgeUploads.deleteAttachment}
-            />
+            />,
+            <SparklesIcon color={theme.textStrong} />
           )}
 
           {renderCard(
@@ -290,6 +307,8 @@ export default function DashboardPage() {
             />,
             <KeyIcon color={theme.textStrong} />
           )}
+
+          <GptAssistantCard styles={styles} iconColor={theme.textStrong} />
         </aside>
       </section>
     </DashboardShell>

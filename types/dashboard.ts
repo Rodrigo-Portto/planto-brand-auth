@@ -190,21 +190,6 @@ export interface LegacyDocument {
   updated_at?: string | null;
 }
 
-export interface DailyNoteData {
-  title?: string | null;
-  content?: string | null;
-  tag?: string | null;
-}
-
-export interface DailyNote {
-  id: string;
-  user_id: string;
-  note_date: string;
-  note_data?: DailyNoteData | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-}
-
 export interface DashboardPayload {
   user: UserSummary | null;
   profile: Profile;
