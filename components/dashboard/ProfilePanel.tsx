@@ -213,9 +213,6 @@ export function ProfilePanel({
           <div style={styles.profileGridTwo}>
             {[renderField('name', 'Nome'), renderField('surname', 'Sobrenome')]}
           </div>
-          <div style={styles.profileGridThree}>
-            {[renderField('market_niche', 'Mercado/Nicho'), renderField('education', 'Formação'), renderField('specialties', 'Especialidades')]}
-          </div>
           <div style={styles.profileGridTwo}>
             {[renderField('email', 'E-mail'), renderField('phone', 'Telefone')]}
           </div>
@@ -231,6 +228,9 @@ export function ProfilePanel({
           <div style={styles.profileGridTwo}>
             {renderSelect('business_stage', 'Em que fase a marca está hoje?', BUSINESS_STAGES)}
             {renderField('main_services', 'Principais serviços/produtos hoje')}
+          </div>
+          <div style={styles.profileGridThree}>
+            {[renderField('education', 'Formação'), renderField('market_niche', 'Mercado/Nicho'), renderField('specialties', 'Especialidades')]}
           </div>
 
           {/* — Público — */}
