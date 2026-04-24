@@ -20,6 +20,16 @@ export interface Profile {
   education?: string | null;
   specialties?: string | null;
   avatar_url?: string | null;
+  // Momento do negócio
+  business_stage?: 'inicio' | 'validacao' | 'crescimento' | 'reposicionamento' | 'escala' | null;
+  main_services?: string | null;
+  // Público
+  ideal_client?: string | null;
+  client_maturity?: string[] | null;
+  // Comunicação
+  priority_channels?: string[] | null;
+  weekly_content_frequency?: number | null;
+  main_marketing_difficulty?: string | null;
 }
 
 export interface BriefingFormBlock {

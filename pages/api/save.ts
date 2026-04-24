@@ -22,6 +22,16 @@ const PROFILE_FIELD_KEYS: Array<keyof Profile> = [
   'education',
   'specialties',
   'avatar_url',
+  // Momento do negócio
+  'business_stage',
+  'main_services',
+  // Público
+  'ideal_client',
+  'client_maturity',
+  // Comunicação
+  'priority_channels',
+  'weekly_content_frequency',
+  'main_marketing_difficulty',
 ];
 
 function pickFields<T extends object>(source: unknown, allowed: Array<keyof T>) {
