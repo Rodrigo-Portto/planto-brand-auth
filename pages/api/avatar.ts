@@ -7,7 +7,7 @@ import {
   extractErrorMessage,
   getAuthenticatedUser,
   supabaseRest,
-} from './_lib/supabase';
+} from '../../lib/supabase/api';
 
 const BUCKET = BRAND_LIBRARY_BUCKET;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;

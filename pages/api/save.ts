@@ -7,7 +7,7 @@ import {
   extractStoragePathFromAvatarValue,
   getAuthenticatedUser,
   supabaseRest,
-} from './_lib/supabase';
+} from '../../lib/supabase/api';
 
 const PROFILE_FIELD_KEYS: Array<keyof Profile> = [
   'name',

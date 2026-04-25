@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { extractErrorMessage, supabaseRest } from './_lib/supabase';
+import { extractErrorMessage, supabaseRest } from '../../lib/supabase/api';
 
 function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex');

@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { GptToken, TokenCreatePayload, TokenListPayload } from '../../types/dashboard';
-import { extractErrorMessage, getAuthenticatedUser, supabaseRest } from './_lib/supabase';
+import { extractErrorMessage, getAuthenticatedUser, supabaseRest } from '../../lib/supabase/api';
 
 function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex');

@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import type { LoginPayload } from '../../types/dashboard';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../lib/supabase/shared';
-import { extractErrorMessage, supabaseRest } from './_lib/supabase';
+import { extractErrorMessage, supabaseRest } from '../../lib/supabase/api';
 
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_BLOCK_MS = 30 * 60 * 1000;

@@ -1,7 +1,7 @@
 import type { User } from '@supabase/supabase-js';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createSupabaseServerClient } from '../../../lib/supabase/server';
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../../lib/supabase/shared';
+import { createSupabaseServerClient } from './server';
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from './shared';
 
 export { SUPABASE_ANON_KEY, SUPABASE_URL };
 export const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';

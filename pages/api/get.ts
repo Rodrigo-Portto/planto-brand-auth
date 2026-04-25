@@ -7,7 +7,7 @@ import {
   extractStoragePathFromAvatarValue,
   getAuthenticatedUser,
   supabaseRest,
-} from './_lib/supabase';
+} from '../../lib/supabase/api';
 
 async function fetchOneById<T>(table: string, idColumn: string, idValue: string): Promise<T | null> {
   const { response, data } = await supabaseRest(

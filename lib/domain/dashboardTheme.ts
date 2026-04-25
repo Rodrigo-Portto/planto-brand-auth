@@ -459,20 +459,6 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       fontSize: typeScale.body,
       lineHeight: 1.5,
     },
-    briefingH1: {
-      margin: 0,
-      color: colors.textStrong,
-      fontSize: typeScale.h1,
-      lineHeight: 1.2,
-      fontWeight: 800,
-    },
-    briefingH2: {
-      margin: 0,
-      color: colors.textStrong,
-      fontSize: typeScale.h2,
-      lineHeight: 1.3,
-      fontWeight: 700,
-    },
     collapseButton: {
       width: '34px',
       height: '34px',
@@ -488,12 +474,6 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
     formGrid: {
       display: 'grid',
       gap: '12px',
-      gridTemplateColumns: '1fr',
-      alignItems: 'start',
-    },
-    briefingGrid: {
-      display: 'grid',
-      gap: '20px',
       gridTemplateColumns: '1fr',
       alignItems: 'start',
     },
@@ -755,39 +735,6 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       fontSize: typeScale.small,
       color: colors.textMuted,
       wordBreak: 'break-word',
-    },
-    briefingIntro: {
-      display: 'grid',
-      gap: '12px',
-      borderBottom: 'none',
-      padding: '0 0 14px',
-    },
-    briefingIntroHeader: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      gap: '12px',
-    },
-    briefingSubtitle: {
-      margin: '6px 0 0',
-      color: colors.textMuted,
-      fontSize: typeScale.body,
-      lineHeight: 1.5,
-    },
-    briefingBodyText: {
-      margin: '8px 0 0',
-      color: colors.text,
-      fontSize: typeScale.body,
-      lineHeight: 1.65,
-    },
-    briefingList: {
-      margin: '8px 0 0',
-      paddingLeft: '18px',
-      display: 'grid',
-      gap: '6px',
-      color: colors.text,
-      fontSize: typeScale.body,
-      lineHeight: 1.55,
     },
     fieldBlock: {
       display: 'grid',

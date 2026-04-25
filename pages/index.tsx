@@ -1,6 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import type { GetServerSidePropsContext } from 'next';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import {
   loginWithEmailPassword,
@@ -183,12 +182,9 @@ export default function HomePage() {
           <p style={styles.kicker}>Planttô</p>
           <h1 style={styles.title}>Hub de marca com foco no essencial.</h1>
           <p style={styles.subtitle}>
-            Entre para acessar seus questionários estratégicos, linha editorial e documentos GPT, com autenticação por
-            e-mail e recuperação de senha integrada.
+            Entre para acessar seu perfil, anexos de conhecimento, documentos GPT e token de integração, com autenticação
+            por e-mail e recuperação de senha integrada.
           </p>
-          <Link href="/convite" style={styles.inlineLink}>
-            Ver convite para testadores
-          </Link>
         </section>
 
         <section style={styles.card}>

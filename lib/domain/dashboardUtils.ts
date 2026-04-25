@@ -1,14 +1,6 @@
-import type { EntryEditorState, GptEntry } from '../../types/dashboard';
-
 export const MAX_ATTACHMENTS = 10;
 export const THEME_STORAGE_KEY = 'planto_theme_mode';
 export const PANEL_STORAGE_KEY = 'planto_form_panels';
-
-export const EMPTY_ENTRY_EDITOR: EntryEditorState = {
-  entry_type: 'note',
-  title: '',
-  content_text: '',
-};
 
 export function bytesToReadable(value?: number | null): string {
   if (!value) return '0 B';
@@ -103,26 +95,5 @@ export async function prepareAvatarUpload(file: File): Promise<PreparedAvatarUpl
     base64: toBase64(buffer),
     mimeType: outputBlob.type || outputMimeType,
     filename: outputFilename,
-  };
-}
-
-export function getEntryText(entry?: GptEntry | null): string {
-  const content = entry?.content_json;
-  if (content && typeof content === 'object' && typeof content.text === 'string') {
-    return content.text;
-  }
-  if (typeof content === 'string') {
-    return content;
-  }
-  return '';
-}
-
-export function mapEntryToEditor(entry?: GptEntry | null): EntryEditorState {
-  if (!entry) return EMPTY_ENTRY_EDITOR;
-
-  return {
-    entry_type: entry.entry_type || 'note',
-    title: entry.title || '',
-    content_text: getEntryText(entry),
   };
 }
