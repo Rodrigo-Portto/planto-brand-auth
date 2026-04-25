@@ -1,0 +1,10 @@
+docs/
+.env
+.env.local
+.env.*.local
+.vercel/
+.git/
+node_modules/
+.next/
+supabase/
+prompts/
