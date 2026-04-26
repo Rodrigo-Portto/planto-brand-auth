@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import type { LoginPayload } from '../../types/dashboard';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../lib/supabase/shared';
-import { extractErrorMessage, supabaseRest } from '../../lib/supabase/api';
+import { SUPABASE_SERVICE_KEY, extractErrorMessage, supabaseRest } from '../../lib/supabase/api';
 
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_BLOCK_MS = 30 * 60 * 1000;
@@ -195,10 +195,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       const limiterKeys = getLimiterKeys(email, getClientIp(req));
-      const limiterState = await assertLoginNotRateLimited(limiterKeys);
-      if (limiterState.blocked) {
-        res.setHeader('Retry-After', String(limiterState.retryAfter));
-        return res.status(429).json({ error: 'Muitas tentativas de login. Tente novamente em alguns minutos.' });
+      const canUseLoginLimiter = Boolean(SUPABASE_SERVICE_KEY);
+      if (canUseLoginLimiter) {
+        const limiterState = await assertLoginNotRateLimited(limiterKeys);
+        if (limiterState.blocked) {
+          res.setHeader('Retry-After', String(limiterState.retryAfter));
+          return res.status(429).json({ error: 'Muitas tentativas de login. Tente novamente em alguns minutos.' });
+        }
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -209,18 +212,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       if (error || !data.user) {
         const message = normalizeMessage(error, 'Credenciais inválidas.');
         if (isEmailConfirmationError(message)) {
-          await registerFailedLoginAttempt(limiterKeys);
+          if (canUseLoginLimiter) {
+            await registerFailedLoginAttempt(limiterKeys);
+          }
           return res.status(401).json({
             error: 'Conta pendente de confirmação. Reenvie o e-mail de confirmação para continuar.',
             requires_confirmation: true,
           });
         }
 
-        await registerFailedLoginAttempt(limiterKeys);
+        if (canUseLoginLimiter) {
+          await registerFailedLoginAttempt(limiterKeys);
+        }
         return res.status(401).json({ error: 'Credenciais inválidas.' });
       }
 
-      await registerSuccessfulLogin(limiterKeys);
+      if (canUseLoginLimiter) {
+        await registerSuccessfulLogin(limiterKeys);
+      }
 
       return res.status(200).json({
         success: true,

@@ -5,43 +5,43 @@
   --planto-surface: #0d1713;
   --planto-text: #e9fff3;
   --planto-muted: #82a394;
-  --planto-accent: #3ddc84;
+  --planto-accent: #43c989;
   --planto-danger: #ff6e6e;
 
   --planto-light-bg: #f6f3ed;
   --planto-light-surface: #fbf9f5;
   --planto-light-text: #112019;
   --planto-light-muted: #5d7668;
-  --planto-light-accent: #0f7a47;
+  --planto-light-accent: #43c989;
   --planto-light-danger: #d14c4c;
 
   --planto-page-bg:
-    radial-gradient(circle at top left, rgba(61, 220, 132, 0.16), transparent 28%),
-    radial-gradient(circle at top right, rgba(24, 120, 73, 0.18), transparent 24%),
+    radial-gradient(circle at top left, rgba(67, 201, 137, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(37, 135, 90, 0.2), transparent 24%),
     linear-gradient(180deg, #07110d 0%, #060c0a 100%);
   --planto-surface-muted: rgba(13, 23, 19, 0.82);
   --planto-surface-raised: rgba(17, 30, 25, 0.96);
   --planto-border: rgba(96, 162, 126, 0.16);
   --planto-border-strong: rgba(96, 162, 126, 0.28);
-  --planto-border-accent: rgba(61, 220, 132, 0.44);
+  --planto-border-accent: rgba(67, 201, 137, 0.44);
   --planto-text-strong: #f4fff8;
   --planto-accent-text: #031109;
-  --planto-accent-soft: rgba(15, 72, 46, 0.34);
-  --planto-accent-muted: #82f0b1;
+  --planto-accent-soft: rgba(67, 201, 137, 0.22);
+  --planto-accent-muted: #8ee6bd;
   --planto-danger-bg: rgba(92, 19, 19, 0.62);
   --planto-danger-text: #ffd1d1;
-  --planto-success-bg: rgba(8, 38, 24, 0.92);
-  --planto-success-text: #d8ffe8;
+  --planto-success-bg: rgba(17, 66, 44, 0.92);
+  --planto-success-text: #dffbed;
   --planto-error-bg: rgba(74, 18, 18, 0.92);
   --planto-error-text: #ffe0e0;
   --planto-overlay: rgba(2, 7, 5, 0.62);
   --planto-input-bg: rgba(7, 17, 13, 0.88);
   --planto-token-bg: rgba(4, 14, 10, 0.96);
-  --planto-focus: #52de8f;
+  --planto-focus: #43c989;
   --planto-hover-surface: rgba(15, 28, 22, 0.96);
-  --planto-selection: rgba(61, 220, 132, 0.2);
+  --planto-selection: rgba(67, 201, 137, 0.22);
   --planto-table-grid: rgba(93, 145, 114, 0.28);
-  --planto-nav-active: rgba(15, 72, 46, 0.28);
+  --planto-nav-active: rgba(67, 201, 137, 0.18);
 
   --planto-light-page-bg:
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.56), transparent 22%),
@@ -51,25 +51,25 @@
   --planto-light-surface-raised: rgba(255, 255, 255, 0.94);
   --planto-light-border: rgba(16, 64, 40, 0.09);
   --planto-light-border-strong: rgba(16, 64, 40, 0.16);
-  --planto-light-border-accent: rgba(15, 122, 71, 0.28);
+  --planto-light-border-accent: rgba(67, 201, 137, 0.34);
   --planto-light-text-strong: #08140e;
-  --planto-light-accent-text: #f3fff8;
-  --planto-light-accent-soft: rgba(61, 220, 132, 0.12);
-  --planto-light-accent-muted: #0f7a47;
+  --planto-light-accent-text: #031109;
+  --planto-light-accent-soft: rgba(67, 201, 137, 0.14);
+  --planto-light-accent-muted: #25875a;
   --planto-light-danger-bg: rgba(255, 232, 232, 0.96);
   --planto-light-danger-text: #9a3434;
-  --planto-light-success-bg: rgba(226, 255, 238, 0.94);
-  --planto-light-success-text: #0f5e39;
+  --planto-light-success-bg: rgba(226, 250, 239, 0.96);
+  --planto-light-success-text: #237a54;
   --planto-light-error-bg: rgba(255, 232, 232, 0.96);
   --planto-light-error-text: #9a3434;
   --planto-light-overlay: rgba(7, 17, 13, 0.08);
   --planto-light-input-bg: rgba(255, 255, 255, 0.92);
   --planto-light-token-bg: rgba(237, 251, 242, 0.98);
-  --planto-light-focus: #0f7a47;
+  --planto-light-focus: #43c989;
   --planto-light-hover-surface: rgba(245, 251, 247, 0.96);
-  --planto-light-selection: rgba(15, 122, 71, 0.14);
-  --planto-light-table-grid: rgba(15, 122, 71, 0.16);
-  --planto-light-nav-active: rgba(61, 220, 132, 0.12);
+  --planto-light-selection: rgba(67, 201, 137, 0.16);
+  --planto-light-table-grid: rgba(67, 201, 137, 0.18);
+  --planto-light-nav-active: rgba(67, 201, 137, 0.12);
 }
 
 * {

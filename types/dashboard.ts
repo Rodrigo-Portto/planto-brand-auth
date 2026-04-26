@@ -44,6 +44,47 @@ export interface Attachment {
   updated_at?: string | null;
 }
 
+export type PipelineStageStatus = 'pending' | 'processing' | 'done' | 'error' | 'not_applicable';
+
+export type PipelineOverallStatus = 'pending' | 'processing' | 'done' | 'error';
+
+export interface PipelineMonitorStage {
+  key: 'uploaded' | 'extracted' | 'embedded' | 'briefing' | 'promoted' | 'knowledge';
+  label: string;
+  status: PipelineStageStatus;
+}
+
+export interface PipelineMonitorItem {
+  id: string;
+  source_type: 'attachment' | 'brand_document';
+  title: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+  overall_status: PipelineOverallStatus;
+  knowledge_count: number;
+  last_error?: string | null;
+  stages: PipelineMonitorStage[];
+}
+
+export interface PipelineMonitorSummary {
+  total_items: number;
+  completed_items: number;
+  processing_items: number;
+  error_items: number;
+  briefing_answered: number;
+  briefing_pending: number;
+  briefing_total: number;
+  brand_knowledge_active: number;
+  brand_knowledge_total: number;
+  branding_models_filled: number;
+  branding_models_total: number;
+}
+
+export interface PipelineMonitor {
+  summary: PipelineMonitorSummary;
+  items: PipelineMonitorItem[];
+}
+
 export interface GptToken {
   id: string;
   label?: string | null;
@@ -80,6 +121,7 @@ export interface DashboardPayload {
   attachments: Attachment[];
   gpt_tokens: GptToken[];
   legacy_documents: LegacyDocument[];
+  pipeline_monitor: PipelineMonitor;
 }
 
 export type SaveResourceName = 'profile';

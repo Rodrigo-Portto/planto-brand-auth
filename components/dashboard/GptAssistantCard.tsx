@@ -28,12 +28,12 @@ export function GptAssistantCard({ styles, iconColor }: GptAssistantCardProps) {
           ...styles.primaryButton,
           textDecoration: 'none',
           width: '100%',
-          background: '#5fc773',
-          color: '#08140e',
+          background: 'var(--planto-light-accent)',
+          color: 'var(--planto-light-accent-text)',
           border: '1px solid rgba(17, 32, 25, 0.08)',
           justifyContent: 'center',
           textAlign: 'center',
-          boxShadow: '0 10px 24px rgba(95, 199, 115, 0.22)',
+          boxShadow: '0 10px 24px rgba(67, 201, 137, 0.22)',
         }}
       >
         Acessar assistente

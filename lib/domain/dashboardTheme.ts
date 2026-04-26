@@ -547,8 +547,8 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       fontSize: typeScale.small,
       boxShadow:
         colors.name === 'light'
-          ? '0 12px 24px rgba(15, 122, 71, 0.18)'
-          : '0 12px 24px rgba(61, 220, 132, 0.16)',
+          ? '0 12px 24px rgba(67, 201, 137, 0.18)'
+          : '0 12px 24px rgba(67, 201, 137, 0.16)',
     },
     secondaryButton: {
       border: `1px solid ${colors.borderStrong}`,
@@ -820,8 +820,8 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       border: `1px solid ${colors.borderAccent}`,
       boxShadow:
         colors.name === 'light'
-          ? '0 12px 20px rgba(15, 122, 71, 0.18)'
-          : '0 12px 20px rgba(61, 220, 132, 0.18)',
+          ? '0 12px 20px rgba(67, 201, 137, 0.18)'
+          : '0 12px 20px rgba(67, 201, 137, 0.18)',
     },
     avatarGreeting: {
       margin: 0,

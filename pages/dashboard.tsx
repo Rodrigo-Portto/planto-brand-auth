@@ -6,6 +6,7 @@ import { DashboardShell } from '../components/dashboard/DashboardShell';
 import { GptAssistantCard } from '../components/dashboard/GptAssistantCard';
 import { GptEntriesPanel } from '../components/dashboard/GptEntriesPanel';
 import { KnowledgePanel } from '../components/dashboard/KnowledgePanel';
+import { PipelineMonitorPanel } from '../components/dashboard/PipelineMonitorPanel';
 import { ProfilePanel } from '../components/dashboard/ProfilePanel';
 import { TokenPanel } from '../components/dashboard/TokenPanel';
 import { ChatIcon, ChevronIcon, CloseIcon, FolderIcon, KeyIcon, PencilIcon, SaveIcon, SparklesIcon } from '../components/dashboard/icons';
@@ -230,6 +231,17 @@ export default function DashboardPage() {
     >
       <section style={styles.singleDashboardGrid}>
         <div style={styles.singleDashboardMain}>
+          {renderCard(
+            'Pipeline',
+            <PipelineMonitorPanel
+              styles={styles}
+              theme={theme}
+              monitor={dashboardData.pipelineMonitor}
+            />,
+            <SparklesIcon color={theme.textStrong} />,
+            true
+          )}
+
           {renderCard(
             'Perfil',
             profileCollapsed ? (
