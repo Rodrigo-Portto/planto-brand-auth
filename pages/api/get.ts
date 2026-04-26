@@ -10,7 +10,7 @@ const getBrandingModels = async () => {
   const { data, error } = await supabase
     .from('plataforma_marca')
     .select('*')
-  if (error) throw error
+  			if (error) throw new Error(JSON.stringify(error))
   return data
 }
 
@@ -22,7 +22,7 @@ export default async function handler(
     const data = await getBrandingModels()
     res.status(200).json(data)
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Erro desconhecido'
+    			const message = error instanceof Error ? error.message : JSON.stringify(error)
     console.error('[/api/get] Erro:', message)
     res.status(500).json({ error: message })
   }
