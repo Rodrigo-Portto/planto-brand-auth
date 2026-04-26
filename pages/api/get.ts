@@ -1,24 +1,27 @@
-// Other parts of the file...
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { createClient } from '@supabase/supabase-js'
 
-// Update the REST API call
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 const getBrandingModels = async () => {
-    const { data, error } = await supabase
-        .from('plataforma_marca') // Changed from branding_models to plataforma_marca
-        .select('*');
-    if (error) throw error;
-    return data;
-};
+  const { data, error } = await supabase
+    .from('plataforma_marca')
+    .select('*')
+  if (error) throw error
+  return data
+}
 
-// Other parts of the file...
-
-// Update the Supabase client call
-const someOtherFunction = async () => {
-    const response = await supabase
-        .from('plataforma_marca') // Changed from branding_models to plataforma_marca
-        .select('*');
-    
-    if (response.error) return response.error;
-    return response.data;
-};
-
-// Other parts of the file...
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  try {
+    const data = await getBrandingModels()
+    res.status(200).json(data)
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar dados' })
+  }
+}
