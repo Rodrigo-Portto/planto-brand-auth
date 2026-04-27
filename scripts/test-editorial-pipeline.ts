@@ -8,8 +8,6 @@
  *   "test:editorial": "ts-node scripts/test-editorial-pipeline.ts"
  */
 
-import fetch from 'node-fetch';
-
 interface TestResult {
   name: string;
   passed: boolean;

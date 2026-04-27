@@ -74,8 +74,7 @@ function buildPrompt(brandContext: Record<string, unknown>): string {
   };
 
   const assessmentData =
-    (brandContext.recent_assessments as Array<{ assessment_json: unknown }>)
-      ?.at(0)?.assessment_json || {};
+    (brandContext.recent_assessments as Array<{ assessment_json: unknown }> | undefined)?.[0]?.assessment_json || {};
 
   const profileContext = `
 Marca: ${profile?.name || 'Sem nome'}
