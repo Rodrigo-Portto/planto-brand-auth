@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import type { GetServerSidePropsContext } from 'next';
 import { useRouter } from 'next/router';
 import {
@@ -33,7 +33,7 @@ export default function HomePage() {
   const modeTitle = isLoginMode ? 'Entrar na sua conta' : 'Criar sua conta';
   const modeSubtitle = isLoginMode
     ? 'Use seu e-mail e senha para acessar seu ambiente de marca.'
-    : 'Cadastre seu acesso para começar a organizar questionários, documentos e materiais da marca.';
+    : 'Cadastre-se e gere seu token para começar a melhorar sua marca.';
   const passwordLabel = isLoginMode ? 'Senha' : 'Crie uma senha';
   const passwordAutoComplete = isLoginMode ? 'current-password' : 'new-password';
   const primaryButtonLabel = loadingAction === authMode ? (isLoginMode ? 'Entrando...' : 'Criando conta...') : isLoginMode ? 'Entrar' : 'Cadastrar';
@@ -175,15 +175,24 @@ export default function HomePage() {
     }
   }
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (loadingAction) {
+      return;
+    }
+
+    void (isLoginMode ? handleLogin() : handleSignup());
+  }
+
   return (
     <main style={styles.main}>
       <div style={styles.shell}>
         <section style={styles.intro}>
           <p style={styles.kicker}>Planttô</p>
-          <h1 style={styles.title}>Hub de marca com foco no essencial.</h1>
+          <h1 style={styles.title}>Evolua sua estratégia de marca a cada conversa.</h1>
           <p style={styles.subtitle}>
-            Entre para acessar seu perfil, anexos de conhecimento, documentos GPT e token de integração, com autenticação
-            por e-mail e recuperação de senha integrada.
+            O assistente estratégico conectado ao ChatGPT que organiza contexto, sustenta decisões e fortalece o posicionamento da sua marca todos os dias.
           </p>
         </section>
 
@@ -212,7 +221,7 @@ export default function HomePage() {
           <h2 style={styles.cardTitle}>{modeTitle}</h2>
           <p style={styles.cardSubtitle}>{modeSubtitle}</p>
 
-          <div style={styles.form}>
+          <form style={styles.form} onSubmit={handleSubmit}>
             <label style={styles.label}>
               E-mail
               <input
@@ -251,10 +260,9 @@ export default function HomePage() {
 
             <div style={styles.primaryActions}>
               <button
-                type="button"
+                type="submit"
                 disabled={Boolean(loadingAction)}
                 style={styles.button}
-                onClick={isLoginMode ? handleLogin : handleSignup}
               >
                 {primaryButtonLabel}
               </button>
@@ -291,7 +299,7 @@ export default function HomePage() {
                 </button>
               )}
             </div>
-          </div>
+          </form>
 
           {message ? <p style={messageStyle(styles, messageTone)}>{message}</p> : null}
         </section>

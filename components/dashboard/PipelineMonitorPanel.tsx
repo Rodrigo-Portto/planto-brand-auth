@@ -92,7 +92,7 @@ export function PipelineMonitorPanel({ monitor, styles, theme }: PipelineMonitor
       featured: false,
     },
     {
-      label: 'Branding models',
+      label: 'Plataforma',
       value: `${summary.branding_models_filled}/${summary.branding_models_total}`,
       featured: false,
     },

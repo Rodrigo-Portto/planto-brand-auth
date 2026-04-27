@@ -68,7 +68,7 @@ export default function ConvitePage() {
         <meta property="og:title" content="Planttô | Convite Beta" />
         <meta
           property="og:description"
-          content="Acesse o Planttô Beta e teste uma nova forma de construir estratégia de marca com contexto vivo."
+          content="Acesse o Planttô Beta e descubra uma nova forma de construir estratégia de marca com contexto vivo."
         />
         <meta property="og:type" content="website" />
       </Head>
@@ -81,15 +81,15 @@ export default function ConvitePage() {
           <section style={styles.heroCard}>
             <div style={styles.heroCopy}>
               <p style={styles.eyebrow}>Convite Planttô beta</p>
-              <h1 style={styles.title}>Evolua sua estratégia de marca a cada conversa.</h1>
+              <h1 style={styles.title}>Quanto mais você conversa, mais propriedade a marca constrói.</h1>
               <p style={styles.lead}>
-                Você foi convidada para testar o Planttô Beta: um assistente estratégico conectado ao ChatGPT que
-                organiza contexto, sustenta decisões e fortalece o posicionamento da sua marca todos os dias.
+                O assistente estratégico conectado ao ChatGPT que organizada contexto,
+                sustenta decisões e fortalece o posicionamento da sua marca todos os dias.
               </p>
 
               <div style={styles.heroActions}>
                 <Link href="https://plantto.vercel.app/" style={styles.primaryButton}>
-                  Acessar o app
+                  Entrar no beta
                 </Link>
                 <a href="#como-acessar" style={styles.secondaryButton}>
                   Ver como funciona
@@ -124,8 +124,8 @@ export default function ConvitePage() {
               <h2 style={styles.sectionTitle}>Uma camada estratégica entre a sua marca e o ChatGPT.</h2>
               <div style={styles.paragraphStack}>
                 <p style={styles.body}>
-                  O Planttô foi desenhado a partir de um framework proprietário de branding para transformar conversas,
-                  referências e materiais soltos em uma base de marca funcional.
+                  O Planttô foi desenvolvido para conectar conversas,
+                  referências e materiais soltos em uma base de marca operacional.
                 </p>
                 <p style={styles.body}>
                   Na prática, ele funciona como um estrategista sempre disponível: entende seu negócio, lembra decisões
@@ -163,7 +163,7 @@ export default function ConvitePage() {
           <section style={styles.bannerCard}>
             <Image src={planttoIconShort} alt="" aria-hidden="true" style={styles.bannerIcon} />
             <div>
-              <p style={styles.bannerLabel}>Quanto mais você conversa, mais propriedade de marca constrói.</p>
+              <p style={styles.bannerLabel}>Evolua sua estratégia de marca a cada conversa.</p>
               <p style={styles.bannerText}>Basta pedir para o assistente salvar o que realmente importa.</p>
             </div>
           </section>
@@ -210,17 +210,17 @@ export default function ConvitePage() {
               </div>
               <div style={styles.paragraphStack}>
                 <p style={styles.body}>
-                  Esta fase beta acontece com um grupo pequeno para garantir acompanhamento próximo e uma experiência
-                  realmente útil desde o início.
+                  Esta fase beta acontece com um grupo limitado para garantir acompanhamento
+                  próximo e uma experiência realmente útil desde o início.
                 </p>
                 <p style={styles.body}>
-                  Seu feedback ajuda a refinar o produto, enquanto você já estrutura uma base de marca mais sólida,
-                  conectada e acionável.
+                  Seu feedback ajuda a refinar o produto, Você sai dessa fase com uma
+                  base de marca mais organizada, documentada e pronta para crescer.
                 </p>
               </div>
               <div style={styles.closingActions}>
                 <Link href="https://plantto.vercel.app/" style={styles.primaryButton}>
-                  Começar acesso
+                  Entrar no beta
                 </Link>
               </div>
             </article>
