@@ -4,7 +4,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "editorial:test": "ts-node scripts/test-editorial-pipeline.ts",
+    "editorial:generate": "curl -X POST http://localhost:3000/api/pipeline/editorial-generate -H 'Authorization: Bearer '$EDITORIAL_CRON_TOKEN'' -H 'Content-Type: application/json'",
+    "editorial:setup": "bash scripts/setup-editorial-pipeline.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
