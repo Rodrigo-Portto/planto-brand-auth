@@ -374,14 +374,14 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       width: '100%',
     },
     modeButtonActive: {
-      border: '1px solid var(--planto-light-border-strong)',
+      border: '1px solid var(--planto-light-accent)',
       borderRadius: '8px',
       padding: '10px 12px',
-      background: 'var(--planto-light-text)',
+      background: 'var(--planto-light-accent)',
       color: 'var(--planto-light-accent-text)',
       fontWeight: 700,
       cursor: 'pointer',
-      boxShadow: '0 8px 20px rgba(20, 20, 20, 0.08)',
+      boxShadow: '0 8px 20px rgba(67, 201, 137, 0.22)',
       width: '100%',
     },
     title: {
