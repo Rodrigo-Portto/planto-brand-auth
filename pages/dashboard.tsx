@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { GetServerSidePropsContext } from 'next';
 import { useRouter } from 'next/router';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
@@ -16,10 +16,8 @@ import { useGptToken } from '../hooks/useGptToken';
 import { useKnowledgeUploads } from '../hooks/useKnowledgeUploads';
 import { useProfileForm } from '../hooks/useProfileForm';
 import { useThemeMode } from '../hooks/useThemeMode';
-import { uploadAvatar } from '../lib/api/dashboard';
 import { getServerAuthenticatedUser } from '../lib/supabase/server';
 import { createDashboardStyles, themeTokens } from '../lib/domain/dashboardTheme';
-import { prepareAvatarUpload } from '../lib/domain/dashboardUtils';
 import { isSessionTokenInvalidMessage } from '../lib/domain/session';
 
 export default function DashboardPage() {
@@ -30,7 +28,6 @@ export default function DashboardPage() {
   const [notice, setNotice] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [viewportWidth, setViewportWidth] = useState(1440);
-  const [avatarUploading, setAvatarUploading] = useState(false);
   const [profileEditing, setProfileEditing] = useState(false);
   const [profileCollapsed, setProfileCollapsed] = useState(false);
 
@@ -113,43 +110,6 @@ export default function DashboardPage() {
     return 'por aqui';
   }, [profileForm.profile?.name, profileForm.profile?.surname, dashboardData.user?.email]);
 
-  async function handleAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!String(file.type || '').startsWith('image/')) {
-      showError('Selecione uma imagem válida para o avatar.');
-      event.target.value = '';
-      return;
-    }
-
-    setAvatarUploading(true);
-    const previousAvatarUrl = String(profileForm.profile?.avatar_url || '');
-    const immediatePreviewUrl = URL.createObjectURL(file);
-    profileForm.setProfile((current) => ({ ...current, avatar_url: immediatePreviewUrl }));
-
-    try {
-      const prepared = await prepareAvatarUpload(file);
-      const data = await uploadAvatar({
-        filename: prepared.filename,
-        mime_type: prepared.mimeType || 'application/octet-stream',
-        base64: prepared.base64,
-      });
-
-      const nextUrl = data.avatar_url || data.profile?.avatar_url || '';
-      profileForm.setProfile((current) => ({ ...current, avatar_url: nextUrl }));
-      dashboardData.setProfile(data.profile || { ...profileForm.profile, avatar_url: nextUrl });
-      showSavedNotice('Avatar salvo');
-    } catch (error) {
-      profileForm.setProfile((current) => ({ ...current, avatar_url: previousAvatarUrl }));
-      handleDashboardError(error instanceof Error ? error.message : 'Erro ao enviar avatar.');
-    } finally {
-      URL.revokeObjectURL(immediatePreviewUrl);
-      event.target.value = '';
-      setAvatarUploading(false);
-    }
-  }
-
   function renderCard(title: string, body: ReactNode, actions?: ReactNode, wide = false) {
     return (
       <section style={wide ? styles.singleDashboardWideCard : styles.panelCard}>
@@ -175,7 +135,7 @@ export default function DashboardPage() {
               }
             : () => setProfileEditing(true)
         }
-        disabled={profileForm.savingProfile || avatarUploading}
+        disabled={profileForm.savingProfile}
         aria-label={profileEditing ? 'Salvar perfil' : 'Editar perfil'}
         title={profileEditing ? 'Salvar perfil' : 'Editar perfil'}
       >
@@ -185,7 +145,7 @@ export default function DashboardPage() {
         type="button"
         style={styles.cardIconButton}
         onClick={() => setProfileCollapsed((current) => !current)}
-        disabled={profileForm.savingProfile || avatarUploading}
+        disabled={profileForm.savingProfile}
         aria-label={profileCollapsed ? 'Expandir perfil' : 'Recolher perfil'}
         title={profileCollapsed ? 'Expandir perfil' : 'Recolher perfil'}
       >
@@ -199,7 +159,7 @@ export default function DashboardPage() {
             profileForm.cancelProfileChanges();
             setProfileEditing(false);
           }}
-          disabled={profileForm.savingProfile || avatarUploading}
+          disabled={profileForm.savingProfile}
           aria-label="Cancelar edição do perfil"
           title="Cancelar edição do perfil"
         >
@@ -217,7 +177,6 @@ export default function DashboardPage() {
       header={
         <DashboardHeader
           greetingName={greetingName}
-          avatarUrl={profileForm.profile?.avatar_url || ''}
           themeMode={themeMode}
           styles={styles}
           theme={theme}
@@ -255,7 +214,6 @@ export default function DashboardPage() {
                 showHeader={false}
                 showEditButton={false}
                 saving={profileForm.savingProfile}
-                avatarUploading={avatarUploading}
                 onStartEdit={() => setProfileEditing(true)}
                 onProfileChange={(key, value) =>
                   profileForm.setProfile((current) => ({
@@ -267,7 +225,6 @@ export default function DashboardPage() {
                   await profileForm.saveProfile();
                   setProfileEditing(false);
                 }}
-                onAvatarUpload={handleAvatarUpload}
               />
             ),
             profileActions,

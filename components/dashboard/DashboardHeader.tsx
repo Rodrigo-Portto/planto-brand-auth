@@ -4,7 +4,6 @@ import { LogOutIcon, MoonIcon, SunIcon } from './icons';
 
 interface DashboardHeaderProps {
   greetingName: string;
-  avatarUrl?: string;
   themeMode: ThemeMode;
   styles: DashboardStyles;
   theme: DashboardThemeColors;
@@ -15,7 +14,6 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({
   greetingName,
-  avatarUrl,
   themeMode,
   styles,
   theme,
@@ -23,7 +21,8 @@ export function DashboardHeader({
   onToggleTheme,
   onLogout,
 }: DashboardHeaderProps) {
-  const initial = String(greetingName || 'U').trim().charAt(0).toUpperCase() || 'U';
+  const hour = new Date().getHours();
+  const salutation = hour >= 6 && hour < 12 ? 'Bom dia' : hour >= 12 && hour < 18 ? 'Boa tarde' : 'Boa noite';
   const headerIconButtonStyle = {
     ...styles.iconOnlyButton,
     border: `1px solid ${theme.border}`,
@@ -41,33 +40,8 @@ export function DashboardHeader({
   return (
     <header style={styles.header}>
       <div style={styles.headerLeading}>
-        <div
-          style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '999px',
-            border: `1px solid ${theme.borderAccent}`,
-            background: theme.shellRaised,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
-            flex: '0 0 42px',
-            boxShadow: theme.name === 'light' ? '0 10px 24px rgba(13, 35, 24, 0.12)' : '0 10px 24px rgba(0, 0, 0, 0.28)',
-          }}
-        >
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={`Avatar de ${greetingName}`}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
-          ) : (
-            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: theme.textStrong }}>{initial}</span>
-          )}
-        </div>
         <div style={{ minWidth: 0 }}>
-          <h1 style={styles.title}>{`Olá, ${greetingName}`}</h1>
+          <h1 style={styles.title}>{`${salutation}, ${greetingName}`}</h1>
         </div>
       </div>
 

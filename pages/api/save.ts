@@ -1,10 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { Profile } from '../../types/dashboard';
 import {
-  BRAND_LIBRARY_BUCKET,
-  createSignedStorageUrl,
   extractErrorMessage,
-  extractStoragePathFromAvatarValue,
   getAuthenticatedUser,
   supabaseRest,
 } from '../../lib/supabase/api';
@@ -21,7 +18,6 @@ const PROFILE_FIELD_KEYS: Array<keyof Profile> = [
   'market_niche',
   'education',
   'specialties',
-  'avatar_url',
   // Momento do negócio
   'business_stage',
   'main_services',
@@ -67,21 +63,6 @@ async function upsertProfile(userId: string, payload: Partial<Profile>) {
   return Array.isArray(data) ? (data[0] as Profile) : (row as Profile);
 }
 
-async function resolveProfileAvatarUrl(profile: Profile): Promise<Profile> {
-  const avatarValue = String(profile?.avatar_url || '').trim();
-  if (!avatarValue) return profile;
-
-  const storagePath = extractStoragePathFromAvatarValue(avatarValue, BRAND_LIBRARY_BUCKET);
-  if (!storagePath) return profile;
-
-  try {
-    const signedUrl = await createSignedStorageUrl(BRAND_LIBRARY_BUCKET, storagePath, 60 * 60 * 24 * 30);
-    return { ...profile, avatar_url: signedUrl };
-  } catch {
-    return { ...profile, avatar_url: '' };
-  }
-}
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<{ success: boolean; profile: Profile } | { error: string }>
@@ -102,11 +83,10 @@ export default async function handler(
 
   try {
     const saved = await upsertProfile(auth.user.id, pickFields<Profile>(req.body?.payload, PROFILE_FIELD_KEYS));
-    const resolvedProfile = await resolveProfileAvatarUrl(saved);
 
     return res.status(200).json({
       success: true,
-      profile: resolvedProfile,
+      profile: saved,
     });
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Erro interno ao salvar perfil.' });

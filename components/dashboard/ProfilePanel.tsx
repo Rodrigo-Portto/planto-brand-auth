@@ -1,6 +1,5 @@
-import { useRef, type ChangeEvent, type CSSProperties } from 'react';
+import { type CSSProperties } from 'react';
 import type { DashboardStyles, DashboardThemeColors, Profile } from '../../types/dashboard';
-import { CameraIcon } from './icons';
 
 interface ProfilePanelProps {
   styles: DashboardStyles;
@@ -10,11 +9,9 @@ interface ProfilePanelProps {
   showHeader?: boolean;
   showEditButton?: boolean;
   saving: boolean;
-  avatarUploading: boolean;
   onStartEdit?: () => void;
   onProfileChange: (key: keyof Profile, value: string | string[] | number | null) => void;
   onSaveProfile: () => Promise<void> | void;
-  onAvatarUpload: (event: ChangeEvent<HTMLInputElement>) => void;
 }
 
 const BUSINESS_STAGES = [
@@ -51,14 +48,11 @@ export function ProfilePanel({
   showHeader = true,
   showEditButton = true,
   saving,
-  avatarUploading,
   onStartEdit,
   onProfileChange,
   onSaveProfile,
-  onAvatarUpload,
 }: ProfilePanelProps) {
-  const avatarInputRef = useRef<HTMLInputElement | null>(null);
-  const disabled = !editing || saving || avatarUploading;
+  const disabled = !editing || saving;
 
   function renderField(key: keyof Profile, label: string) {
     return (
@@ -182,30 +176,6 @@ export function ProfilePanel({
       ) : null}
 
       <>
-        <div style={styles.avatarArea}>
-          <button
-            type="button"
-            style={styles.avatarButton}
-            onClick={() => avatarInputRef.current?.click()}
-            disabled={avatarUploading || !editing}
-          >
-            {profile.avatar_url ? (
-              <img src={profile.avatar_url} alt="Avatar do perfil" style={styles.avatarImage} />
-            ) : null}
-            <span style={styles.avatarCameraBadge}>
-              <CameraIcon color={theme.textStrong} />
-            </span>
-          </button>
-        </div>
-
-        <input
-          ref={avatarInputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp,image/gif"
-          onChange={onAvatarUpload}
-          style={styles.hiddenInput}
-        />
-
         <div style={styles.formGrid}>
 
           {/* — Dados básicos — */}
@@ -254,11 +224,11 @@ export function ProfilePanel({
 
         {showEditButton
           ? (editing ? (
-              <button disabled={saving || avatarUploading} style={styles.primaryButton} onClick={onSaveProfile} type="button">
+              <button disabled={saving} style={styles.primaryButton} onClick={onSaveProfile} type="button">
                 Salvar perfil
               </button>
             ) : (
-              <button disabled={saving || avatarUploading} style={styles.secondaryButton} onClick={onStartEdit} type="button">
+              <button disabled={saving} style={styles.secondaryButton} onClick={onStartEdit} type="button">
                 Editar perfil
               </button>
             ))

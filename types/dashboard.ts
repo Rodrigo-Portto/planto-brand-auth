@@ -19,7 +19,6 @@ export interface Profile {
   market_niche?: string | null;
   education?: string | null;
   specialties?: string | null;
-  avatar_url?: string | null;
   // Momento do negócio
   business_stage?: 'inicio' | 'validacao' | 'crescimento' | 'reposicionamento' | 'escala' | null;
   main_services?: string | null;

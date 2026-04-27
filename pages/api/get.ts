@@ -1,26 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { DashboardPayload, PipelineMonitorItem, PipelineMonitorStage, PipelineStageStatus } from '../../types/dashboard';
 import {
-  BRAND_LIBRARY_BUCKET,
-  createSignedStorageUrl,
   extractErrorMessage,
-  extractStoragePathFromAvatarValue,
   getAuthenticatedUser,
   supabaseRest,
 } from '../../lib/supabase/api';
 
-async function resolveAvatarUrl(rawUrl?: string | null): Promise<string> {
-  if (!rawUrl) return '';
-  const storagePath = extractStoragePathFromAvatarValue(rawUrl, BRAND_LIBRARY_BUCKET);
-  if (!storagePath) return rawUrl;
-  try {
-    return await createSignedStorageUrl(BRAND_LIBRARY_BUCKET, storagePath, 60 * 60 * 24 * 30);
-  } catch {
-    return '';
-  }
-}
-
-type EmbedQueueRow = { source_id: string; status: string };
 type AttachmentRow = {
   id: string;
   filename: string;
@@ -41,38 +26,36 @@ async function buildPipelineMonitor(userId: string): Promise<DashboardPayload['p
 
   // Run all pipeline queries in parallel
   const [bdsRes, knowledgeRes, attachmentsRes, docsRes] = await Promise.all([
-    supabaseRest(`/rest/v1/brand_data_collection_status?user_id=eq.${encoded}&select=answered_questions,pending_questions,canonical_knowledge_items&limit=1`),
+    supabaseRest(`/rest/v1/brand_context_responses?user_id=eq.${encoded}&select=id`),
     supabaseRest(`/rest/v1/brand_knowledge?user_id=eq.${encoded}&select=id,status`),
     supabaseRest(`/rest/v1/user_attachments?user_id=eq.${encoded}&select=id,filename,created_at,updated_at,content_text,promoted_at&order=created_at.desc`),
-    supabaseRest(`/rest/v1/brand_documents?user_id=eq.${encoded}&select=id,title,created_at,updated_at,content,status&order=updated_at.desc`),
+    supabaseRest(`/rest/v1/plataforma_marca?user_id=eq.${encoded}&output_json=not.is.null&select=model_key`),
   ]);
 
   // --- Summary ---
-  const bdsRow = (bdsRes.response.ok && Array.isArray(bdsRes.data) && bdsRes.data[0]) as Record<string, number> | null;
-  const briefingAnswered = Number(bdsRow?.answered_questions ?? 0);
-  const briefingPending = Number(bdsRow?.pending_questions ?? 0);
-  const briefingTotal = briefingAnswered + briefingPending || 28;
+  const BRIEFING_TOTAL = 28;
+  const briefingAnswered = (bdsRes.response.ok && Array.isArray(bdsRes.data)) ? bdsRes.data.length : 0;
+  const briefingPending = Math.max(0, BRIEFING_TOTAL - briefingAnswered);
+  const briefingTotal = BRIEFING_TOTAL;
 
   const knowledgeRows = (knowledgeRes.response.ok && Array.isArray(knowledgeRes.data) ? knowledgeRes.data : []) as Array<{ status: string }>;
   const knowledgeActive = knowledgeRows.filter((r) => r.status === 'active').length;
   const knowledgeTotal = knowledgeRows.length;
 
-  const docsRows = (docsRes.response.ok && Array.isArray(docsRes.data) ? docsRes.data : []) as Array<{ content: string | null }>;
-  const brandingFilled = docsRows.filter((d) => d.content != null && d.content !== '').length;
+  const brandingFilled = (docsRes.response.ok && Array.isArray(docsRes.data)) ? docsRes.data.length : 0;
 
   // --- Pipeline Items: attachments ---
   const attachmentRows = (attachmentsRes.response.ok && Array.isArray(attachmentsRes.data) ? attachmentsRes.data : []) as AttachmentRow[];
   const attachmentIds = attachmentRows.map((a) => a.id);
 
-  // Fetch embedding_queue entries for these attachments
   const embeddedAttachmentIds = new Set<string>();
   if (attachmentIds.length > 0) {
     const idsParam = attachmentIds.map(encodeURIComponent).join(',');
-    const eqRes = await supabaseRest(
-      `/rest/v1/embedding_queue?source_table=eq.user_attachments&source_id=in.(${idsParam})&select=source_id,status&status=eq.done`
+    const embRes = await supabaseRest(
+      `/rest/v1/user_attachments?id=in.(${idsParam})&embedding=not.is.null&select=id`
     );
-    if (eqRes.response.ok && Array.isArray(eqRes.data)) {
-      (eqRes.data as EmbedQueueRow[]).forEach((r) => embeddedAttachmentIds.add(r.source_id));
+    if (embRes.response.ok && Array.isArray(embRes.data)) {
+      (embRes.data as { id: string }[]).forEach((r) => embeddedAttachmentIds.add(r.id));
     }
   }
 
@@ -122,7 +105,7 @@ async function buildPipelineMonitor(userId: string): Promise<DashboardPayload['p
       brand_knowledge_active: knowledgeActive,
       brand_knowledge_total: knowledgeTotal,
       branding_models_filled: brandingFilled,
-      branding_models_total: 4,
+      branding_models_total: 7,
     },
     items: attachmentItems,
   };
@@ -156,11 +139,7 @@ export default async function handler(
     if (!profileRes.response.ok) {
       throw new Error(extractErrorMessage(profileRes.data, 'Falha ao carregar perfil.'));
     }
-    const rawProfile = (Array.isArray(profileRes.data) && profileRes.data[0]) || {};
-    const resolvedAvatarUrl = await resolveAvatarUrl(
-      (rawProfile as Record<string, unknown>).avatar_url as string | null
-    );
-    const profile = { ...rawProfile, avatar_url: resolvedAvatarUrl };
+    const profile = (Array.isArray(profileRes.data) && profileRes.data[0]) || {};
 
     if (!attachmentsRes.response.ok) {
       throw new Error(extractErrorMessage(attachmentsRes.data, 'Falha ao carregar anexos.'));

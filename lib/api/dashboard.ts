@@ -90,20 +90,6 @@ export async function deleteKnowledgeFile(id: string): Promise<{ success: boolea
   });
 }
 
-export async function uploadAvatar(
-  payload: {
-    filename: string;
-    mime_type: string;
-    base64: string;
-  }
-): Promise<{ avatar_url?: string; profile?: Profile }> {
-  return requestJson<{ avatar_url?: string; profile?: Profile }>('/api/avatar', {
-    method: 'POST',
-    authRequired: true,
-    body: payload,
-  });
-}
-
 export async function createToken(): Promise<TokenCreatePayload> {
   return requestJson<TokenCreatePayload>('/api/token', {
     method: 'POST',
