@@ -457,10 +457,10 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       marginTop: '4px',
     },
     button: {
-      border: '1px solid var(--planto-light-border-strong)',
+      border: '1px solid var(--planto-light-accent)',
       borderRadius: '8px',
       padding: '10px',
-      background: 'var(--planto-light-text)',
+      background: 'var(--planto-light-accent)',
       color: 'var(--planto-light-accent-text)',
       fontWeight: 650,
       cursor: 'pointer',
