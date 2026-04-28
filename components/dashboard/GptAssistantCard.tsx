@@ -1,6 +1,6 @@
 import type { DashboardStyles, PipelineMonitorSummary } from '../../types/dashboard';
-import { ChatIcon } from './icons';
 import { calcAgentReadiness, AGENT_READINESS_THRESHOLD } from '../../hooks/useAgentReadiness';
+import { ChatIcon } from './icons';
 
 interface GptAssistantCardProps {
   styles: DashboardStyles;
@@ -19,7 +19,7 @@ export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCar
   return (
     <section style={styles.panelCard}>
       <div style={styles.panelCardHeader}>
-        <h2 style={styles.panelTitle}>Planttô no GPT</h2>
+        <h2 style={styles.panelTitle}>Plantto no GPT</h2>
         <div style={styles.panelCardHeaderGroup}>
           <ChatIcon color={iconColor} />
         </div>
@@ -28,7 +28,7 @@ export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCar
       <div style={{ marginBottom: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
           <span style={{ ...styles.bodyText, fontSize: '0.78rem', opacity: 0.6 }}>
-            Prontidão da base
+            Prontidao da base
           </span>
           <span
             style={{
@@ -65,7 +65,7 @@ export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCar
 
       <p style={{ margin: '0 0 12px', ...styles.bodyText, fontSize: '0.92rem', lineHeight: 1.6 }}>
         {isUnlocked
-          ? 'A base de contexto está pronta. O assistente pode orientar e criar com precisão.'
+          ? 'A base de contexto esta pronta. O assistente pode orientar e criar com precisao.'
           : `Ainda construindo contexto. Faltam ${missing}% para liberar o assistente.`}
       </p>
 
@@ -86,7 +86,7 @@ export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCar
             boxShadow: '0 10px 24px rgba(67, 201, 137, 0.22)',
           }}
         >
-          ¤⚞ Acessar assistente
+          Acessar assistente
         </a>
       ) : (
         <div
@@ -103,7 +103,7 @@ export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCar
             pointerEvents: 'none',
           }}
         >
-          🔒 Disponível em {missing}%
+          Disponivel em {missing}%
         </div>
       )}
     </section>

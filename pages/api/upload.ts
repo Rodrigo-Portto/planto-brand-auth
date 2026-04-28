@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { MAX_ATTACHMENTS } from '../../lib/domain/dashboardUtils';
 import { SUPABASE_SERVICE_KEY, SUPABASE_URL, extractErrorMessage, getAuthenticatedUser, supabaseRest } from '../../lib/supabase/api';
 
 const BUCKET = 'brand-library';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const MAX_ATTACHMENTS = 10;
 const ALLOWED_EXTENSIONS = new Set(['pdf', 'md', 'txt', 'doc', 'docx']);
 
 export const config = {

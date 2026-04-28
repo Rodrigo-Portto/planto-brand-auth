@@ -1,3 +1,4 @@
+import { AGENT_READINESS_THRESHOLD, calcAgentReadiness } from '../../hooks/useAgentReadiness';
 import type {
   DashboardStyles,
   DashboardThemeColors,
@@ -10,12 +11,15 @@ interface PipelineMonitorPanelProps {
   monitor: PipelineMonitor;
   styles: DashboardStyles;
   theme: DashboardThemeColors;
+  strategicQuestionCount: number;
+  showReadinessCard?: boolean;
+  showStrategicQuestionCount?: boolean;
 }
 
 type TimelineStageKey = Extract<PipelineMonitorStage['key'], 'extracted' | 'embedded' | 'promoted'>;
 
 const timelineStages: Array<{ key: TimelineStageKey; label: string }> = [
-  { key: 'extracted', label: 'Extraído' },
+  { key: 'extracted', label: 'Extraido' },
   { key: 'embedded', label: 'Vetorizado' },
   { key: 'promoted', label: 'Promovido' },
 ];
@@ -23,8 +27,8 @@ const timelineStages: Array<{ key: TimelineStageKey; label: string }> = [
 function indicatorColors(status: PipelineStageStatus, theme: DashboardThemeColors) {
   if (status === 'done') {
     return {
-      fill: theme.accent,
-      border: theme.accent,
+      fill: theme.statusActive,
+      border: theme.statusActive,
       shadow: `0 0 0 4px ${theme.accentSoft}, 0 0 18px ${theme.accent}`,
       opacity: 1,
     };
@@ -32,9 +36,9 @@ function indicatorColors(status: PipelineStageStatus, theme: DashboardThemeColor
 
   if (status === 'error') {
     return {
-      fill: theme.errorText,
-      border: theme.errorText,
-      shadow: `0 0 0 4px ${theme.errorBg}`,
+      fill: theme.statusDanger,
+      border: theme.statusDanger,
+      shadow: `0 0 0 4px ${theme.statusDangerSoft}`,
       opacity: 1,
     };
   }
@@ -49,9 +53,9 @@ function indicatorColors(status: PipelineStageStatus, theme: DashboardThemeColor
   }
 
   return {
-    fill: theme.name === 'light' ? 'rgba(67, 201, 137, 0.16)' : 'rgba(67, 201, 137, 0.12)',
+    fill: theme.statusMutedSoft,
     border: theme.borderAccent,
-    shadow: status === 'processing' ? `0 0 0 4px ${theme.accentSoft}` : 'none',
+    shadow: status === 'processing' ? `0 0 0 4px ${theme.statusActiveSoft}` : 'none',
     opacity: 0.82,
   };
 }
@@ -72,8 +76,18 @@ function formatDate(value?: string | null) {
   }).format(date);
 }
 
-export function PipelineMonitorPanel({ monitor, styles, theme }: PipelineMonitorPanelProps) {
+export function PipelineMonitorPanel({
+  monitor,
+  styles,
+  theme,
+  strategicQuestionCount,
+  showReadinessCard = true,
+  showStrategicQuestionCount = true,
+}: PipelineMonitorPanelProps) {
   const summary = monitor.summary;
+  const readiness = calcAgentReadiness(summary);
+  const isUnlocked = readiness >= AGENT_READINESS_THRESHOLD;
+  const missing = Math.max(0, AGENT_READINESS_THRESHOLD - readiness);
 
   // Bug 7 fix: replace two separate briefing cards with a progress bar
   const briefingPct = summary.briefing_total > 0
@@ -95,6 +109,63 @@ export function PipelineMonitorPanel({ monitor, styles, theme }: PipelineMonitor
 
   return (
     <div style={{ ...styles.cardBlock, gap: '12px' }}>
+      {showReadinessCard ? (
+        <div
+          style={{
+            display: 'grid',
+            gap: '10px',
+            border: `1px solid ${isUnlocked ? theme.borderAccent : theme.border}`,
+            borderRadius: '18px',
+            padding: '14px',
+            background: isUnlocked ? theme.statusActiveSoft : theme.statusWarningSoft,
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'baseline', flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ ...styles.smallText, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Prontidao do assistente
+              </p>
+              <p style={{ ...styles.listTitle, marginTop: '4px' }}>{readiness}%</p>
+            </div>
+            <span
+              style={{
+                ...styles.countBadge,
+                background: isUnlocked ? theme.statusActiveSoft : theme.statusMutedSoft,
+                color: isUnlocked ? theme.statusActiveText : theme.statusMutedText,
+              }}
+            >
+              {isUnlocked ? 'GPT liberado' : `Faltam ${missing}%`}
+            </span>
+          </div>
+
+          <div
+            style={{
+              height: '6px',
+              borderRadius: '999px',
+              background: theme.progressTrack,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${readiness}%`,
+                borderRadius: '999px',
+                background: theme.progressFill,
+              }}
+            />
+          </div>
+
+          <p style={{ ...styles.smallText, lineHeight: 1.6 }}>
+            {isUnlocked
+              ? 'A base ja sustenta o assistente com contexto suficiente para orientar e criar.'
+              : strategicQuestionCount > 0
+              ? `${strategicQuestionCount} perguntas estrategicas podem desbloquear contexto e acelerar a liberacao do GPT.`
+              : 'O pipeline ja esta centralizado aqui. Complete briefing, plataforma e conhecimento para liberar o GPT.'}
+          </p>
+        </div>
+      ) : null}
+
       <div style={{ display: 'grid', gap: '10px' }}>
         <div
           style={{
@@ -110,7 +181,7 @@ export function PipelineMonitorPanel({ monitor, styles, theme }: PipelineMonitor
               <div
                 key={card.label}
                 style={{
-                  border: card.featured ? '1px solid transparent' : `1px solid ${theme.borderAccent}`,
+                  border: `1px solid ${card.featured ? theme.borderAccent : theme.border}`,
                   borderRadius: '16px',
                   background,
                   padding: '10px',
@@ -158,10 +229,12 @@ export function PipelineMonitorPanel({ monitor, styles, theme }: PipelineMonitor
 
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <span style={styles.countBadge}>{summary.completed_items} arquivos processados</span>
-          {/* Bug 6 fix: only show processing badge when count > 0 */}
           {summary.processing_items > 0 && (
             <span style={styles.countBadge}>{summary.processing_items} em processamento</span>
           )}
+          {showStrategicQuestionCount ? (
+            <span style={styles.countBadge}>{strategicQuestionCount} perguntas laterais</span>
+          ) : null}
         </div>
       </div>
 
@@ -176,7 +249,7 @@ export function PipelineMonitorPanel({ monitor, styles, theme }: PipelineMonitor
                 style={{
                   border: `1px solid ${theme.border}`,
                   borderRadius: '18px',
-                  background: theme.name === 'light' ? 'rgba(247, 251, 248, 0.88)' : 'rgba(13, 22, 18, 0.88)',
+                  background: theme.surfaceRaised,
                   padding: '12px 14px',
                   display: 'flex',
                   alignItems: 'center',
@@ -194,7 +267,7 @@ export function PipelineMonitorPanel({ monitor, styles, theme }: PipelineMonitor
                 </div>
 
                 <div
-                  aria-label={`Régua de processamento de ${item.title}`}
+                  aria-label={`Regua de processamento de ${item.title}`}
                   style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(3, minmax(68px, 1fr))',

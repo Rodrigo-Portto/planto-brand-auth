@@ -39,19 +39,19 @@ export async function requestJson<T>(path: string, options: RequestJsonOptions =
   const data = (await parseJsonSafe<T & { error?: string }>(response)) as T & { error?: string };
 
   if (!response.ok) {
-    if (options.authRequired && (response.status === 401 || response.status === 403)) {
-      throw new Error('Sessão expirada. Faça login novamente.');
-    }
-
     if (data?.error) {
       throw new Error(data.error);
+    }
+
+    if (options.authRequired && (response.status === 401 || response.status === 403)) {
+      throw new Error('Sessao expirada. Faca login novamente.');
     }
 
     if (response.status === 413) {
       throw new Error('Arquivo muito grande para envio.');
     }
 
-    throw new Error(`Erro na requisição (${response.status}).`);
+    throw new Error(`Erro na requisicao (${response.status}).`);
   }
 
   return data;

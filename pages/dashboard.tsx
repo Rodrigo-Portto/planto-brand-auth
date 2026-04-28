@@ -1,20 +1,15 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { GetServerSidePropsContext } from 'next';
 import { useRouter } from 'next/router';
+import { DashboardCenterPanel } from '../components/dashboard/DashboardCenterPanel';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { DashboardShell } from '../components/dashboard/DashboardShell';
-import { GptAssistantCard } from '../components/dashboard/GptAssistantCard';
-import { GptEntriesPanel } from '../components/dashboard/GptEntriesPanel';
 import { KnowledgePanel } from '../components/dashboard/KnowledgePanel';
-import { PipelineMonitorPanel } from '../components/dashboard/PipelineMonitorPanel';
-import { ProfilePanel } from '../components/dashboard/ProfilePanel';
-import { TokenPanel } from '../components/dashboard/TokenPanel';
-import { ChatIcon, ChevronIcon, CloseIcon, FolderIcon, KeyIcon, PencilIcon, SaveIcon, SparklesIcon } from '../components/dashboard/icons';
+import { SidebarAgentPanel } from '../components/dashboard/SidebarAgentPanel';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useDashboardSession } from '../hooks/useDashboardSession';
 import { useGptToken } from '../hooks/useGptToken';
 import { useKnowledgeUploads } from '../hooks/useKnowledgeUploads';
-import { useProfileForm } from '../hooks/useProfileForm';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { getServerAuthenticatedUser } from '../lib/supabase/server';
 import { createDashboardStyles, themeTokens } from '../lib/domain/dashboardTheme';
@@ -28,8 +23,9 @@ export default function DashboardPage() {
   const [notice, setNotice] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [viewportWidth, setViewportWidth] = useState(1440);
-  const [profileEditing, setProfileEditing] = useState(false);
-  const [profileCollapsed, setProfileCollapsed] = useState(false);
+
+  const uploadSectionRef = useRef<HTMLDivElement | null>(null);
+  const agentSectionRef = useRef<HTMLDivElement | null>(null);
 
   const theme = themeTokens[themeMode];
   const styles = useMemo(() => createDashboardStyles(theme, viewportWidth), [theme, viewportWidth]);
@@ -82,33 +78,42 @@ export default function DashboardPage() {
     }
   }, [dashboardData.error]);
 
-  const profileForm = useProfileForm({
-    initialProfile: dashboardData.profile,
-    onSaved: (data, message) => {
-      dashboardData.setProfile(data.profile || {});
-      showSavedNotice(message || 'Perfil salvo');
-    },
-    onError: handleDashboardError,
-  });
-
   const knowledgeUploads = useKnowledgeUploads({
     initialAttachments: dashboardData.attachments,
-    onSaved: showSavedNotice,
+    onSaved: (message) => {
+      showSavedNotice(message || 'Contexto atualizado');
+      void dashboardData.refresh({ silent: true });
+    },
     onError: handleDashboardError,
   });
 
   const gptToken = useGptToken({
     initialTokens: dashboardData.tokens,
-    onSaved: showSavedNotice,
+    onSaved: (message) => {
+      showSavedNotice(message || 'Token atualizado');
+      void dashboardData.refresh({ silent: true });
+    },
     onError: handleDashboardError,
   });
 
   const greetingName = useMemo(() => {
-    const fullName = [profileForm.profile?.name, profileForm.profile?.surname].filter(Boolean).join(' ').trim();
+    const fullName = [dashboardData.profile?.name, dashboardData.profile?.surname].filter(Boolean).join(' ').trim();
     if (fullName) return fullName;
     if (dashboardData.user?.email) return dashboardData.user.email;
     return 'por aqui';
-  }, [profileForm.profile?.name, profileForm.profile?.surname, dashboardData.user?.email]);
+  }, [dashboardData.profile?.name, dashboardData.profile?.surname, dashboardData.user?.email]);
+
+  const scrollToRef = useCallback((ref: RefObject<HTMLDivElement | null>) => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  const focusUpload = useCallback(() => {
+    scrollToRef(uploadSectionRef);
+  }, [scrollToRef]);
+
+  const focusAgent = useCallback(() => {
+    scrollToRef(agentSectionRef);
+  }, [scrollToRef]);
 
   function renderCard(title: string, body: ReactNode, actions?: ReactNode, wide = false) {
     return (
@@ -121,53 +126,6 @@ export default function DashboardPage() {
       </section>
     );
   }
-
-  const profileActions = (
-    <>
-      <button
-        type="button"
-        style={styles.cardIconButton}
-        onClick={
-          profileEditing
-            ? async () => {
-                await profileForm.saveProfile();
-                setProfileEditing(false);
-              }
-            : () => setProfileEditing(true)
-        }
-        disabled={profileForm.savingProfile}
-        aria-label={profileEditing ? 'Salvar perfil' : 'Editar perfil'}
-        title={profileEditing ? 'Salvar perfil' : 'Editar perfil'}
-      >
-        {profileEditing ? <SaveIcon color={theme.textStrong} /> : <PencilIcon color={theme.textStrong} />}
-      </button>
-      <button
-        type="button"
-        style={styles.cardIconButton}
-        onClick={() => setProfileCollapsed((current) => !current)}
-        disabled={profileForm.savingProfile}
-        aria-label={profileCollapsed ? 'Expandir perfil' : 'Recolher perfil'}
-        title={profileCollapsed ? 'Expandir perfil' : 'Recolher perfil'}
-      >
-        <ChevronIcon collapsed={profileCollapsed} color={theme.textStrong} />
-      </button>
-      {profileEditing ? (
-        <button
-          type="button"
-          style={styles.cardIconButton}
-          onClick={() => {
-            profileForm.cancelProfileChanges();
-            setProfileEditing(false);
-          }}
-          disabled={profileForm.savingProfile}
-          aria-label="Cancelar edição do perfil"
-          title="Cancelar edição do perfil"
-        >
-          <CloseIcon color={theme.textStrong} />
-        </button>
-      ) : null}
-    </>
-  );
 
   const isLoading = !sessionReady || dashboardData.loading;
 
@@ -190,94 +148,56 @@ export default function DashboardPage() {
     >
       <section style={styles.singleDashboardGrid}>
         <div style={styles.singleDashboardMain}>
-          {renderCard(
-            'Pipeline',
-            <PipelineMonitorPanel
+          <DashboardCenterPanel
+              stage={dashboardData.dashboardStage}
+              nextAction={dashboardData.nextAction}
+              overview={dashboardData.overview}
+              monitor={dashboardData.pipelineMonitor}
               styles={styles}
               theme={theme}
-              monitor={dashboardData.pipelineMonitor}
-            />,
-            <SparklesIcon color={theme.textStrong} />,
-            true
-          )}
-
-          {renderCard(
-            'Perfil',
-            profileCollapsed ? (
-              <p style={styles.smallText}>Perfil recolhido. Use o botao ao lado de editar para expandir novamente.</p>
-            ) : (
-              <ProfilePanel
-                styles={styles}
-                theme={theme}
-                profile={profileForm.profile}
-                editing={profileEditing}
-                showHeader={false}
-                showEditButton={false}
-                saving={profileForm.savingProfile}
-                onStartEdit={() => setProfileEditing(true)}
-                onProfileChange={(key, value) =>
-                  profileForm.setProfile((current) => ({
-                    ...current,
-                    [key]: value,
-                  }))
-                }
-                onSaveProfile={async () => {
-                  await profileForm.saveProfile();
-                  setProfileEditing(false);
-                }}
-              />
-            ),
-            profileActions,
-            true
-          )}
-
-          {renderCard(
-            'Documentos GPT',
-            <GptEntriesPanel
-              styles={styles}
-              documents={dashboardData.legacyDocuments}
-              containerStyle={{ ...styles.centerPanel, padding: 0 }}
-            />,
-            <FolderIcon color={theme.textStrong} />,
-            true
-          )}
+              onJumpToUpload={focusUpload}
+              onJumpToAgent={focusAgent}
+          />
         </div>
 
         <aside style={styles.singleDashboardSide}>
-          {renderCard(
-            'Conhecimento',
-            <KnowledgePanel
-              styles={styles}
-              showTitle={false}
-              attachments={knowledgeUploads.attachments}
-              selectedFile={knowledgeUploads.selectedFile}
-              uploading={knowledgeUploads.uploading}
-              deletingAttachmentId={knowledgeUploads.deletingAttachmentId}
-              onSelectedFileChange={knowledgeUploads.setSelectedFile}
-              onUpload={knowledgeUploads.uploadKnowledgeFile}
-              onDeleteAttachment={knowledgeUploads.deleteAttachment}
-            />,
-            <SparklesIcon color={theme.textStrong} />
-          )}
+          <div ref={uploadSectionRef}>
+            {renderCard(
+              'Adicionar ao contexto',
+              <KnowledgePanel
+                styles={styles}
+                showTitle={false}
+                attachments={knowledgeUploads.attachments}
+                selectedFile={knowledgeUploads.selectedFile}
+                uploading={knowledgeUploads.uploading}
+                deletingAttachmentId={knowledgeUploads.deletingAttachmentId}
+                onSelectedFileChange={knowledgeUploads.setSelectedFile}
+                onUpload={knowledgeUploads.uploadKnowledgeFile}
+                onDeleteAttachment={knowledgeUploads.deleteAttachment}
+              />
+            )}
+          </div>
 
-          {renderCard(
-            'Token GPT',
-            <TokenPanel
-              styles={styles}
-              theme={theme}
-              showTitle={false}
-              createdToken={gptToken.createdToken}
-              tokenCopied={gptToken.tokenCopied}
-              savingToken={gptToken.savingToken}
-              canGenerateToken={gptToken.canGenerateToken}
-              copyingDisabled={!gptToken.createdToken || gptToken.savingToken}
-              onCreateToken={gptToken.createToken}
-              onCopyToken={gptToken.copyCurrentToken}
-            />,
-            <KeyIcon color={theme.textStrong} />
-          )}
-
-          <GptAssistantCard styles={styles} iconColor={theme.textStrong} />
+          <div ref={agentSectionRef}>
+            {renderCard(
+              'Agente',
+              <SidebarAgentPanel
+                styles={styles}
+                theme={theme}
+                summary={dashboardData.pipelineMonitor.summary}
+                strategicQuestionCount={dashboardData.strategicQuestionCount}
+                agentReadiness={dashboardData.agentReadiness}
+                agentUnlocked={dashboardData.agentUnlocked}
+                createdToken={gptToken.createdToken}
+                tokenCopied={gptToken.tokenCopied}
+                savingToken={gptToken.savingToken}
+                canGenerateToken={gptToken.canGenerateToken}
+                onCreateToken={gptToken.createToken}
+                onCopyToken={gptToken.copyCurrentToken}
+                onJumpToUpload={focusUpload}
+              />
+            )}
+          </div>
         </aside>
       </section>
     </DashboardShell>

@@ -84,6 +84,103 @@ export interface PipelineMonitor {
   items: PipelineMonitorItem[];
 }
 
+export interface StrategicQuestion {
+  id: string;
+  question_text: string;
+  question_goal: string | null;
+  dimension_key: string | null;
+  priority: number;
+  expected_unlock: string | null;
+  severity: 'high' | 'medium' | 'low';
+}
+
+export type DashboardDomainKey = 'comunicacao' | 'identidade' | 'negocio' | 'pessoas';
+
+export type DashboardMaturityLevel = 'advanced' | 'intermediate' | 'developing';
+
+export interface DashboardMaturityDimension {
+  key: string;
+  label: string;
+  score: number;
+  level: DashboardMaturityLevel;
+}
+
+export interface DashboardKnowledgeNode {
+  id: string;
+  label: string;
+  group: DashboardDomainKey;
+}
+
+export interface DashboardKnowledgeEdge {
+  id: string;
+  from_item_id: string;
+  to_item_id: string;
+  relation_type: string;
+}
+
+export interface DashboardKnowledgeRelationStat {
+  key: string;
+  label: string;
+  count: number;
+}
+
+export interface DashboardDomainCoverageStat {
+  key: DashboardDomainKey;
+  label: string;
+  count: number;
+}
+
+export interface DashboardPlatformPillar {
+  key: string;
+  label: string;
+  active: boolean;
+}
+
+export interface DashboardPipelineStep {
+  key: 'files' | 'briefing' | 'memories' | 'knowledge' | 'platform';
+  label: string;
+  value: number;
+}
+
+export interface DashboardStrategicGap {
+  key: string;
+  label: string;
+  score: number;
+  detail: string;
+}
+
+export interface DashboardOverview {
+  assessment_score: number | null;
+  maturity_dimensions: DashboardMaturityDimension[];
+  knowledge_nodes: DashboardKnowledgeNode[];
+  knowledge_edges: DashboardKnowledgeEdge[];
+  knowledge_relations: DashboardKnowledgeRelationStat[];
+  knowledge_domains: DashboardDomainCoverageStat[];
+  knowledge_total_assets: number;
+  knowledge_total_connections: number;
+  platform_pillars: DashboardPlatformPillar[];
+  platform_next_unlocks: string[];
+  pipeline_steps: DashboardPipelineStep[];
+  pipeline_evidence_count: number;
+  embedding_completed: number;
+  embedding_total: number;
+  strategic_gap_count: number;
+  strategic_gap_pending_briefings: number;
+  strategic_gaps: DashboardStrategicGap[];
+  tension_count: number;
+}
+
+export type DashboardStage = 'welcome' | 'processing' | 'active';
+
+export type DashboardNextActionTarget = 'upload' | 'cards' | 'agent';
+
+export interface DashboardNextAction {
+  title: string;
+  description: string;
+  cta_label: string;
+  target: DashboardNextActionTarget;
+}
+
 export interface GptToken {
   id: string;
   label?: string | null;
@@ -97,21 +194,16 @@ export interface GptToken {
 }
 
 export interface LegacyDocument {
-  id?: string;
-  user_id?: string | null;
-  type?: string | null;
-  title?: string | null;
-  content?: string | null;
-  canvas_url?: string | null;
-  canvas_content?: string | null;
-  canvas_kind?: string | null;
-  content_format?: string | null;
-  canvas_external_id?: string | null;
-  canvas_version?: string | null;
-  source?: string | null;
+  id: string;
+  user_id: string;
+  title: string;
+  content: string;
+  doc_kind: string;
+  content_format: string;
+  source: string;
   metadata_json?: Record<string, unknown> | null;
-  created_at?: string | null;
-  updated_at?: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface StrategicAssessment {
@@ -143,11 +235,17 @@ export interface DashboardPayload {
   gpt_tokens: GptToken[];
   legacy_documents: LegacyDocument[];
   pipeline_monitor: PipelineMonitor;
-  // Strategic data fields (Bug 5 fix)
   assessment?: StrategicAssessment | null;
   strategic_gaps?: StrategicGap[];
   next_questions?: StrategicNextQuestion[];
   plataforma_marca?: PlataformaMarcaItem[];
+  strategic_questions: StrategicQuestion[];
+  strategic_question_count: number;
+  agent_readiness: number;
+  agent_unlocked: boolean;
+  dashboard_stage: DashboardStage;
+  next_action: DashboardNextAction;
+  overview: DashboardOverview | null;
 }
 
 export type SaveResourceName = 'profile';
@@ -169,6 +267,10 @@ export interface DashboardThemeColors {
   shell: string;
   shellMuted: string;
   shellRaised: string;
+  surfaceBase: string;
+  surfaceRaised: string;
+  surfaceSoft: string;
+  surfaceStrong: string;
   border: string;
   borderStrong: string;
   borderAccent: string;
@@ -189,6 +291,20 @@ export interface DashboardThemeColors {
   overlay: string;
   inputBg: string;
   tokenBg: string;
+  progressTrack: string;
+  progressFill: string;
+  statusMuted: string;
+  statusActive: string;
+  statusWarning: string;
+  statusDanger: string;
+  statusMutedSoft: string;
+  statusActiveSoft: string;
+  statusWarningSoft: string;
+  statusDangerSoft: string;
+  statusMutedText: string;
+  statusActiveText: string;
+  statusWarningText: string;
+  statusDangerText: string;
 }
 
 export type DashboardStyles = Record<string, CSSProperties>;

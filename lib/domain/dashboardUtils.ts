@@ -1,4 +1,6 @@
+export const BRIEFING_TOTAL = 28;
 export const MAX_ATTACHMENTS = 10;
+export const BRANDING_MODELS_TOTAL = 7;
 export const THEME_STORAGE_KEY = 'planto_theme_mode';
 export const PANEL_STORAGE_KEY = 'planto_form_panels';
 

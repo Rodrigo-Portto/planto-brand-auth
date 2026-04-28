@@ -37,11 +37,12 @@ export function KnowledgePanel({
   }
 
   return (
-    <div id="conhecimento-panel" style={styles.cardBlock}>
-      {showTitle ? <h2 style={styles.panelTitle}>Conhecimento</h2> : null}
-      <div style={styles.countBadge}>
-        {attachments.length}/{MAX_ATTACHMENTS} arquivos
-      </div>
+    <div id="conhecimento-panel" style={{ ...styles.cardBlock, gap: '12px' }}>
+      {showTitle ? <h2 style={styles.panelTitle}>Adicionar ao contexto</h2> : null}
+      <p style={{ ...styles.smallText, lineHeight: 1.65 }}>
+        Envie qualquer material da sua marca. O Plantto extrai, organiza e promove o que importa para a base.
+      </p>
+      <div style={styles.countBadge}>{attachments.length}/{MAX_ATTACHMENTS} arquivos</div>
 
       <input
         ref={inputRef}
@@ -63,8 +64,11 @@ export function KnowledgePanel({
         <span style={styles.uploadIconFrame}>
           <FilePlusIcon color={styles.uploadBrowseText.color as string} />
         </span>
-        <span style={styles.uploadDropzoneText}>
-          Arraste e solte ou <span style={styles.uploadBrowseText}>pesquise</span> seus arquivos
+        <span style={{ ...styles.uploadDropzoneText, fontWeight: 700 }}>
+          Arraste ou toque para adicionar
+        </span>
+        <span style={styles.smallText}>
+          PDF, DOCX, TXT e materiais de marca em geral.
         </span>
       </button>
 
@@ -90,11 +94,13 @@ export function KnowledgePanel({
         }
         type="button"
       >
-        {uploading ? 'Enviando...' : 'Anexar arquivo'}
+        {uploading ? 'Enviando...' : 'Promover ao contexto'}
       </button>
 
       <div style={styles.list}>
-        {attachments.length === 0 && <p style={styles.smallText}>Sem anexos ainda.</p>}
+        {attachments.length === 0 ? (
+          <p style={styles.smallText}>Sem arquivos ainda. Comece com qualquer referencia util da marca.</p>
+        ) : null}
         {attachments.length > 0 ? (
           <div style={styles.attachmentListContainer}>
             {attachments.map((item, index) => (

@@ -9,17 +9,17 @@ interface GptEntriesPanelProps {
 }
 
 function getDocumentTitle(document: LegacyDocument) {
-  return document.title || document.type || document.canvas_kind || 'Documento GPT';
+  return document.title || document.doc_kind || 'Documento';
 }
 
 function getDocumentContent(document: LegacyDocument) {
-  return document.content || document.canvas_content || document.canvas_url || '';
+  return document.content || '';
 }
 
 function getDocumentMeta(document: LegacyDocument) {
   const updatedAt = document.updated_at || document.created_at;
   const formattedDate = updatedAt ? new Date(updatedAt).toLocaleString('pt-BR') : 'Sem data';
-  const format = document.content_format || document.canvas_kind || document.source || 'GPT';
+  const format = document.content_format || document.doc_kind || document.source || 'documento';
   return `${format} · ${formattedDate}`;
 }
 
@@ -38,7 +38,7 @@ export function GptEntriesPanel({ styles, documents, containerStyle }: GptEntrie
       <div style={styles.list}>
         {documents.length === 0 ? <p style={styles.smallText}>Nenhum documento GPT encontrado.</p> : null}
         {documents.map((item) => {
-          const itemId = item.id || `${item.type || 'document'}-${item.updated_at || item.created_at || getDocumentTitle(item)}`;
+          const itemId = item.id || `${item.doc_kind || 'document'}-${item.updated_at || item.created_at || getDocumentTitle(item)}`;
           const isSelected = selectedDocument ? itemId === (selectedDocument.id || selectedDocumentId) : false;
           return (
             <button
@@ -49,7 +49,7 @@ export function GptEntriesPanel({ styles, documents, containerStyle }: GptEntrie
             >
               <div style={styles.listItemInline}>
                 <p style={styles.listTitle}>{getDocumentTitle(item)}</p>
-                <span style={styles.entryBadge}>{item.type || item.content_format || 'documento'}</span>
+                <span style={styles.entryBadge}>{item.doc_kind || item.content_format || 'documento'}</span>
               </div>
               <p style={styles.smallText}>{getDocumentMeta(item)}</p>
             </button>

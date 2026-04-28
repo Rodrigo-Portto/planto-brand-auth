@@ -1,88 +1,98 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { withAuth } from '../../lib/supabase/api';
+import { getAuthenticatedUser } from '../../lib/supabase/api';
+import { createSupabaseServerClient } from '../../lib/supabase/server';
+import type { StrategicQuestion } from '../../types/dashboard';
+
+function strategicQuestionSeverity(priority: number): StrategicQuestion['severity'] {
+  if (priority <= 3) return 'high';
+  if (priority <= 6) return 'medium';
+  return 'low';
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  return withAuth(req, res, async (supabase, user) => {
-    if (req.method === 'GET') {
-      const { data: questions, error } = await supabase
-        .from('strategic_next_questions')
-        .select('id, question_text, question_goal, dimension_key, priority, expected_unlock, briefing_field_key')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .order('priority', { ascending: true })
-        .limit(10);
+  const auth = await getAuthenticatedUser(req, res);
+  if (!auth.ok) {
+    return res.status(auth.status ?? 401).json({ error: auth.error ?? 'Nao autenticado.' });
+  }
 
-      if (error) return res.status(500).json({ error: error.message });
+  const supabase = createSupabaseServerClient(req, res);
+  const user = auth.user;
 
-      const { data: answered } = await supabase
-        .from('brand_context_responses')
-        .select('metadata_json')
-        .eq('user_id', user.id)
-        .eq('form_type', 'strategic_question')
-        .not('metadata_json', 'is', null);
+  if (req.method === 'GET') {
+    const { data: questions, error } = await supabase
+      .from('strategic_next_questions')
+      .select('id, question_text, question_goal, dimension_key, priority, expected_unlock, briefing_field_key')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('priority', { ascending: true })
+      .limit(10);
 
-      const answeredIds = new Set(
-        (answered || [])
-          .map((r) => (r.metadata_json as Record<string, string>)?.question_id)
-          .filter(Boolean)
-      );
+    if (error) return res.status(500).json({ error: error.message });
 
-      const pending = (questions || [])
-        .filter((q) => !answeredIds.has(q.id))
-        .map((q) => ({
-          ...q,
-          severity: q.priority <= 3 ? 'high' : q.priority <= 6 ? 'medium' : 'low',
-        }));
+    const pending = (questions || [])
+      .map((question) => ({
+        ...question,
+        severity: strategicQuestionSeverity(question.priority),
+      }));
 
-      return res.status(200).json({ questions: pending });
+    return res.status(200).json({ questions: pending });
+  }
+
+  if (req.method === 'POST') {
+    const { question_id, answer_text } = req.body as {
+      question_id: string;
+      answer_text: string;
+    };
+
+    if (!question_id || !answer_text?.trim()) {
+      return res.status(400).json({ error: 'question_id e answer_text sao obrigatorios.' });
     }
 
-    if (req.method === 'POST') {
-      const { question_id, answer_text } = req.body as {
-        question_id: string;
-        answer_text: string;
-      };
+    const { data: question } = await supabase
+      .from('strategic_next_questions')
+      .select('briefing_field_key, dimension_key, question_text')
+      .eq('id', question_id)
+      .eq('user_id', user.id)
+      .single();
 
-      if (!question_id || !answer_text?.trim()) {
-        return res.status(400).json({ error: 'question_id e answer_text sao obrigatorios.' });
-      }
+    const fieldKey = question?.briefing_field_key ?? `flashcard.${question_id}`;
 
-      const { data: question } = await supabase
-        .from('strategic_next_questions')
-        .select('briefing_field_key, dimension_key, question_text')
-        .eq('id', question_id)
-        .eq('user_id', user.id)
-        .single();
+    const { data: insertedResponse, error: insertError } = await supabase
+      .from('brand_context_responses')
+      .insert({
+        user_id: user.id,
+        form_type: 'strategic_question',
+        field_key: fieldKey,
+        value_text: answer_text.trim(),
+        response_status: 'active',
+        answer_type: 'strategic',
+        source_question_id: question_id,
+        value_json: {
+          question_id,
+          dimension_key: question?.dimension_key,
+          question_text: question?.question_text,
+          source: 'flashcard',
+        },
+      })
+      .select('id')
+      .single();
 
-      const fieldKey = question?.briefing_field_key ?? `flashcard.${question_id}`;
+    if (insertError) return res.status(500).json({ error: insertError.message });
 
-      const { error: insertError } = await supabase
-        .from('brand_context_responses')
-        .insert({
-          user_id: user.id,
-          form_type: 'strategic_question',
-          field_key: fieldKey,
-          field_value: answer_text.trim(),
-          response_status: 'active',
-          metadata_json: {
-            question_id,
-            dimension_key: question?.dimension_key,
-            question_text: question?.question_text,
-            source: 'flashcard',
-          },
-        });
+    const { error: updateError } = await supabase
+      .from('strategic_next_questions')
+      .update({
+        status: 'answered',
+        answered_at: new Date().toISOString(),
+        answer_response_id: insertedResponse?.id ?? null,
+      })
+      .eq('id', question_id)
+      .eq('user_id', user.id);
 
-      if (insertError) return res.status(500).json({ error: insertError.message });
+    if (updateError) return res.status(500).json({ error: updateError.message });
 
-      await supabase
-        .from('strategic_next_questions')
-        .update({ status: 'answered' })
-        .eq('id', question_id)
-        .eq('user_id', user.id);
+    return res.status(200).json({ success: true });
+  }
 
-      return res.status(200).json({ success: true });
-    }
-
-    return res.status(405).json({ error: 'Method not allowed' });
-  });
+  return res.status(405).json({ error: 'Metodo nao permitido.' });
 }

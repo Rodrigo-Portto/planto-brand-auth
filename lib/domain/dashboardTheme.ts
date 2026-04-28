@@ -7,6 +7,10 @@ export const themeTokens: Record<'dark' | 'light', DashboardThemeColors> = {
     shell: 'var(--planto-surface)',
     shellMuted: 'var(--planto-surface-muted)',
     shellRaised: 'var(--planto-surface-raised)',
+    surfaceBase: 'rgba(10, 17, 14, 0.78)',
+    surfaceRaised: 'rgba(13, 22, 18, 0.9)',
+    surfaceSoft: 'rgba(15, 24, 20, 0.82)',
+    surfaceStrong: 'rgba(8, 14, 11, 0.84)',
     border: 'var(--planto-border)',
     borderStrong: 'var(--planto-border-strong)',
     borderAccent: 'var(--planto-border-accent)',
@@ -27,6 +31,20 @@ export const themeTokens: Record<'dark' | 'light', DashboardThemeColors> = {
     overlay: 'var(--planto-overlay)',
     inputBg: 'var(--planto-input-bg)',
     tokenBg: 'var(--planto-token-bg)',
+    progressTrack: 'rgba(255,255,255,0.08)',
+    progressFill: 'var(--planto-accent)',
+    statusMuted: 'rgba(142, 230, 189, 0.58)',
+    statusActive: 'var(--planto-accent)',
+    statusWarning: 'rgba(142, 230, 189, 0.82)',
+    statusDanger: 'rgba(255, 209, 209, 0.88)',
+    statusMutedSoft: 'rgba(67, 201, 137, 0.08)',
+    statusActiveSoft: 'rgba(67, 201, 137, 0.16)',
+    statusWarningSoft: 'rgba(67, 201, 137, 0.12)',
+    statusDangerSoft: 'rgba(92, 19, 19, 0.42)',
+    statusMutedText: 'var(--planto-muted)',
+    statusActiveText: 'var(--planto-accent-muted)',
+    statusWarningText: 'var(--planto-text)',
+    statusDangerText: 'var(--planto-danger-text)',
   },
   light: {
     name: 'light',
@@ -34,6 +52,10 @@ export const themeTokens: Record<'dark' | 'light', DashboardThemeColors> = {
     shell: '#f6f3ed',
     shellMuted: '#f6f3ed',
     shellRaised: '#fbf9f5',
+    surfaceBase: 'rgba(255, 255, 255, 0.82)',
+    surfaceRaised: 'rgba(248, 252, 249, 0.92)',
+    surfaceSoft: 'rgba(255,255,255,0.76)',
+    surfaceStrong: 'rgba(255,255,255,0.9)',
     border: 'var(--planto-light-border)',
     borderStrong: 'var(--planto-light-border-strong)',
     borderAccent: 'var(--planto-light-border-accent)',
@@ -54,6 +76,20 @@ export const themeTokens: Record<'dark' | 'light', DashboardThemeColors> = {
     overlay: 'var(--planto-light-overlay)',
     inputBg: 'var(--planto-light-input-bg)',
     tokenBg: 'var(--planto-light-token-bg)',
+    progressTrack: 'rgba(17, 32, 25, 0.08)',
+    progressFill: 'var(--planto-light-accent)',
+    statusMuted: 'rgba(37, 135, 90, 0.64)',
+    statusActive: 'var(--planto-light-accent)',
+    statusWarning: 'rgba(17, 32, 25, 0.72)',
+    statusDanger: 'var(--planto-light-danger-text)',
+    statusMutedSoft: 'rgba(67, 201, 137, 0.08)',
+    statusActiveSoft: 'rgba(232, 255, 241, 0.86)',
+    statusWarningSoft: 'rgba(245, 251, 247, 0.96)',
+    statusDangerSoft: 'rgba(255, 232, 232, 0.96)',
+    statusMutedText: 'var(--planto-light-muted)',
+    statusActiveText: 'var(--planto-light-accent-muted)',
+    statusWarningText: 'var(--planto-light-text)',
+    statusDangerText: 'var(--planto-light-danger-text)',
   },
 };
 
@@ -69,6 +105,14 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
     small: '0.82rem',
     meta: '0.75rem',
   };
+  const cardShadow =
+    colors.name === 'light'
+      ? '0 20px 36px rgba(13, 35, 24, 0.07)'
+      : '0 20px 36px rgba(0, 0, 0, 0.24)';
+  const raisedShadow =
+    colors.name === 'light'
+      ? '0 24px 48px rgba(13, 35, 24, 0.08)'
+      : '0 24px 48px rgba(0, 0, 0, 0.28)';
 
   return {
     page: {
@@ -94,14 +138,11 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       justifyContent: 'space-between',
       flexDirection: 'row',
       gap: '14px',
-      background: colors.name === 'light' ? 'rgba(255, 255, 255, 0.74)' : 'rgba(8, 15, 11, 0.72)',
+      background: colors.surfaceSoft,
       border: `1px solid ${colors.border}`,
       borderRadius: '24px',
       padding: isCompact ? '12px 14px' : '16px 18px',
-      boxShadow:
-        colors.name === 'light'
-          ? '0 20px 40px rgba(13, 35, 24, 0.08)'
-          : '0 20px 40px rgba(0, 0, 0, 0.28)',
+      boxShadow: raisedShadow,
       backdropFilter: 'blur(18px)',
       position: 'sticky',
       top: 0,
@@ -288,15 +329,12 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
     singleDashboardWideCard: {
       border: `1px solid ${colors.border}`,
       borderRadius: '28px',
-      background: colors.name === 'light' ? 'rgba(255, 255, 255, 0.82)' : 'rgba(10, 17, 14, 0.78)',
+      background: colors.surfaceBase,
       padding: isCompact ? '18px' : '22px',
       display: 'grid',
       gap: '16px',
       minWidth: 0,
-      boxShadow:
-        colors.name === 'light'
-          ? '0 24px 48px rgba(13, 35, 24, 0.08)'
-          : '0 24px 48px rgba(0, 0, 0, 0.28)',
+      boxShadow: raisedShadow,
       backdropFilter: 'blur(16px)',
     },
     leftPanel: {
@@ -336,11 +374,8 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
     panelCard: {
       border: `1px solid ${colors.border}`,
       borderRadius: '24px',
-      background: colors.name === 'light' ? 'rgba(255, 255, 255, 0.82)' : 'rgba(10, 17, 14, 0.78)',
-      boxShadow:
-        colors.name === 'light'
-          ? '0 20px 36px rgba(13, 35, 24, 0.07)'
-          : '0 20px 36px rgba(0, 0, 0, 0.24)',
+      background: colors.surfaceBase,
+      boxShadow: cardShadow,
       padding: isCompact ? '16px' : '18px',
       display: 'grid',
       gap: '14px',
@@ -372,7 +407,7 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       border: `1px solid ${colors.borderStrong}`,
       borderRadius: '12px',
       padding: 0,
-      background: colors.name === 'light' ? 'rgba(255,255,255,0.76)' : 'rgba(15, 24, 20, 0.82)',
+      background: colors.surfaceSoft,
       color: colors.text,
       cursor: 'pointer',
       fontSize: typeScale.small,
@@ -436,7 +471,7 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
     formCard: {
       border: `1px solid ${colors.border}`,
       borderRadius: '18px',
-      background: colors.name === 'light' ? 'rgba(248, 252, 249, 0.92)' : 'rgba(13, 22, 18, 0.9)',
+      background: colors.surfaceRaised,
       padding: '16px',
     },
     formCardHeader: {
@@ -501,7 +536,7 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
     input: {
       border: `1px solid ${colors.borderStrong}`,
       borderRadius: '14px',
-      background: colors.name === 'light' ? 'rgba(255,255,255,0.9)' : colors.inputBg,
+      background: colors.surfaceStrong,
       color: colors.text,
       padding: '12px 14px',
       fontSize: typeScale.body,
@@ -513,8 +548,8 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
     profileInput: {
       border: `1px solid ${colors.borderStrong}`,
       borderRadius: '14px',
-      background: colors.name === 'light' ? 'rgba(255,255,255,0.72)' : 'rgba(8, 17, 13, 0.82)',
-      color: colors.name === 'light' ? '#1f1b14' : colors.text,
+      background: colors.surfaceSoft,
+      color: colors.text,
       padding: '12px 14px',
       fontSize: typeScale.body,
       width: '100%',
@@ -525,7 +560,7 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
     textarea: {
       border: `1px solid ${colors.borderStrong}`,
       borderRadius: '16px',
-      background: colors.name === 'light' ? 'rgba(255,255,255,0.9)' : colors.inputBg,
+      background: colors.surfaceStrong,
       color: colors.text,
       padding: '12px 14px',
       fontSize: typeScale.body,
@@ -554,7 +589,7 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       border: `1px solid ${colors.borderStrong}`,
       borderRadius: '14px',
       padding: '11px 14px',
-      background: colors.name === 'light' ? 'rgba(255,255,255,0.74)' : 'rgba(15, 24, 20, 0.82)',
+      background: colors.surfaceSoft,
       color: colors.text,
       cursor: 'pointer',
       fontWeight: 700,
@@ -684,7 +719,7 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       display: 'grid',
       border: `1px solid ${colors.border}`,
       borderRadius: '18px',
-      background: colors.name === 'light' ? 'rgba(247, 251, 248, 0.9)' : 'rgba(13, 22, 18, 0.9)',
+      background: colors.surfaceRaised,
       overflow: 'hidden',
     },
     attachmentListRow: {
@@ -736,12 +771,18 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       color: colors.textMuted,
       wordBreak: 'break-word',
     },
+    bodyText: {
+      margin: 0,
+      fontSize: typeScale.body,
+      color: colors.text,
+      lineHeight: 1.65,
+    },
     fieldBlock: {
       display: 'grid',
       gap: '10px',
       border: `1px solid ${colors.border}`,
       borderRadius: '10px',
-      background: colors.name === 'light' ? '#ffffff' : colors.shell,
+      background: colors.surfaceStrong,
       padding: '14px',
     },
     fieldHeading: {
@@ -897,7 +938,7 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       border: `1px solid ${colors.border}`,
       borderRadius: '18px',
       padding: '12px',
-      background: colors.name === 'light' ? 'rgba(247, 251, 248, 0.9)' : 'rgba(13, 22, 18, 0.9)',
+      background: colors.surfaceRaised,
     },
     uploadFileIcon: {
       width: '42px',
@@ -920,7 +961,7 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       border: `1px solid ${colors.border}`,
       borderRadius: '18px',
       padding: '14px',
-      background: colors.name === 'light' ? 'rgba(255,255,255,0.74)' : 'rgba(13, 22, 18, 0.82)',
+      background: colors.surfaceSoft,
       color: colors.text,
       display: 'grid',
       gap: '8px',
@@ -953,7 +994,7 @@ export function createDashboardStyles(colors: DashboardThemeColors, viewportWidt
       margin: 0,
       border: `1px solid ${colors.border}`,
       borderRadius: '18px',
-      background: colors.name === 'light' ? 'rgba(248, 252, 249, 0.94)' : colors.inputBg,
+      background: colors.surfaceRaised,
       color: colors.text,
       padding: '16px',
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
