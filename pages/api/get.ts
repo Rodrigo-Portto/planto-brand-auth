@@ -5,6 +5,7 @@ import {
   getAuthenticatedUser,
   supabaseRest,
 } from '../../lib/supabase/api';
+import { BRANDING_MODELS_TOTAL, BRIEFING_TOTAL_FALLBACK } from '../../lib/domain/constants';
 
 type AttachmentRow = {
   id: string;
@@ -25,17 +26,22 @@ async function buildPipelineMonitor(userId: string): Promise<DashboardPayload['p
   const encoded = encodeURIComponent(userId);
 
   // Run all pipeline queries in parallel
-  const [bdsRes, knowledgeRes, attachmentsRes, docsRes] = await Promise.all([
+  const [bdsRes, knowledgeRes, attachmentsRes, docsRes, briefingTotalRes] = await Promise.all([
     supabaseRest(`/rest/v1/brand_context_responses?user_id=eq.${encoded}&select=id`),
     supabaseRest(`/rest/v1/brand_knowledge?user_id=eq.${encoded}&select=id,status`),
     supabaseRest(`/rest/v1/user_attachments?user_id=eq.${encoded}&select=id,filename,created_at,updated_at,content_text,promoted_at&order=created_at.desc`),
     supabaseRest(`/rest/v1/plataforma_marca?user_id=eq.${encoded}&output_json=not.is.null&select=model_key`),
+    // Bug 1 fix: fetch BRIEFING_TOTAL dynamically from DB
+    supabaseRest(`/rest/v1/brand_context_questions?user_id=eq.${encoded}&select=id`),
   ]);
 
   // --- Summary ---
-  const BRIEFING_TOTAL = 28;
+  // Bug 1 fix: dynamic BRIEFING_TOTAL with safe fallback
+  const BRIEFING_TOTAL = (briefingTotalRes.response.ok && Array.isArray(briefingTotalRes.data) && briefingTotalRes.data.length > 0)
+    ? briefingTotalRes.data.length
+    : BRIEFING_TOTAL_FALLBACK;
+
   const briefingAnswered = (bdsRes.response.ok && Array.isArray(bdsRes.data)) ? bdsRes.data.length : 0;
-  const briefingPending = Math.max(0, BRIEFING_TOTAL - briefingAnswered);
   const briefingTotal = BRIEFING_TOTAL;
 
   const knowledgeRows = (knowledgeRes.response.ok && Array.isArray(knowledgeRes.data) ? knowledgeRes.data : []) as Array<{ status: string }>;
@@ -100,12 +106,14 @@ async function buildPipelineMonitor(userId: string): Promise<DashboardPayload['p
       processing_items: processingItems,
       error_items: 0,
       briefing_answered: briefingAnswered,
-      briefing_pending: briefingPending > 0 ? briefingPending : Math.max(0, briefingTotal - briefingAnswered),
+      // Bug 3 fix: simplified, no dead-code branch
+      briefing_pending: Math.max(0, briefingTotal - briefingAnswered),
       briefing_total: briefingTotal,
       brand_knowledge_active: knowledgeActive,
       brand_knowledge_total: knowledgeTotal,
       branding_models_filled: brandingFilled,
-      branding_models_total: 7,
+      // Bug 2 fix: use shared constant (BRANDING_MODELS_TOTAL = 7)
+      branding_models_total: BRANDING_MODELS_TOTAL,
     },
     items: attachmentItems,
   };
@@ -128,12 +136,19 @@ export default async function handler(
   const encoded = encodeURIComponent(userId);
 
   try {
-    const [profileRes, attachmentsRes, tokensRes, docsRes, pipeline_monitor] = await Promise.all([
+    // Bug 4 fix: add queries for strategic tables in parallel
+    const [profileRes, attachmentsRes, tokensRes, docsRes, pipeline_monitor, assessmentRes, gapsRes, nextQuestionsRes] = await Promise.all([
       supabaseRest(`/rest/v1/user_profiles?id=eq.${encoded}&select=*&limit=1`),
       supabaseRest(`/rest/v1/user_attachments?user_id=eq.${encoded}&select=*&order=created_at.desc`),
       supabaseRest(`/rest/v1/gpt_access_tokens?user_id=eq.${encoded}&select=id,label,token_prefix,token_value,status,created_at,last_used_at,expires_at,revoked_at&order=created_at.desc`),
       supabaseRest(`/rest/v1/brand_documents?user_id=eq.${encoded}&select=id,user_id,type,title,content,canvas_url,canvas_content,canvas_kind,content_format,canvas_external_id,canvas_version,source,metadata_json,created_at,updated_at&order=updated_at.desc`),
       buildPipelineMonitor(userId),
+      // Bug 4 fix: strategic_assessments
+      supabaseRest(`/rest/v1/strategic_assessments?user_id=eq.${encoded}&select=overall_score,status,generated_at&order=generated_at.desc&limit=1`),
+      // Bug 4 fix: strategic_gaps
+      supabaseRest(`/rest/v1/strategic_gaps?user_id=eq.${encoded}&status=eq.active&select=gap_title,severity&order=severity`),
+      // Bug 4 fix: strategic_next_questions
+      supabaseRest(`/rest/v1/strategic_next_questions?user_id=eq.${encoded}&status=eq.active&select=question_text,dimension_key,priority&order=priority&limit=3`),
     ]);
 
     if (!profileRes.response.ok) {
@@ -153,6 +168,12 @@ export default async function handler(
 
     const legacy_documents = docsRes.response.ok && Array.isArray(docsRes.data) ? docsRes.data : [];
 
+    // Parse strategic data
+    const assessmentRows = assessmentRes.response.ok && Array.isArray(assessmentRes.data) ? assessmentRes.data : [];
+    const assessment = assessmentRows.length > 0 ? assessmentRows[0] : null;
+    const strategic_gaps = gapsRes.response.ok && Array.isArray(gapsRes.data) ? gapsRes.data : [];
+    const next_questions = nextQuestionsRes.response.ok && Array.isArray(nextQuestionsRes.data) ? nextQuestionsRes.data : [];
+
     return res.status(200).json({
       user: { id: userId, email: auth.user.email },
       profile,
@@ -160,6 +181,9 @@ export default async function handler(
       gpt_tokens,
       legacy_documents,
       pipeline_monitor,
+      assessment,
+      strategic_gaps,
+      next_questions,
     });
   } catch (error) {
     return res
