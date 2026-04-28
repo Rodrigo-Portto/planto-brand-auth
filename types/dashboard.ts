@@ -103,6 +103,9 @@ export interface DashboardMaturityDimension {
   label: string;
   score: number;
   level: DashboardMaturityLevel;
+  diagnosis?: string | null;
+  recommendation?: string | null;
+  confidence?: number | null;
 }
 
 export interface DashboardKnowledgeNode {
@@ -145,12 +148,18 @@ export interface DashboardPipelineStep {
 export interface DashboardStrategicGap {
   key: string;
   label: string;
-  score: number;
-  detail: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  description: string;
+  suggested_action: string | null;
 }
 
 export interface DashboardOverview {
   assessment_score: number | null;
+  assessment_status: 'active' | 'stale' | 'archived' | 'error' | null;
+  assessment_generated_at: string | null;
+  assessment_is_fallback: boolean;
+  diagnostics_source: 'db' | 'heuristic';
+  gaps_source: 'db' | 'heuristic';
   maturity_dimensions: DashboardMaturityDimension[];
   knowledge_nodes: DashboardKnowledgeNode[];
   knowledge_edges: DashboardKnowledgeEdge[];
@@ -206,28 +215,6 @@ export interface LegacyDocument {
   updated_at: string | null;
 }
 
-export interface StrategicAssessment {
-  overall_score: number;
-  status: string;
-  generated_at: string;
-}
-
-export interface StrategicGap {
-  gap_title: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-}
-
-export interface StrategicNextQuestion {
-  question_text: string;
-  dimension_key: string;
-  priority: number;
-}
-
-export interface PlataformaMarcaItem {
-  model_key: string;
-  status: string;
-}
-
 export interface DashboardPayload {
   user: UserSummary | null;
   profile: Profile;
@@ -235,10 +222,6 @@ export interface DashboardPayload {
   gpt_tokens: GptToken[];
   legacy_documents: LegacyDocument[];
   pipeline_monitor: PipelineMonitor;
-  assessment?: StrategicAssessment | null;
-  strategic_gaps?: StrategicGap[];
-  next_questions?: StrategicNextQuestion[];
-  plataforma_marca?: PlataformaMarcaItem[];
   strategic_questions: StrategicQuestion[];
   strategic_question_count: number;
   agent_readiness: number;

@@ -17,6 +17,15 @@ import type {
   StrategicQuestion,
 } from '../../types/dashboard';
 
+type AttachmentPipelineStatus =
+  | 'uploaded'
+  | 'extracting'
+  | 'extracted'
+  | 'briefing'
+  | 'briefed'
+  | 'done'
+  | 'error';
+
 type AttachmentRow = {
   id: string;
   filename: string;
@@ -24,18 +33,50 @@ type AttachmentRow = {
   updated_at: string | null;
   content_text: string | null;
   promoted_at: string | null;
+  pipeline_status: AttachmentPipelineStatus | null;
+  pipeline_error: string | null;
+  briefing_done_at: string | null;
 };
 
+type BriefingResponseRow = {
+  id: string;
+  source_attachment_id: string | null;
+  embedding?: unknown;
+  promoted_at?: string | null;
+  response_status?: string | null;
+};
+
+type AssessmentStatus = 'active' | 'stale' | 'archived' | 'error';
+
 type AssessmentRow = {
+  id?: string;
   overall_score: number | null;
   reasoning_json?: {
     main_risks?: unknown;
   } | null;
   summary?: string | null;
-  status?: string | null;
+  status?: AssessmentStatus | null;
   updated_at?: string | null;
   generated_at?: string | null;
   error_msg?: string | null;
+};
+
+type DiagnosticRow = {
+  dimension_key: string;
+  dimension_label: string | null;
+  score: number | null;
+  maturity_level: string | null;
+  diagnosis: string | null;
+  recommendation: string | null;
+  confidence: number | null;
+};
+
+type StrategicGapRow = {
+  gap_key: string;
+  gap_title: string;
+  severity: DashboardStrategicGap['severity'];
+  gap_description: string | null;
+  suggested_action: string | null;
 };
 
 type KnowledgeRow = {
@@ -57,6 +98,13 @@ type KnowledgeLinkRow = {
 type PlatformRow = {
   model_key: string;
   output_json?: Record<string, unknown> | null;
+  status?: string | null;
+};
+
+type AttachmentResponseSummary = {
+  total: number;
+  embedded: number;
+  promoted: number;
 };
 
 const DOMAIN_LABELS: Record<DashboardDomainCoverageStat['key'], string> = {
@@ -169,10 +217,9 @@ const MATURITY_DIMENSION_CONFIG = [
   },
 ];
 
-function stageStatus(condition: boolean | null, processingIds?: Set<string>, id?: string): PipelineStageStatus {
-  if (condition) return 'done';
-  if (id && processingIds?.has(id)) return 'processing';
-  return 'pending';
+function logDashboardDebug(event: string, payload: Record<string, unknown>) {
+  if (process.env.NODE_ENV === 'production') return;
+  console.info('[dashboard-debug]', JSON.stringify({ event, ...payload }));
 }
 
 function maturityLevel(score: number): DashboardMaturityLevel {
@@ -186,12 +233,14 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function slugToLabel(input: string) {
-  return input
-    .split('.')
-    .pop()
-    ?.split('_')
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ''))
-    .join(' ') || input;
+  return (
+    input
+      .split('.')
+      .pop()
+      ?.split('_')
+      .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ''))
+      .join(' ') || input
+  );
 }
 
 function collectMainRisks(assessment?: AssessmentRow | null): string[] {
@@ -209,16 +258,164 @@ function findMatchingRisk(label: string, risks: string[]) {
   return risks.find((risk) => keywords.some((keyword) => risk.toLowerCase().includes(keyword))) || '';
 }
 
+function normalizeAssessmentStatus(status?: string | null): DashboardOverview['assessment_status'] {
+  if (status === 'active' || status === 'stale' || status === 'archived' || status === 'error') {
+    return status;
+  }
+  return null;
+}
+
+function normalizeGapSeverity(value?: string | null): DashboardStrategicGap['severity'] {
+  if (value === 'critical' || value === 'high' || value === 'medium' || value === 'low') {
+    return value;
+  }
+  return 'medium';
+}
+
+function normalizeStageStatus(
+  done: boolean,
+  processing: boolean,
+  error: boolean
+): PipelineStageStatus {
+  if (error) return 'error';
+  if (done) return 'done';
+  if (processing) return 'processing';
+  return 'pending';
+}
+
+function attachmentStageStatus(
+  attachment: AttachmentRow,
+  summary: AttachmentResponseSummary
+): PipelineMonitorStage[] {
+  const status = attachment.pipeline_status;
+  const hasContent = typeof attachment.content_text === 'string' && attachment.content_text.trim() !== '';
+  const hasBriefing = summary.total > 0 || attachment.briefing_done_at != null;
+  const hasEmbedding = summary.embedded > 0;
+  const hasPromotion = attachment.promoted_at != null || summary.promoted > 0 || status === 'done';
+  const isError = status === 'error';
+
+  return [
+    {
+      key: 'extracted',
+      label: 'Extraido',
+      status: normalizeStageStatus(
+        hasContent || status === 'extracted' || status === 'briefing' || status === 'briefed' || status === 'done',
+        status === 'extracting',
+        isError
+      ),
+    },
+    {
+      key: 'briefing',
+      label: 'Briefing',
+      status: normalizeStageStatus(
+        hasBriefing || status === 'briefed' || status === 'done',
+        status === 'briefing',
+        isError
+      ),
+    },
+    {
+      key: 'embedded',
+      label: 'Vetorizado',
+      status: normalizeStageStatus(
+        hasEmbedding || (status === 'done' && hasBriefing),
+        (status === 'briefed' || status === 'done') && !hasEmbedding,
+        isError
+      ),
+    },
+    {
+      key: 'promoted',
+      label: 'Promovido',
+      status: normalizeStageStatus(
+        hasPromotion,
+        (status === 'briefed' || status === 'done') && !hasPromotion,
+        isError
+      ),
+    },
+  ];
+}
+
+function heuristicMaturityDimensions(
+  strategicQuestions: StrategicQuestion[],
+  latestAssessment: AssessmentRow | null,
+  activeKnowledgeKeys: Set<string>,
+  activePlatformKeys: Set<string>
+): DashboardMaturityDimension[] {
+  const questionDimensionMap = new Map<string, StrategicQuestion[]>();
+  strategicQuestions.forEach((question) => {
+    if (!question.dimension_key) return;
+    const list = questionDimensionMap.get(question.dimension_key) || [];
+    list.push(question);
+    questionDimensionMap.set(question.dimension_key, list);
+  });
+
+  const overallBase = typeof latestAssessment?.overall_score === 'number' ? latestAssessment.overall_score : 62;
+  return MATURITY_DIMENSION_CONFIG.map((config) => {
+    const knowledgeHits = config.knowledgeKeys.filter((key) => activeKnowledgeKeys.has(key)).length;
+    const platformHits = config.platformKeys.filter((key) => activePlatformKeys.has(key)).length;
+    const questionHits = config.questionKeys.reduce(
+      (count, key) => count + (questionDimensionMap.get(key)?.length || 0),
+      0
+    );
+    const evidenceTotal = config.knowledgeKeys.length + config.platformKeys.length;
+    const evidenceHits = knowledgeHits + platformHits;
+    const evidenceRatio = evidenceTotal > 0 ? evidenceHits / evidenceTotal : 0;
+    const signalShift = Math.round((evidenceRatio - 0.45) * 26);
+    const platformBonus = platformHits > 0 ? 8 : 0;
+    const questionPenalty = questionHits * 14;
+    const confidenceBonus = knowledgeHits >= 2 ? 6 : knowledgeHits === 1 ? 3 : 0;
+    const score = clamp(overallBase + signalShift + platformBonus + confidenceBonus - questionPenalty, 45, 94);
+
+    return {
+      key: config.key,
+      label: config.label,
+      score,
+      level: maturityLevel(score),
+      diagnosis: null,
+      recommendation: null,
+      confidence: null,
+    };
+  });
+}
+
+function heuristicStrategicGaps(
+  maturityDimensions: DashboardMaturityDimension[],
+  latestAssessment: AssessmentRow | null
+): DashboardStrategicGap[] {
+  const risks = collectMainRisks(latestAssessment);
+  return maturityDimensions
+    .filter((dimension) => dimension.score < 78)
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 2)
+    .map((dimension) => ({
+      key: dimension.key,
+      label: dimension.label,
+      severity: dimension.score < 55 ? 'high' : 'medium',
+      description:
+        findMatchingRisk(dimension.label, risks) ||
+        `Faltam sinais suficientes na base atual para consolidar ${dimension.label.toLowerCase()}.`,
+      suggested_action: null,
+    }));
+}
+
+function inferAssessmentScore(dimensions: DashboardMaturityDimension[]) {
+  if (dimensions.length === 0) return null;
+  return Math.round(dimensions.reduce((sum, dimension) => sum + dimension.score, 0) / dimensions.length);
+}
+
 export async function buildPipelineMonitor(userId: string): Promise<PipelineMonitor> {
   const encoded = encodeURIComponent(userId);
 
   const [briefingRes, knowledgeRes, attachmentsRes, docsRes] = await Promise.all([
-    supabaseRest(`/rest/v1/brand_context_responses?user_id=eq.${encoded}&answer_type=eq.briefing&select=id`),
+    supabaseRest(
+      `/rest/v1/brand_context_responses?user_id=eq.${encoded}&answer_type=eq.briefing&response_status=eq.active&select=id,source_attachment_id,embedding,promoted_at,response_status`
+    ),
     supabaseRest(`/rest/v1/brand_knowledge?user_id=eq.${encoded}&select=id,status`),
     supabaseRest(
-      `/rest/v1/user_attachments?user_id=eq.${encoded}&select=id,filename,created_at,updated_at,content_text,promoted_at&order=created_at.desc`
+      `/rest/v1/user_attachments?user_id=eq.${encoded}&select=id,filename,created_at,updated_at,content_text,promoted_at,pipeline_status,pipeline_error,briefing_done_at&order=created_at.desc`
     ),
-    supabaseRest(`/rest/v1/plataforma_marca?user_id=eq.${encoded}&output_json=not.is.null&select=model_key`),
+    supabaseRest(
+      `/rest/v1/plataforma_marca?user_id=eq.${encoded}&status=eq.active&output_json=not.is.null&select=model_key`
+    ),
   ]);
 
   if (!briefingRes.response.ok) {
@@ -234,56 +431,56 @@ export async function buildPipelineMonitor(userId: string): Promise<PipelineMoni
     throw new Error(extractErrorMessage(docsRes.data, 'Falha ao carregar plataforma de marca.'));
   }
 
-  const briefingAnswered = Array.isArray(briefingRes.data) ? briefingRes.data.length : 0;
+  const activeBriefingResponses = (Array.isArray(briefingRes.data) ? briefingRes.data : []) as BriefingResponseRow[];
+  const briefingAnswered = activeBriefingResponses.length;
   const briefingPending = Math.max(0, BRIEFING_TOTAL - briefingAnswered);
   const knowledgeRows = (Array.isArray(knowledgeRes.data) ? knowledgeRes.data : []) as Array<{ status: string }>;
   const knowledgeActive = knowledgeRows.filter((row) => row.status === 'active').length;
   const knowledgeTotal = knowledgeRows.length;
   const brandingFilled = Array.isArray(docsRes.data) ? docsRes.data.length : 0;
 
+  const responseSummaryByAttachment = new Map<string, AttachmentResponseSummary>();
+  activeBriefingResponses.forEach((row) => {
+    if (!row.source_attachment_id) return;
+    const current = responseSummaryByAttachment.get(row.source_attachment_id) || {
+      total: 0,
+      embedded: 0,
+      promoted: 0,
+    };
+    current.total += 1;
+    if (row.embedding != null) current.embedded += 1;
+    if (row.promoted_at != null) current.promoted += 1;
+    responseSummaryByAttachment.set(row.source_attachment_id, current);
+  });
+
   const attachmentRows = (Array.isArray(attachmentsRes.data) ? attachmentsRes.data : []) as AttachmentRow[];
-  const attachmentIds = attachmentRows.map((attachment) => attachment.id);
-
-  const embeddedAttachmentIds = new Set<string>();
-  if (attachmentIds.length > 0) {
-    const idsParam = attachmentIds.map(encodeURIComponent).join(',');
-    const embeddingsRes = await supabaseRest(
-      `/rest/v1/user_attachments?id=in.(${idsParam})&embedding=not.is.null&select=id`
-    );
-
-    if (!embeddingsRes.response.ok) {
-      throw new Error(extractErrorMessage(embeddingsRes.data, 'Falha ao carregar vetorizacao dos anexos.'));
-    }
-
-    (Array.isArray(embeddingsRes.data) ? embeddingsRes.data : []).forEach((row) => {
-      const id = (row as { id?: string }).id;
-      if (id) {
-        embeddedAttachmentIds.add(id);
-      }
-    });
-  }
-
   const items: PipelineMonitorItem[] = attachmentRows.map((attachment) => {
-    const extracted: PipelineMonitorStage = {
-      key: 'extracted',
-      label: 'Extraido',
-      status: stageStatus(attachment.content_text != null && attachment.content_text !== ''),
+    const responseSummary = responseSummaryByAttachment.get(attachment.id) || {
+      total: 0,
+      embedded: 0,
+      promoted: 0,
     };
-    const embedded: PipelineMonitorStage = {
-      key: 'embedded',
-      label: 'Vetorizado',
-      status: stageStatus(embeddedAttachmentIds.has(attachment.id)),
-    };
-    const promoted: PipelineMonitorStage = {
-      key: 'promoted',
-      label: 'Promovido',
-      status: stageStatus(attachment.promoted_at != null),
-    };
+    const stages = attachmentStageStatus(attachment, responseSummary);
+    const isError = attachment.pipeline_status === 'error' || Boolean(attachment.pipeline_error);
+    const allDone = stages.every((stage) => stage.status === 'done');
+    const overallStatus: PipelineMonitorItem['overall_status'] = isError
+      ? 'error'
+      : allDone
+      ? 'done'
+      : 'processing';
 
-    const allDone =
-      extracted.status === 'done' &&
-      embedded.status === 'done' &&
-      promoted.status === 'done';
+    if (
+      attachment.pipeline_status === 'done' &&
+      stages.some((stage) => stage.key === 'embedded' && stage.status !== 'done')
+    ) {
+      logDashboardDebug('pipeline_status_divergence', {
+        userId,
+        attachmentId: attachment.id,
+        pipeline_status: attachment.pipeline_status,
+        briefing_responses: responseSummary.total,
+        embedded_responses: responseSummary.embedded,
+      });
+    }
 
     return {
       id: attachment.id,
@@ -291,21 +488,23 @@ export async function buildPipelineMonitor(userId: string): Promise<PipelineMoni
       title: attachment.filename,
       created_at: attachment.created_at,
       updated_at: attachment.updated_at,
-      overall_status: allDone ? 'done' : 'processing',
-      knowledge_count: 0,
-      stages: [extracted, embedded, promoted],
+      overall_status: overallStatus,
+      knowledge_count: responseSummary.promoted,
+      last_error: attachment.pipeline_error,
+      stages,
     };
   });
 
   const completedItems = items.filter((item) => item.overall_status === 'done').length;
-  const processingItems = items.length - completedItems;
+  const processingItems = items.filter((item) => item.overall_status === 'processing').length;
+  const errorItems = items.filter((item) => item.overall_status === 'error').length;
 
   return {
     summary: {
       total_items: items.length,
       completed_items: completedItems,
       processing_items: processingItems,
-      error_items: 0,
+      error_items: errorItems,
       briefing_answered: briefingAnswered,
       briefing_pending: briefingPending,
       briefing_total: BRIEFING_TOTAL,
@@ -326,7 +525,7 @@ export async function buildDashboardOverview(
   const encoded = encodeURIComponent(userId);
   const [assessmentsRes, knowledgeRes, linksRes, platformRes, memoryNotesRes, contextRes] = await Promise.all([
     supabaseRest(
-      `/rest/v1/strategic_assessments?user_id=eq.${encoded}&select=overall_score,reasoning_json,summary,status,updated_at,generated_at,error_msg&order=updated_at.desc&limit=10`
+      `/rest/v1/strategic_assessments?user_id=eq.${encoded}&select=id,overall_score,reasoning_json,summary,status,updated_at,generated_at,error_msg&order=generated_at.desc.nullslast,updated_at.desc.nullslast&limit=20`
     ),
     supabaseRest(
       `/rest/v1/brand_knowledge?user_id=eq.${encoded}&select=id,item_key,item_group,status,is_canonical,readable_label&limit=1000`
@@ -335,10 +534,10 @@ export async function buildDashboardOverview(
       `/rest/v1/knowledge_links?user_id=eq.${encoded}&select=id,from_item_id,to_item_id,relation_type&limit=1000`
     ),
     supabaseRest(
-      `/rest/v1/plataforma_marca?user_id=eq.${encoded}&output_json=not.is.null&select=model_key,output_json&limit=1000`
+      `/rest/v1/plataforma_marca?user_id=eq.${encoded}&status=eq.active&output_json=not.is.null&select=model_key,output_json,status&limit=1000`
     ),
     supabaseRest(`/rest/v1/memory_notes?user_id=eq.${encoded}&select=id&limit=1000`),
-    supabaseRest(`/rest/v1/brand_context_responses?user_id=eq.${encoded}&select=id&limit=1000`),
+    supabaseRest(`/rest/v1/brand_context_responses?user_id=eq.${encoded}&response_status=eq.active&select=id&limit=1000`),
   ]);
 
   if (!assessmentsRes.response.ok) {
@@ -361,8 +560,65 @@ export async function buildDashboardOverview(
   }
 
   const assessments = (Array.isArray(assessmentsRes.data) ? assessmentsRes.data : []) as AssessmentRow[];
-  const latestAssessment =
+  const activeAssessment =
+    assessments.find((row) => row.status === 'active' && typeof row.overall_score === 'number' && row.error_msg == null) ||
+    null;
+  const staleAssessment =
+    assessments.find((row) => row.status === 'stale' && typeof row.overall_score === 'number' && row.error_msg == null) ||
+    null;
+  const latestScoredAssessment =
     assessments.find((row) => typeof row.overall_score === 'number' && row.error_msg == null) || null;
+  const selectedAssessment = activeAssessment || staleAssessment || latestScoredAssessment;
+
+  if (!activeAssessment) {
+    logDashboardDebug('missing_active_assessment', {
+      userId,
+      stale_found: Boolean(staleAssessment),
+      fallback_status: selectedAssessment?.status || null,
+      assessment_count: assessments.length,
+    });
+  }
+
+  let diagnosticsRows: DiagnosticRow[] = [];
+  let dbGapsRows: StrategicGapRow[] = [];
+
+  if (selectedAssessment?.id) {
+    const selectedAssessmentId = encodeURIComponent(selectedAssessment.id);
+    const [diagnosticsRes, dbGapsRes] = await Promise.all([
+      supabaseRest(
+        `/rest/v1/strategic_diagnostics?assessment_id=eq.${selectedAssessmentId}&status=eq.active&select=dimension_key,dimension_label,score,maturity_level,diagnosis,recommendation,confidence&order=score.asc.nullslast&limit=100`
+      ),
+      supabaseRest(
+        `/rest/v1/strategic_gaps?assessment_id=eq.${selectedAssessmentId}&status=eq.active&select=gap_key,gap_title,severity,gap_description,suggested_action&limit=100`
+      ),
+    ]);
+
+    if (!diagnosticsRes.response.ok) {
+      throw new Error(extractErrorMessage(diagnosticsRes.data, 'Falha ao carregar diagnosticos estrategicos.'));
+    }
+    if (!dbGapsRes.response.ok) {
+      throw new Error(extractErrorMessage(dbGapsRes.data, 'Falha ao carregar lacunas estrategicas.'));
+    }
+
+    diagnosticsRows = (Array.isArray(diagnosticsRes.data) ? diagnosticsRes.data : []) as DiagnosticRow[];
+    dbGapsRows = (Array.isArray(dbGapsRes.data) ? dbGapsRes.data : []) as StrategicGapRow[];
+  }
+
+  if (diagnosticsRows.length === 0) {
+    logDashboardDebug('missing_active_diagnostics', {
+      userId,
+      assessment_id: selectedAssessment?.id || null,
+      assessment_status: selectedAssessment?.status || null,
+    });
+  }
+
+  if (dbGapsRows.length === 0) {
+    logDashboardDebug('missing_active_gaps', {
+      userId,
+      assessment_id: selectedAssessment?.id || null,
+      assessment_status: selectedAssessment?.status || null,
+    });
+  }
 
   const knowledgeRows = (Array.isArray(knowledgeRes.data) ? knowledgeRes.data : []) as KnowledgeRow[];
   const activeKnowledge = knowledgeRows.filter(
@@ -398,15 +654,7 @@ export async function buildDashboardOverview(
     relationCountMap.set(row.relation_type, (relationCountMap.get(row.relation_type) || 0) + 1);
   });
 
-  const relationOrder = [
-    'apoia',
-    'tensiona',
-    'refina',
-    'exemplifica',
-    'complementa',
-    'origina',
-    'contradiz',
-  ];
+  const relationOrder = ['apoia', 'tensiona', 'refina', 'exemplifica', 'complementa', 'origina', 'contradiz'];
   const knowledgeRelations: DashboardKnowledgeRelationStat[] = relationOrder
     .filter((key) => relationCountMap.has(key))
     .map((key) => ({
@@ -416,59 +664,48 @@ export async function buildDashboardOverview(
     }));
 
   const platformRows = (Array.isArray(platformRes.data) ? platformRes.data : []) as PlatformRow[];
-  const activePlatformKeys = new Set(platformRows.map((row) => row.model_key));
+  const activePlatformKeys = new Set(platformRows.filter((row) => row.status !== 'archived').map((row) => row.model_key));
   const platformPillars: DashboardPlatformPillar[] = PLATFORM_PILLAR_ORDER.map((key) => ({
     key,
     label: PLATFORM_PILLAR_LABELS[key] || slugToLabel(key),
     active: activePlatformKeys.has(key),
   }));
 
-  const questionDimensionMap = new Map<string, StrategicQuestion[]>();
-  strategicQuestions.forEach((question) => {
-    if (!question.dimension_key) return;
-    const list = questionDimensionMap.get(question.dimension_key) || [];
-    list.push(question);
-    questionDimensionMap.set(question.dimension_key, list);
-  });
+  const heuristicDimensions = heuristicMaturityDimensions(
+    strategicQuestions,
+    selectedAssessment,
+    activeKnowledgeKeys,
+    activePlatformKeys
+  );
+  const maturityDimensions: DashboardMaturityDimension[] =
+    diagnosticsRows.length > 0
+      ? diagnosticsRows
+          .filter((row) => typeof row.score === 'number')
+          .map((row) => ({
+            key: row.dimension_key,
+            label: row.dimension_label || slugToLabel(row.dimension_key),
+            score: Number(row.score),
+            level:
+              row.maturity_level === 'advanced' || row.maturity_level === 'intermediate' || row.maturity_level === 'developing'
+                ? row.maturity_level
+                : maturityLevel(Number(row.score)),
+            diagnosis: row.diagnosis,
+            recommendation: row.recommendation,
+            confidence: row.confidence,
+          }))
+      : heuristicDimensions;
 
-  const overallBase = typeof latestAssessment?.overall_score === 'number' ? latestAssessment.overall_score : 62;
-  const maturityDimensions: DashboardMaturityDimension[] = MATURITY_DIMENSION_CONFIG.map((config) => {
-    const knowledgeHits = config.knowledgeKeys.filter((key) => activeKnowledgeKeys.has(key)).length;
-    const platformHits = config.platformKeys.filter((key) => activePlatformKeys.has(key)).length;
-    const questionHits = config.questionKeys.reduce(
-      (count, key) => count + (questionDimensionMap.get(key)?.length || 0),
-      0
-    );
-    const evidenceTotal = config.knowledgeKeys.length + config.platformKeys.length;
-    const evidenceHits = knowledgeHits + platformHits;
-    const evidenceRatio = evidenceTotal > 0 ? evidenceHits / evidenceTotal : 0;
-    const signalShift = Math.round((evidenceRatio - 0.45) * 26);
-    const platformBonus = platformHits > 0 ? 8 : 0;
-    const questionPenalty = questionHits * 14;
-    const confidenceBonus = knowledgeHits >= 2 ? 6 : knowledgeHits === 1 ? 3 : 0;
-    const score = clamp(overallBase + signalShift + platformBonus + confidenceBonus - questionPenalty, 45, 94);
-
-    return {
-      key: config.key,
-      label: config.label,
-      score,
-      level: maturityLevel(score),
-    };
-  });
-
-  const risks = collectMainRisks(latestAssessment);
-  const strategicGaps: DashboardStrategicGap[] = maturityDimensions
-    .filter((dimension) => dimension.score < 78)
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 2)
-    .map((dimension) => ({
-      key: dimension.key,
-      label: dimension.label,
-      score: dimension.score,
-      detail:
-        findMatchingRisk(dimension.label, risks) ||
-        `Faltam sinais suficientes na base atual para consolidar ${dimension.label.toLowerCase()}.`,
-    }));
+  const heuristicGaps = heuristicStrategicGaps(heuristicDimensions, selectedAssessment);
+  const strategicGaps: DashboardStrategicGap[] =
+    dbGapsRows.length > 0
+      ? dbGapsRows.map((gap) => ({
+          key: gap.gap_key,
+          label: gap.gap_title,
+          severity: normalizeGapSeverity(gap.severity),
+          description: gap.gap_description || gap.gap_title,
+          suggested_action: gap.suggested_action,
+        }))
+      : heuristicGaps;
 
   const activeNodeRows = canonicalActiveKnowledge.slice(0, 15);
   const activeNodeIds = new Set(activeNodeRows.map((row) => row.id));
@@ -493,8 +730,18 @@ export async function buildDashboardOverview(
     item.stages.some((stage) => stage.key === 'embedded' && stage.status === 'done')
   ).length;
 
+  const assessmentScore =
+    typeof selectedAssessment?.overall_score === 'number'
+      ? Number(selectedAssessment.overall_score)
+      : inferAssessmentScore(maturityDimensions);
+
   return {
-    assessment_score: typeof latestAssessment?.overall_score === 'number' ? latestAssessment.overall_score : null,
+    assessment_score: assessmentScore,
+    assessment_status: normalizeAssessmentStatus(selectedAssessment?.status),
+    assessment_generated_at: selectedAssessment?.generated_at || selectedAssessment?.updated_at || null,
+    assessment_is_fallback: selectedAssessment?.status !== 'active',
+    diagnostics_source: diagnosticsRows.length > 0 ? 'db' : 'heuristic',
+    gaps_source: dbGapsRows.length > 0 ? 'db' : 'heuristic',
     maturity_dimensions: maturityDimensions,
     knowledge_nodes: knowledgeNodes,
     knowledge_edges: knowledgeEdges,

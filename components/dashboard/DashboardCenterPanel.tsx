@@ -20,6 +20,7 @@ interface DashboardCenterPanelProps {
   styles: DashboardStyles;
   theme: DashboardThemeColors;
   onJumpToUpload: () => void;
+  onJumpToCards: () => void;
   onJumpToAgent: () => void;
 }
 
@@ -75,6 +76,17 @@ function sectionShadow(theme: DashboardThemeColors) {
 
 function progressTrack(theme: DashboardThemeColors) {
   return theme.progressTrack;
+}
+
+function formatAssessmentBadge(overview: DashboardOverview) {
+  if (overview.assessment_status === 'active') return 'Diagnostico real';
+  if (overview.assessment_status === 'stale') return 'Diagnostico stale';
+  if (overview.assessment_is_fallback) return 'Estimativa local';
+  return 'Diagnostico';
+}
+
+function gapSeverityLabel(severity: DashboardOverview['strategic_gaps'][number]['severity']) {
+  return severity.toUpperCase();
 }
 
 function DashboardSection({
@@ -161,8 +173,21 @@ function RadarChart({
   const values = data.map((dimension) => dimension.score);
 
   return (
-    <div style={{ position: 'relative', width: canvasSize, height: canvasSize }}>
-      <svg width={canvasSize} height={canvasSize} viewBox={`0 0 ${canvasSize} ${canvasSize}`} style={{ overflow: 'visible' }}>
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: `${canvasSize}px`,
+        aspectRatio: '1 / 1',
+        margin: '0 auto',
+      }}
+    >
+      <svg
+        width="100%"
+        height="100%"
+        viewBox={`0 0 ${canvasSize} ${canvasSize}`}
+        style={{ overflow: 'visible', display: 'block' }}
+      >
         {gridLevels.map((level) => (
           <polygon
             key={level}
@@ -298,6 +323,7 @@ export function DashboardCenterPanel({
   styles,
   theme,
   onJumpToUpload,
+  onJumpToCards,
   onJumpToAgent,
 }: DashboardCenterPanelProps) {
   const activePillarCount = overview.platform_pillars.filter((pillar) => pillar.active).length;
@@ -314,6 +340,11 @@ export function DashboardCenterPanel({
   const handleNextAction = () => {
     if (nextAction.target === 'upload') {
       onJumpToUpload();
+      return;
+    }
+
+    if (nextAction.target === 'cards') {
+      onJumpToCards();
       return;
     }
 
@@ -413,29 +444,38 @@ export function DashboardCenterPanel({
         />
       </DashboardSection>
 
-      <DashboardSection title="Conhecimento de marca" badge="Dimensoes" theme={theme}>
+      <DashboardSection
+        title="Conhecimento de marca"
+        badge={`${formatAssessmentBadge(overview)}${overview.assessment_score != null ? ` - ${overview.assessment_score}` : ''}`}
+        theme={theme}
+      >
+        <div style={{ fontSize: '0.78rem', color: theme.textMuted, lineHeight: 1.6 }}>
+          {overview.diagnostics_source === 'db'
+            ? 'As dimensoes abaixo usam strategic_diagnostics do banco.'
+            : 'As dimensoes abaixo estao em fallback heuristico ate o banco materializar diagnosticos ativos.'}
+        </div>
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(300px, 360px) minmax(0, 520px)',
-            gap: '24px',
-            alignItems: 'center',
-            justifyContent: 'center',
+            gridTemplateColumns: 'minmax(0, 1fr)',
+            gap: '28px',
+            alignItems: 'start',
             maxWidth: '100%',
             overflow: 'hidden',
           }}
         >
-          <div style={{ justifySelf: 'center' }}>
-            <RadarChart data={overview.maturity_dimensions} theme={theme} size={260} />
+          <div style={{ justifySelf: 'center', width: '100%', minWidth: 0, maxWidth: '560px', margin: '0 auto' }}>
+            <RadarChart data={overview.maturity_dimensions} theme={theme} size={360} />
           </div>
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(2, minmax(0, 240px))',
-              gap: '10px 16px',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gap: '14px 20px',
               alignSelf: 'center',
               justifyContent: 'center',
               maxWidth: '100%',
+              minWidth: 0,
             }}
           >
             {overview.maturity_dimensions.map((dimension) => {
@@ -458,6 +498,11 @@ export function DashboardCenterPanel({
                       }}
                     />
                   </div>
+                  {dimension.diagnosis ? (
+                    <div style={{ fontSize: '0.7rem', color: theme.textMuted, marginTop: '4px', lineHeight: 1.45 }}>
+                      {dimension.diagnosis}
+                    </div>
+                  ) : null}
                 </div>
               );
             })}
@@ -544,7 +589,11 @@ export function DashboardCenterPanel({
 
       <DashboardSection
         title="Lacunas Estrategicas"
-        badge={overview.strategic_gap_count > 0 ? `${overview.strategic_gap_count} ativas` : undefined}
+        badge={
+          overview.strategic_gap_count > 0
+            ? `${overview.gaps_source === 'db' ? 'Banco' : 'Heuristica'} - ${overview.strategic_gap_count} ativas`
+            : undefined
+        }
         theme={theme}
       >
         <div style={{ fontSize: '0.84rem', color: theme.textMuted, lineHeight: 1.6 }}>
@@ -563,9 +612,16 @@ export function DashboardCenterPanel({
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '4px' }}>
                 <span style={{ fontSize: '0.84rem', fontWeight: 700, color: theme.textStrong }}>{gap.label}</span>
-                <span style={{ fontSize: '0.84rem', fontWeight: 800, color: theme.accent }}>{gap.score}/100</span>
+                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: theme.accent }}>
+                  {gapSeverityLabel(gap.severity)}
+                </span>
               </div>
-              <div style={{ fontSize: '0.76rem', color: theme.textMuted, lineHeight: 1.5 }}>{gap.detail}</div>
+              <div style={{ fontSize: '0.76rem', color: theme.textMuted, lineHeight: 1.5 }}>{gap.description}</div>
+              {gap.suggested_action ? (
+                <div style={{ fontSize: '0.72rem', color: theme.text, marginTop: '6px', lineHeight: 1.45 }}>
+                  Proxima acao: {gap.suggested_action}
+                </div>
+              ) : null}
             </div>
           ))
         ) : (

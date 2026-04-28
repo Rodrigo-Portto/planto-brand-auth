@@ -16,10 +16,11 @@ interface PipelineMonitorPanelProps {
   showStrategicQuestionCount?: boolean;
 }
 
-type TimelineStageKey = Extract<PipelineMonitorStage['key'], 'extracted' | 'embedded' | 'promoted'>;
+type TimelineStageKey = Extract<PipelineMonitorStage['key'], 'extracted' | 'briefing' | 'embedded' | 'promoted'>;
 
 const timelineStages: Array<{ key: TimelineStageKey; label: string }> = [
   { key: 'extracted', label: 'Extraido' },
+  { key: 'briefing', label: 'Briefing' },
   { key: 'embedded', label: 'Vetorizado' },
   { key: 'promoted', label: 'Promovido' },
 ];
@@ -270,11 +271,11 @@ export function PipelineMonitorPanel({
                   aria-label={`Regua de processamento de ${item.title}`}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(3, minmax(68px, 1fr))',
+                    gridTemplateColumns: 'repeat(4, minmax(68px, 1fr))',
                     gap: '12px',
                     alignItems: 'center',
-                    flex: '0 1 300px',
-                    minWidth: '220px',
+                    flex: '0 1 408px',
+                    minWidth: '280px',
                   }}
                 >
                   {timelineStages.map((stage) => {

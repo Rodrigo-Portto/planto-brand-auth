@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { DashboardCenterPanel } from '../components/dashboard/DashboardCenterPanel';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { DashboardShell } from '../components/dashboard/DashboardShell';
+import { FlashcardPanel } from '../components/dashboard/FlashcardPanel';
 import { KnowledgePanel } from '../components/dashboard/KnowledgePanel';
 import { SidebarAgentPanel } from '../components/dashboard/SidebarAgentPanel';
 import { useDashboardData } from '../hooks/useDashboardData';
@@ -25,6 +26,7 @@ export default function DashboardPage() {
   const [viewportWidth, setViewportWidth] = useState(1440);
 
   const uploadSectionRef = useRef<HTMLDivElement | null>(null);
+  const cardsSectionRef = useRef<HTMLDivElement | null>(null);
   const agentSectionRef = useRef<HTMLDivElement | null>(null);
 
   const theme = themeTokens[themeMode];
@@ -111,6 +113,10 @@ export default function DashboardPage() {
     scrollToRef(uploadSectionRef);
   }, [scrollToRef]);
 
+  const focusCards = useCallback(() => {
+    scrollToRef(cardsSectionRef);
+  }, [scrollToRef]);
+
   const focusAgent = useCallback(() => {
     scrollToRef(agentSectionRef);
   }, [scrollToRef]);
@@ -156,6 +162,7 @@ export default function DashboardPage() {
               styles={styles}
               theme={theme}
               onJumpToUpload={focusUpload}
+              onJumpToCards={focusCards}
               onJumpToAgent={focusAgent}
           />
         </div>
@@ -178,6 +185,15 @@ export default function DashboardPage() {
             )}
           </div>
 
+          <div ref={cardsSectionRef}>
+            <FlashcardPanel
+              styles={styles}
+              colors={theme}
+              questions={dashboardData.strategicQuestions}
+              onAnswered={() => void dashboardData.refresh({ silent: true })}
+            />
+          </div>
+
           <div ref={agentSectionRef}>
             {renderCard(
               'Agente',
@@ -194,6 +210,7 @@ export default function DashboardPage() {
                 canGenerateToken={gptToken.canGenerateToken}
                 onCreateToken={gptToken.createToken}
                 onCopyToken={gptToken.copyCurrentToken}
+                onJumpToCards={focusCards}
                 onJumpToUpload={focusUpload}
               />
             )}

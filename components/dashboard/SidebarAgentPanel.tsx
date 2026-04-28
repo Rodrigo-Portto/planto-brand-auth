@@ -19,6 +19,7 @@ interface SidebarAgentPanelProps {
   canGenerateToken: boolean;
   onCreateToken: () => void;
   onCopyToken: () => void;
+  onJumpToCards: () => void;
   onJumpToUpload: () => void;
 }
 
@@ -90,6 +91,7 @@ export function SidebarAgentPanel({
   canGenerateToken,
   onCreateToken,
   onCopyToken,
+  onJumpToCards,
   onJumpToUpload,
 }: SidebarAgentPanelProps) {
   const tokenPreview = createdToken ? `${createdToken.slice(0, 20)}...` : 'Nenhum token ativo ainda.';
@@ -202,7 +204,9 @@ export function SidebarAgentPanel({
 
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {strategicQuestionCount > 0 ? (
-              <span style={styles.countBadge}>{strategicQuestionCount} perguntas ativas</span>
+              <button type="button" style={styles.primaryButton} onClick={onJumpToCards}>
+                Responder {strategicQuestionCount} pergunta{strategicQuestionCount > 1 ? 's' : ''}
+              </button>
             ) : null}
             <button type="button" style={styles.secondaryButton} onClick={onJumpToUpload}>
               Adicionar ao contexto

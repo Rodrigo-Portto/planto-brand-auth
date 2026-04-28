@@ -52,6 +52,11 @@ const EMPTY_NEXT_ACTION: DashboardNextAction = {
 
 const EMPTY_OVERVIEW: DashboardOverview = {
   assessment_score: null,
+  assessment_status: null,
+  assessment_generated_at: null,
+  assessment_is_fallback: true,
+  diagnostics_source: 'heuristic',
+  gaps_source: 'heuristic',
   maturity_dimensions: [],
   knowledge_nodes: [],
   knowledge_edges: [],
