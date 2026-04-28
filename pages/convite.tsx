@@ -5,9 +5,10 @@ import Link from 'next/link';
 import type { GetServerSideProps } from 'next';
 import heroImage from './assets/img-hero-plantto-page-convite.jpg';
 import closingImage from './assets/plantt-image-boy-note.jpg';
+import dashboardBetaImage from './assets/plantto-dashboard-beta-01.png';
 import planttoIconShort from './assets/plantto-icon-short.png';
 
-type StepIconKind = 'user' | 'key' | 'chat' | 'spark';
+type StepIconKind = 'user' | 'file' | 'key' | 'chat' | 'spark';
 
 const DIFFERENTIALS = [
   'Consolida identidade, público, posicionamento e oferta em uma camada de contexto viva.',
@@ -19,30 +20,30 @@ const DIFFERENTIALS = [
 const ACCESS_STEPS: Array<{ icon: StepIconKind; title: string; text: string }> = [
   {
     icon: 'user',
-    title: 'Crie seu acesso',
-    text: 'Entre no app Planttô e cadastre sua conta para ativar seu ambiente de marca.',
+    title: 'Crie sua conta',
+    text: 'Acesse o app Planttô e cadastre-se. É aqui que a sua base de marca começa a ser construída.',
+  },
+  {
+    icon: 'file',
+    title: 'Envie seus materiais',
+    text: 'Mande o que você já tem: apresentações, propostas, bio, posts. O app extrai, organiza e conecta tudo em uma camada de contexto da sua marca.',
   },
   {
     icon: 'key',
     title: 'Copie o token',
-    text: 'Gere seu token dentro da plataforma e deixe a integração pronta para uso.',
+    text: 'O app gera um token único vinculado ao seu contexto de marca. Copie e guarde.',
   },
   {
     icon: 'chat',
-    title: 'Ative no ChatGPT',
-    text: 'Abra o agente Planttô, cole o token e conecte seu contexto estratégico.',
-  },
-  {
-    icon: 'spark',
-    title: 'Comece com contexto',
-    text: 'Use o estrategista já alimentado com memória, direção e linguagem da sua marca.',
+    title: 'Ative o Agente no ChatGPT',
+    text: 'Abra o Agente Planttô no ChatGPT, cole o token e continue construindo com toda a memória e direção da sua marca já ativas.',
   },
 ];
 
 const OUTCOMES = [
-  'Menos improviso em decisões de conteúdo, posicionamento e comunicação.',
-  'Mais continuidade entre uma conversa, um documento e a próxima ação.',
-  'Uma operação de marca mais clara, acumulativa e utilizável no dia a dia.',
+  'A leitura da sua identidade de marca: não como você declarou, mas como ela realmente aparece no que você produz.',
+  'Os padrões que o sistema identificou e as lacunas que ainda existem.',
+  'Os próximos passos concretos. Como uma foto que vai ganhando resolução.',
 ];
 
 export default function ConvitePage() {
@@ -63,12 +64,12 @@ export default function ConvitePage() {
         <title>Planttô | Convite Beta</title>
         <meta
           name="description"
-          content="Convite para testar o Planttô Beta, um estrategista de marca conectado ao ChatGPT com memória, contexto e direção estratégica."
+          content="Planttô é onde a sua marca finalmente encontra palavras."
         />
         <meta property="og:title" content="Planttô | Convite Beta" />
         <meta
           property="og:description"
-          content="Acesse o Planttô Beta e descubra uma nova forma de construir estratégia de marca com contexto vivo."
+          content="Planttô é onde a sua marca finalmente encontra palavras."
         />
         <meta property="og:type" content="website" />
       </Head>
@@ -81,11 +82,13 @@ export default function ConvitePage() {
           <section style={styles.heroCard}>
             <div style={styles.heroCopy}>
               <p style={styles.eyebrow}>Convite Planttô beta</p>
-              <h1 style={styles.title}>Quanto mais você conversa, mais propriedade a marca constrói.</h1>
-              <p style={styles.lead}>
-                O assistente estratégico conectado ao ChatGPT que organizada contexto,
-                sustenta decisões e fortalece o posicionamento da sua marca todos os dias.
-              </p>
+              <h1 style={styles.title}>Você tem uma marca. Ela só ainda não foi organizada.</h1>
+              <div style={styles.heroLeadStack}>
+                <p style={styles.lead}>
+                  O Planttô transforma o que você já produziu em uma leitura clara da sua marca. Sem formulário
+                  interminável. Sem consultoria cara. Sem ter que saber se descrever antes de começar.
+                </p>
+              </div>
 
               <div style={styles.heroActions}>
                 <Link href="https://plantto.vercel.app/" style={styles.primaryButton}>
@@ -96,7 +99,6 @@ export default function ConvitePage() {
                 </a>
               </div>
 
-              <p style={styles.footnote}>Os limites de uso variam de acordo com o seu plano do ChatGPT.</p>
             </div>
 
             <div style={styles.heroMedia}>
@@ -111,8 +113,10 @@ export default function ConvitePage() {
               <div style={styles.floatingNote}>
                 <Image src={planttoIconShort} alt="" aria-hidden="true" style={styles.noteIcon} />
                 <div>
-                  <strong style={styles.noteTitle}>Memória estratégica ativa</strong>
-                  <p style={styles.noteText}>Seu contexto de marca continua vivo entre conversas, documentos e decisões.</p>
+                  <strong style={styles.noteTitle}>Contexto de marca em construção</strong>
+                  <p style={styles.noteText}>
+                    Cada arquivo enviado vira uma camada de clareza. Sua marca vai ganhando forma com o tempo.
+                  </p>
                 </div>
               </div>
             </div>
@@ -121,19 +125,22 @@ export default function ConvitePage() {
           <section style={styles.storyGrid}>
             <article style={styles.storyCard}>
               <p style={styles.sectionLabel}>O que é o Planttô</p>
-              <h2 style={styles.sectionTitle}>Uma camada estratégica entre a sua marca e o ChatGPT.</h2>
+              <h2 style={styles.sectionTitle}>O lugar onde você joga tudo que sabe sobre a sua marca e descobre o que ela realmente é.</h2>
               <div style={styles.paragraphStack}>
                 <p style={styles.body}>
-                  O Planttô foi desenvolvido para conectar conversas,
-                  referências e materiais soltos em uma base de marca operacional.
+                  Não é um formulário. Não é uma consultoria. Não é um gerador de conteúdo.
                 </p>
                 <p style={styles.body}>
-                  Na prática, ele funciona como um estrategista sempre disponível: entende seu negócio, lembra decisões
-                  anteriores, identifica lacunas e ajuda a definir o próximo passo com mais clareza.
+                  O Planttô é um processo de revelação: silencioso, acumulativo e cada vez mais preciso, que acontece
+                  enquanto você vai vivendo o seu trabalho.
                 </p>
                 <p style={styles.body}>
-                  Em vez de começar do zero a cada nova conversa, você opera com memória, direção e consistência.
+                  Suas melhores ideias sobre o seu negócio estão numa apresentação que você não abre faz meses. Num post
+                  que bombou mas que você nunca entendeu como padrão. Numa conversa que revelou seu posicionamento real e
+                  foi esquecida no dia seguinte.
                 </p>
+                <p style={styles.body}>A clareza existe: em cacos. O problema é que cacos não servem de bússola.</p>
+                <p style={styles.bodyStrong}>O Planttô junta os pedaços. E te mostra o que eles formam.</p>
               </div>
             </article>
 
@@ -163,7 +170,7 @@ export default function ConvitePage() {
           <section style={styles.bannerCard}>
             <Image src={planttoIconShort} alt="" aria-hidden="true" style={styles.bannerIcon} />
             <div>
-              <p style={styles.bannerLabel}>Evolua sua estratégia de marca a cada conversa.</p>
+              <p style={styles.bannerLabel}>A base de conhecimento é sua. Por isso a leitura é sua.</p>
               <p style={styles.bannerText}>Basta pedir para o assistente salvar o que realmente importa.</p>
             </div>
           </section>
@@ -189,7 +196,14 @@ export default function ConvitePage() {
           <section style={styles.outcomeSection}>
             <article style={styles.outcomeCard}>
               <p style={styles.sectionLabel}>O resultado</p>
-              <h2 style={styles.sectionTitle}>Uma rotina de marca menos reativa e mais consistente.</h2>
+              <div style={styles.outcomeImageFrame}>
+                <Image
+                  src={dashboardBetaImage}
+                  alt="Prévia do painel beta do Planttô"
+                  style={styles.outcomeImage}
+                />
+              </div>
+              <h2 style={styles.sectionTitle}>Não é um relatório. É um painel vivo que fica mais preciso com o tempo.</h2>
               <div style={styles.outcomeList}>
                 {OUTCOMES.map((item) => (
                   <p key={item} style={styles.outcomeItem}>
@@ -210,12 +224,21 @@ export default function ConvitePage() {
               </div>
               <div style={styles.paragraphStack}>
                 <p style={styles.body}>
-                  Esta fase beta acontece com um grupo limitado para garantir acompanhamento
-                  próximo e uma experiência realmente útil desde o início.
+                  Você sabe fazer bem o que faz. Tem clientes. Tem resultados. Mas quando alguém pergunta “o que você faz
+                  exatamente?”, você hesita.
                 </p>
                 <p style={styles.body}>
-                  Seu feedback ajuda a refinar o produto, Você sai dessa fase com uma
-                  base de marca mais organizada, documentada e pronta para crescer.
+                  Quando vai criar conteúdo, começa do zero toda vez. Quando precisa explicar seu diferencial, usa
+                  palavras genéricas que não soam como você.
+                </p>
+                <p style={styles.bodyStrong}>O Planttô é o espelho que você nunca conseguiu segurar sozinho.</p>
+                <p style={styles.body}>
+                  Esta fase beta acontece com um grupo limitado para garantir acompanhamento próximo e uma experiência
+                  realmente útil desde o início.
+                </p>
+                <p style={styles.body}>
+                  Seu feedback ajuda a refinar o produto. Você sai dessa fase com uma base de marca mais organizada,
+                  documentada e pronta para crescer.
                 </p>
               </div>
               <div style={styles.closingActions}>
@@ -302,12 +325,16 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
     },
     title: {
       margin: 0,
-      maxWidth: '11ch',
+      maxWidth: isCompact ? '12ch' : '13ch',
       fontFamily: '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
       fontSize: isCompact ? '3rem' : '4.8rem',
       lineHeight: isCompact ? 0.98 : 0.92,
       letterSpacing: '-0.05em',
       color: '#102017',
+    },
+    heroLeadStack: {
+      display: 'grid',
+      gap: '12px',
     },
     lead: {
       margin: 0,
@@ -468,7 +495,7 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       lineHeight: 1.02,
       letterSpacing: '-0.04em',
       color: '#102017',
-      maxWidth: '16ch',
+      maxWidth: isCompact ? '18ch' : '22ch',
     },
     paragraphStack: {
       display: 'grid',
@@ -479,6 +506,13 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       fontSize: '0.98rem',
       lineHeight: 1.8,
       color: '#465b51',
+    },
+    bodyStrong: {
+      margin: 0,
+      fontSize: '1rem',
+      lineHeight: 1.75,
+      color: '#102017',
+      fontWeight: 700,
     },
     listStack: {
       display: 'grid',
@@ -549,7 +583,8 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       borderRadius: '10px',
       background: 'rgba(255, 251, 247, 0.82)',
       border: '1px solid rgba(25, 59, 34, 0.08)',
-      minHeight: '220px',
+      minHeight: isCompact ? 'auto' : '260px',
+      alignContent: 'start',
     },
     stepHeader: {
       display: 'flex',
@@ -592,6 +627,15 @@ function createStyles(isCompact: boolean): Record<string, CSSProperties> {
       display: 'grid',
       gap: '16px',
       border: '1px solid var(--planto-light-border-accent)',
+    },
+    outcomeImageFrame: {
+      width: '100%',
+    },
+    outcomeImage: {
+      width: '100%',
+      height: 'auto',
+      objectFit: 'contain',
+      display: 'block',
     },
     outcomeList: {
       display: 'grid',
@@ -644,6 +688,20 @@ function StepIcon({ kind, color }: { kind: StepIconKind; color: string }) {
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
         <circle cx="12" cy="8" r="3.2" stroke={color} strokeWidth="1.8" />
         <path d="M6.5 19c.7-3 3-4.8 5.5-4.8s4.8 1.8 5.5 4.8" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (kind === 'file') {
+    return (
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+        <path
+          d="M7 3.8h6.4L18 8.4V19a1.2 1.2 0 0 1-1.2 1.2H7A1.2 1.2 0 0 1 5.8 19V5A1.2 1.2 0 0 1 7 3.8Z"
+          stroke={color}
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+        <path d="M13.2 4.2v4.4h4.4M9 12.2h6M9 15.2h4.2" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
       </svg>
     );
   }
