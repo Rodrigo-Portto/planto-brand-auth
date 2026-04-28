@@ -2,7 +2,6 @@
 
 > Escrito do zero a partir do pitchdeck e do roteiro de copy Planttô.
 > A lógica narrativa segue a mesma ordem do pitch: Momento → Problema → Promessa → Como funciona → O que você recebe → Para quem é → Diferencial → CTA.
-> Cada seção indica qual elemento do pitch ela traduz.
 
 ---
 
@@ -48,8 +47,13 @@ Os limites de uso variam de acordo com o seu plano do ChatGPT.
 ```
 
 ### Badge flutuante
-- **Título:** `Memória estratégica ativa`
-- **Texto:** `Seu contexto de marca continua vivo entre conversas, documentos e decisões.`
+
+> **Contexto:** O badge aparece sobre a imagem hero e comunica o diferencial central do produto —
+> a ideia de que o Planttô (app) constrói e organiza a base de marca, e o Agente GPT acessa
+> essa base para continuar construindo. O badge precisa comunicar o app, não o agente.
+
+- **Título:** `Contexto de marca em construção`
+- **Texto:** `Cada arquivo enviado vira uma camada de clareza. Sua marca vai ganhando forma com o tempo.`
 
 ---
 
@@ -141,7 +145,13 @@ Basta pedir para o assistente salvar o que realmente importa.
 
 ## Seção 5 — Como acessar (4 passos)
 
-_Pitch de referência: Slide 4 (Como funciona — em 3 tempos)_
+_Pitch de referência: Slide 4 (Como funciona)_
+
+> **Nota de produto:** Os passos seguem a ordem real do fluxo:
+> 1. O usuário entra no **app Planttô** e envia seus materiais de marca.
+> 2. O app processa, organiza e constrói a base de contexto de marca.
+> 3. O usuário copia o token gerado pelo app.
+> 4. Com o token, ele conecta o **Agente GPT** ao contexto já construído e continua de onde parou.
 
 ### Label
 ```
@@ -150,27 +160,28 @@ Como acessar
 
 ### Passo 1
 ```
-Title: Crie seu acesso
-Text:  Entre no app Planttô e cadastre sua conta para ativar seu ambiente de marca.
+Title: Crie sua conta
+Text:  Acesse o app Planttô e cadastre-se. É aqui que a sua base de marca começa a ser construída.
 ```
 
 ### Passo 2
 ```
-Title: Copie o token
-Text:  Gere seu token dentro da plataforma e deixe a integração pronta para uso.
+Title: Envie seus materiais
+Text:  Mande o que você já tem — apresentações, propostas, bio, posts. O app extrai, organiza
+       e conecta tudo em uma camada de contexto da sua marca.
 ```
 
 ### Passo 3
 ```
-Title: Ative no ChatGPT
-Text:  Abra o agente Planttô, cole o token e conecte seu contexto estratégico.
+Title: Copie seu token
+Text:  O app gera um token único vinculado ao seu contexto de marca. Copie e guarde.
 ```
 
 ### Passo 4
 ```
-Title: Comece com contexto
-Text:  O processo acontece para você, não com você. Você não precisa estar
-       presente durante o trabalho pesado.
+Title: Ative o Agente no ChatGPT
+Text:  Abra o Agente Planttô no ChatGPT, cole o token e continue construindo —
+       agora com toda a memória e direção da sua marca já ativas.
 ```
 
 ---
@@ -245,4 +256,6 @@ Entrar no beta
 - O output do Planttô não é conteúdo, não é post, não é legenda. O output é **direção**.
 - Nunca posicionar como gerenciador de marca, consultor ou gerador de conteúdo.
 - O usuário **ainda está descobrindo** quem é sua marca. Não é alguém que já sabe e quer organizar.
-- A marca é a pessoa. Isso torna tudo mais difícil — e o Planttô é o único espelho que organiza sem pedir que você se descreva de forma artificial.
+- **App Planttô** = organização, conexão e clareza de marca (base de contexto).
+- **Agente GPT** = camada de continuação que usa o contexto construído pelo app para manter consistência.
+- O fluxo é sempre: App primeiro → Agente depois. Nunca inverter.
