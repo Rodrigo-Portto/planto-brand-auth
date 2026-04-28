@@ -18,6 +18,8 @@ type AuthMode = 'login' | 'signup';
 
 export default function HomePage() {
   const router = useRouter();
+  const [name, setName] = useState('');
+  const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberAccess, setRememberAccess] = useState(false);
@@ -115,8 +117,11 @@ export default function HomePage() {
   }
 
   async function handleSignup() {
-    if (!email || !password) {
-      showMessage('Informe e-mail e senha para criar a conta.', 'error');
+    const trimmedName = name.trim();
+    const trimmedSurname = surname.trim();
+
+    if (!trimmedName || !trimmedSurname || !email || !password) {
+      showMessage('Informe nome, sobrenome, e-mail e senha para criar a conta.', 'error');
       return;
     }
 
@@ -125,7 +130,10 @@ export default function HomePage() {
 
     try {
       persistRememberedEmail();
-      const data = await signupWithEmailPassword(email, password);
+      const data = await signupWithEmailPassword(email, password, {
+        name: trimmedName,
+        surname: trimmedSurname,
+      });
       showMessage(data.message || 'Conta criada. Faça login para continuar.', 'success');
       setAuthMode('login');
     } catch (error) {
@@ -222,6 +230,32 @@ export default function HomePage() {
           <p style={styles.cardSubtitle}>{modeSubtitle}</p>
 
           <form style={styles.form} onSubmit={handleSubmit}>
+            {!isLoginMode ? (
+              <>
+                <label style={styles.label}>
+                  Nome
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    autoComplete="given-name"
+                    style={styles.input}
+                  />
+                </label>
+
+                <label style={styles.label}>
+                  Sobrenome
+                  <input
+                    type="text"
+                    value={surname}
+                    onChange={(event) => setSurname(event.target.value)}
+                    autoComplete="family-name"
+                    style={styles.input}
+                  />
+                </label>
+              </>
+            ) : null}
+
             <label style={styles.label}>
               E-mail
               <input

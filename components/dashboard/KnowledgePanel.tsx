@@ -6,6 +6,7 @@ import { FilePlusIcon, TrashIcon } from './icons';
 interface KnowledgePanelProps {
   styles: DashboardStyles;
   showTitle?: boolean;
+  variant?: 'sidebar' | 'onboarding';
   attachments: Attachment[];
   selectedFile: File | null;
   uploading: boolean;
@@ -18,6 +19,7 @@ interface KnowledgePanelProps {
 export function KnowledgePanel({
   styles,
   showTitle = true,
+  variant = 'sidebar',
   attachments,
   selectedFile,
   uploading,
@@ -29,6 +31,28 @@ export function KnowledgePanel({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const attachmentLimitReached = attachments.length >= MAX_ATTACHMENTS;
   const selectedFileSize = selectedFile ? `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB` : '';
+  const isOnboarding = variant === 'onboarding';
+  const titleStyle = isOnboarding
+    ? { ...styles.panelTitle, fontSize: 'clamp(1.28rem, 2.4vw, 2rem)', lineHeight: 1.12, textAlign: 'center' as const }
+    : styles.panelTitle;
+  const descriptionStyle = isOnboarding
+    ? {
+        ...styles.smallText,
+        lineHeight: 1.75,
+        fontSize: '0.98rem',
+        textAlign: 'center' as const,
+        maxWidth: '620px',
+        justifySelf: 'center',
+      }
+    : { ...styles.smallText, lineHeight: 1.65 };
+  const badgeStyle = isOnboarding ? { ...styles.countBadge, justifySelf: 'center' } : styles.countBadge;
+  const dropzoneStyle = isOnboarding
+    ? { ...styles.uploadDropzone, minHeight: '220px', padding: '34px', gap: '18px' }
+    : styles.uploadDropzone;
+  const iconStyle = isOnboarding ? { ...styles.uploadIconFrame, width: '74px', height: '74px' } : styles.uploadIconFrame;
+  const primaryButtonStyle = isOnboarding
+    ? { ...(styles.uploadPrimaryButton || styles.primaryButton), minHeight: '48px' }
+    : styles.uploadPrimaryButton || styles.primaryButton;
 
   function handleDrop(event: DragEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -37,12 +61,12 @@ export function KnowledgePanel({
   }
 
   return (
-    <div id="conhecimento-panel" style={{ ...styles.cardBlock, gap: '12px' }}>
-      {showTitle ? <h2 style={styles.panelTitle}>Adicionar ao contexto</h2> : null}
-      <p style={{ ...styles.smallText, lineHeight: 1.65 }}>
+    <div id="conhecimento-panel" style={{ ...styles.cardBlock, gap: isOnboarding ? '16px' : '12px' }}>
+      {showTitle ? <h2 style={titleStyle}>Adicionar ao contexto</h2> : null}
+      <p style={descriptionStyle}>
         Envie qualquer material da sua marca. O Plantto extrai, organiza e promove o que importa para a base.
       </p>
-      <div style={styles.countBadge}>{attachments.length}/{MAX_ATTACHMENTS} arquivos</div>
+      <div style={badgeStyle}>{attachments.length}/{MAX_ATTACHMENTS} arquivos</div>
 
       <input
         ref={inputRef}
@@ -55,13 +79,13 @@ export function KnowledgePanel({
 
       <button
         type="button"
-        style={styles.uploadDropzone}
+        style={dropzoneStyle}
         onClick={() => inputRef.current?.click()}
         onDragOver={(event) => event.preventDefault()}
         onDrop={handleDrop}
         disabled={attachmentLimitReached || uploading}
       >
-        <span style={styles.uploadIconFrame}>
+        <span style={iconStyle}>
           <FilePlusIcon color={styles.uploadBrowseText.color as string} />
         </span>
         <span style={{ ...styles.uploadDropzoneText, fontWeight: 700 }}>
@@ -84,7 +108,7 @@ export function KnowledgePanel({
 
       <button
         disabled={uploading || attachmentLimitReached}
-        style={styles.uploadPrimaryButton || styles.primaryButton}
+        style={primaryButtonStyle}
         onClick={() =>
           onUpload(() => {
             if (inputRef.current) {

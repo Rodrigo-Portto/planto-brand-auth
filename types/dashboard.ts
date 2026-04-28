@@ -11,6 +11,7 @@ export interface Profile {
   name?: string | null;
   surname?: string | null;
   email?: string | null;
+  dashboard_onboarded_at?: string | null;
   phone?: string | null;
   address?: string | null;
   modalidade?: string | null;

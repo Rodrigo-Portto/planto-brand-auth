@@ -351,65 +351,24 @@ export function DashboardCenterPanel({
     onJumpToAgent();
   };
 
-  if (stage === 'welcome') {
+  if (stage === 'welcome' || stage === 'processing') {
+    const isWelcome = stage === 'welcome';
+
     return (
       <section style={styles.singleDashboardWideCard}>
         <div style={{ display: 'grid', gap: '10px' }}>
-          <p style={{ ...styles.smallText, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Seu laboratorio de marca</p>
-          <h2 style={{ ...styles.panelTitle, fontSize: '1.72rem', lineHeight: 1.14 }}>
-            Voce nao precisa saber por onde comecar. So precisa trazer o que ja existe.
-          </h2>
-          <p style={{ ...styles.smallText, fontSize: '0.96rem', lineHeight: 1.75 }}>
-            Apresentacoes, propostas, bios, PDFs, documentos e textos de site ja servem para iniciar o contexto.
+          <p style={{ ...styles.smallText, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            {isWelcome ? 'Contexto inicial' : 'Processando contexto'}
           </p>
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '10px',
-          }}
-        >
-          {[
-            'Apresentacoes e propostas antigas',
-            'Bios, textos e redes sociais',
-            'PDFs, notas e referencias',
-            'Qualquer material util da marca',
-          ].map((item) => (
-            <div
-              key={item}
-              style={{
-                borderRadius: '18px',
-                border: `1px solid ${theme.border}`,
-                background: sectionSurface(theme, true),
-                padding: '14px',
-                lineHeight: 1.55,
-                color: theme.text,
-              }}
-            >
-              {item}
-            </div>
-          ))}
-        </div>
-
-        <button type="button" style={styles.primaryButton} onClick={onJumpToUpload}>
-          {nextAction.cta_label}
-        </button>
-      </section>
-    );
-  }
-
-  if (stage === 'processing') {
-    return (
-      <section style={styles.singleDashboardWideCard}>
-        <div style={{ display: 'grid', gap: '10px' }}>
-          <p style={{ ...styles.smallText, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Processando contexto</p>
           <h2 style={{ ...styles.panelTitle, fontSize: '1.62rem', lineHeight: 1.16 }}>
-            O Plantto ja esta organizando a base para revelar os primeiros sinais da marca.
+            {isWelcome
+              ? 'Adicione materiais para alimentar os proximos paineis do dashboard.'
+              : 'O Plantto ja esta organizando a base para revelar os primeiros sinais da marca.'}
           </h2>
           <p style={{ ...styles.smallText, fontSize: '0.96rem', lineHeight: 1.75 }}>
-            Extracao, vetorizacao e promocao ao conhecimento acontecem aqui. Assim que o contexto amadurece, o painel analitico assume a frente.
+            {isWelcome
+              ? 'O restante do dashboard aparece depois que o primeiro contexto for enviado.'
+              : 'Extracao, vetorizacao e promocao ao conhecimento acontecem aqui. Assim que o contexto amadurece, o painel analitico assume a frente.'}
           </p>
         </div>
 
@@ -424,7 +383,7 @@ export function DashboardCenterPanel({
             {nextAction.cta_label}
           </button>
           <button type="button" style={styles.secondaryButton} onClick={onJumpToUpload}>
-            Adicionar mais contexto
+            {isWelcome ? 'Adicionar contexto' : 'Adicionar mais contexto'}
           </button>
         </div>
       </section>

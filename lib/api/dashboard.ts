@@ -14,10 +14,14 @@ export async function loginWithEmailPassword(email: string, password: string): P
   });
 }
 
-export async function signupWithEmailPassword(email: string, password: string): Promise<LoginPayload> {
+export async function signupWithEmailPassword(
+  email: string,
+  password: string,
+  profile: { name: string; surname: string }
+): Promise<LoginPayload> {
   return requestJson<LoginPayload>('/api/auth', {
     method: 'POST',
-    body: { action: 'signup', email, password },
+    body: { action: 'signup', email, password, ...profile },
   });
 }
 

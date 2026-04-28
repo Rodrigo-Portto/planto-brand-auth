@@ -171,6 +171,24 @@ function isEmailConfirmationError(message: string) {
   return normalized.includes('email not confirmed') || normalized.includes('confirm');
 }
 
+async function upsertSignupProfile(userId: string, payload: { name: string; surname: string; email: string }) {
+  const { response, data } = await supabaseRest('/rest/v1/user_profiles?on_conflict=id', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: {
+      id: userId,
+      name: payload.name,
+      surname: payload.surname,
+      email: payload.email,
+      updated_at: new Date().toISOString(),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(data, 'Conta criada, mas falha ao salvar nome e sobrenome no perfil.'));
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse<AuthResponse | { error: string; requires_confirmation?: boolean }>) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido.' });
@@ -185,6 +203,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     .trim()
     .toLowerCase();
   const password = String(req.body?.password || '');
+  const name = String(req.body?.name || '').trim();
+  const surname = String(req.body?.surname || '').trim();
 
   const supabase = createSupabaseServerClient(req, res);
 
@@ -242,20 +262,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     if (action === 'signup') {
-      if (!email || !password) {
-        return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
+      if (!name || !surname || !email || !password) {
+        return res.status(400).json({ error: 'Nome, sobrenome, e-mail e senha são obrigatórios.' });
       }
 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          data: {
+            name,
+            surname,
+            full_name: `${name} ${surname}`,
+          },
           emailRedirectTo: buildEmailRedirectUrl(req, '/dashboard'),
         },
       });
 
       if (error) {
         return res.status(400).json({ error: normalizeMessage(error, 'Falha ao criar conta.') });
+      }
+
+      if (data.user?.id) {
+        await upsertSignupProfile(data.user.id, {
+          name,
+          surname,
+          email,
+        });
       }
 
       if (data.session || data.user?.email_confirmed_at) {

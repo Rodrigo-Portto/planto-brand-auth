@@ -47,6 +47,22 @@ async function countAttachments(userId: string) {
   return Array.isArray(data) ? data.length : 0;
 }
 
+async function markDashboardOnboarded(userId: string, timestamp: string) {
+  const { response, data } = await supabaseRest('/rest/v1/user_profiles?on_conflict=id', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: {
+      id: userId,
+      dashboard_onboarded_at: timestamp,
+      updated_at: timestamp,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(data, 'Falha ao marcar onboarding do dashboard.'));
+  }
+}
+
 async function fetchAttachment(userId: string, attachmentId: string) {
   const { response, data } = await supabaseRest(
     `/rest/v1/user_attachments?id=eq.${encodeURIComponent(attachmentId)}&user_id=eq.${encodeURIComponent(userId)}&select=*&limit=1`
@@ -187,6 +203,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error(extractErrorMessage(uploadData, 'Falha ao enviar arquivo para o storage.'));
     }
 
+    const now = new Date().toISOString();
     const metadataRow = {
       user_id: userId,
       filename: safeName,
@@ -198,7 +215,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       metadata_json: {
         original_filename: filename,
       },
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     };
 
     const { response, data } = await supabaseRest('/rest/v1/user_attachments', {
@@ -209,6 +226,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     if (!response.ok) {
       throw new Error(extractErrorMessage(data, 'Falha ao registrar metadados do anexo.'));
+    }
+
+    if (totalAttachments === 0) {
+      await markDashboardOnboarded(userId, now);
     }
 
     return res.status(200).json({

@@ -24,10 +24,12 @@ export default function DashboardPage() {
   const [notice, setNotice] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [viewportWidth, setViewportWidth] = useState(1440);
+  const [isUnlockingDashboard, setIsUnlockingDashboard] = useState(false);
 
   const uploadSectionRef = useRef<HTMLDivElement | null>(null);
   const cardsSectionRef = useRef<HTMLDivElement | null>(null);
   const agentSectionRef = useRef<HTMLDivElement | null>(null);
+  const unlockTimerRef = useRef<number | null>(null);
 
   const theme = themeTokens[themeMode];
   const styles = useMemo(() => createDashboardStyles(theme, viewportWidth), [theme, viewportWidth]);
@@ -65,6 +67,14 @@ export default function DashboardPage() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  useEffect(() => {
+    return () => {
+      if (unlockTimerRef.current) {
+        window.clearTimeout(unlockTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleTokenInvalid = useCallback(() => {
     resetSession();
     void router.replace('/');
@@ -80,11 +90,32 @@ export default function DashboardPage() {
     }
   }, [dashboardData.error]);
 
+  const isInitialContextMode =
+    !dashboardData.profile?.dashboard_onboarded_at &&
+    dashboardData.attachments.length === 0 &&
+    dashboardData.dashboardStage === 'welcome';
+
   const knowledgeUploads = useKnowledgeUploads({
     initialAttachments: dashboardData.attachments,
     onSaved: (message) => {
+      const isFirstUpload = isInitialContextMode && !message;
+      if (isFirstUpload) {
+        setIsUnlockingDashboard(true);
+      }
+
       showSavedNotice(message || 'Contexto atualizado');
-      void dashboardData.refresh({ silent: true });
+      void dashboardData.refresh({ silent: true }).finally(() => {
+        if (!isFirstUpload) return;
+
+        if (unlockTimerRef.current) {
+          window.clearTimeout(unlockTimerRef.current);
+        }
+
+        unlockTimerRef.current = window.setTimeout(() => {
+          setIsUnlockingDashboard(false);
+          unlockTimerRef.current = null;
+        }, 900);
+      });
     },
     onError: handleDashboardError,
   });
@@ -133,7 +164,48 @@ export default function DashboardPage() {
     );
   }
 
+  function renderUploadPanel(variant: 'sidebar' | 'onboarding' = 'sidebar', className?: string) {
+    const isOnboarding = variant === 'onboarding';
+
+    return (
+      <section
+        className={className}
+        style={isOnboarding ? { ...styles.singleDashboardWideCard, maxWidth: '760px', width: '100%' } : styles.panelCard}
+      >
+        {!isOnboarding ? (
+          <div style={styles.panelCardHeader}>
+            <h2 style={styles.panelTitle}>Adicionar ao contexto</h2>
+          </div>
+        ) : null}
+        <KnowledgePanel
+          styles={styles}
+          showTitle={isOnboarding}
+          variant={variant}
+          attachments={knowledgeUploads.attachments}
+          selectedFile={knowledgeUploads.selectedFile}
+          uploading={knowledgeUploads.uploading}
+          deletingAttachmentId={knowledgeUploads.deletingAttachmentId}
+          onSelectedFileChange={knowledgeUploads.setSelectedFile}
+          onUpload={knowledgeUploads.uploadKnowledgeFile}
+          onDeleteAttachment={knowledgeUploads.deleteAttachment}
+        />
+      </section>
+    );
+  }
+
+  function renderSkeletonCard(label?: string, tall = false) {
+    return (
+      <section className="planto-skeleton-card" style={{ ...styles.panelCard, minHeight: tall ? '280px' : '148px' }}>
+        <div className="planto-skeleton-line planto-skeleton-line--short" />
+        <div className="planto-skeleton-line" />
+        <div className="planto-skeleton-line" />
+        {label ? <span style={{ ...styles.smallText, marginTop: 'auto' }}>{label}</span> : null}
+      </section>
+    );
+  }
+
   const isLoading = !sessionReady || dashboardData.loading;
+  const showInitialUploadOnly = isInitialContextMode && !isUnlockingDashboard;
 
   return (
     <DashboardShell
@@ -152,7 +224,31 @@ export default function DashboardPage() {
       errorMessage={errorMessage}
       loading={isLoading}
     >
-      <section style={styles.singleDashboardGrid}>
+      {showInitialUploadOnly ? (
+        <section className="planto-initial-context">
+          {renderUploadPanel('onboarding', 'planto-initial-context-card')}
+        </section>
+      ) : isUnlockingDashboard ? (
+        <section className="planto-dashboard-unlocking" style={styles.singleDashboardGrid}>
+          <div className="planto-dashboard-fadein" style={styles.singleDashboardMain}>
+            {renderSkeletonCard('Carregando pipeline de contexto', true)}
+            {renderSkeletonCard('Preparando conhecimento de marca', true)}
+          </div>
+
+          <aside style={styles.singleDashboardSide}>
+            <div ref={uploadSectionRef}>
+              {renderUploadPanel('sidebar', 'planto-upload-card-settling')}
+            </div>
+            <div className="planto-dashboard-fadein">
+              {renderSkeletonCard('Carregando perguntas')}
+            </div>
+            <div className="planto-dashboard-fadein">
+              {renderSkeletonCard('Carregando agente')}
+            </div>
+          </aside>
+        </section>
+      ) : (
+      <section className="planto-dashboard-fadein" style={styles.singleDashboardGrid}>
         <div style={styles.singleDashboardMain}>
           <DashboardCenterPanel
               stage={dashboardData.dashboardStage}
@@ -169,20 +265,7 @@ export default function DashboardPage() {
 
         <aside style={styles.singleDashboardSide}>
           <div ref={uploadSectionRef}>
-            {renderCard(
-              'Adicionar ao contexto',
-              <KnowledgePanel
-                styles={styles}
-                showTitle={false}
-                attachments={knowledgeUploads.attachments}
-                selectedFile={knowledgeUploads.selectedFile}
-                uploading={knowledgeUploads.uploading}
-                deletingAttachmentId={knowledgeUploads.deletingAttachmentId}
-                onSelectedFileChange={knowledgeUploads.setSelectedFile}
-                onUpload={knowledgeUploads.uploadKnowledgeFile}
-                onDeleteAttachment={knowledgeUploads.deleteAttachment}
-              />
-            )}
+            {renderUploadPanel('sidebar')}
           </div>
 
           <div ref={cardsSectionRef}>
@@ -217,6 +300,7 @@ export default function DashboardPage() {
           </div>
         </aside>
       </section>
+      )}
     </DashboardShell>
   );
 }
