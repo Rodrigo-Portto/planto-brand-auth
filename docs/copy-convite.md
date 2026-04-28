@@ -1,28 +1,34 @@
 # Copy — Página `/convite`
 
-> Roteiro de copy por seção, pronto para diagramação. Cada bloco corresponde a uma seção do componente `ConvitePage` em `pages/convite.tsx`.
+> Roteiro de copy por seção, baseado fielmente no **Roteiro de Copy do Pitchdeck Planttô**.
+> Cada bloco corresponde a uma seção do componente `ConvitePage` em `pages/convite.tsx`.
 
 ---
 
 ## 1. Hero — `heroCard`
 
+> **Referência:** Slide 1 (O Momento) + Slide 3 (A Promessa) do pitchdeck
+
 ### Eyebrow
 ```
-Acesso antecipado · Beta fechado
+Convite Planttô beta
 ```
 
 ### Headline (h1)
 ```
-Quanto mais você usa,
-mais a marca sabe
-quem ela é.
+Você tem clareza.
+Ela só ainda não
+foi organizada.
 ```
 
 ### Subtítulo / Lead
 ```
-O Planttô conecta o ChatGPT à memória estratégica da sua marca — consolidando
-contexto, decisões e posicionamento num só lugar. Cada conversa constrói
-algo permanente.
+47 arquivos. 3 apresentações. 12 posts que performaram bem.
+E nenhuma frase que explica o que você realmente faz.
+
+O Planttô transforma o que você já produziu em uma leitura clara da sua marca —
+sem formulário interminável, sem consultoria cara, sem ter que saber se descrever
+before de começar.
 ```
 
 ### CTA Principal
@@ -37,49 +43,54 @@ Ver como funciona
 
 ### Nota de rodapé
 ```
-Os limites de uso variam de acordo com o plano ChatGPT do usuário.
+Os limites de uso variam de acordo com o seu plano do ChatGPT.
 ```
 
 ### Floating Note (badge flutuante)
-- **Título:** `Memória de marca sempre ativa`
-- **Texto:** `Contexto, decisões e direção estratégica presentes em cada conversa.`
+- **Título:** `Memória estratégica ativa`
+- **Texto:** `Seu contexto de marca continua vivo entre conversas, documentos e decisões.`
 
 ---
 
 ## 2. Seção "O que é o Planttô" — `storyCard`
 
+> **Referência:** Slide 2 (O Problema Real) + Slide 4 (Como Funciona) do pitchdeck
+
 ### Label
 ```
-O que é
+O que é o Planttô
 ```
 
 ### Título (h2)
 ```
-Uma camada de contexto
-entre você e o ChatGPT.
+Uma camada estratégica
+entre a sua marca e
+o ChatGPT.
 ```
 
 ### Corpo (3 parágrafos)
 ```
-O Planttô foi criado para resolver um problema específico: cada nova conversa
-no ChatGPT começa do zero — sem memória da sua marca, sem histórico de decisões,
-sem consistência de linguagem.
+Suas melhores ideias sobre o seu negócio estão numa apresentação que você não
+abre faz meses. Num post que bombou mas que você nunca entendeu como padrão.
+Numa conversa que revelou seu posicionamento real e foi esquecida no dia seguinte.
 ```
 
 ```
-Com o Planttô, você alimenta uma base estratégica viva que o assistente usa
-automaticamente. Ele entende seu negócio, reconhece padrões, lembra do que já
-foi decidido e ajuda a definir o próximo passo com contexto real.
+O Planttô lê tudo isso, extrai o que é significativo, conecta os pontos e começa a
+devolver uma leitura da sua marca — não como você declarou, mas como ela realmente
+aparece no que você produz.
 ```
 
 ```
-O resultado é uma operação de marca mais contínua — menos improvisada,
-mais acumulativa, mais parecida com você.
+Em vez de começar do zero a cada nova conversa, você opera com memória,
+direção e consistência. O processo acontece para você, não com você.
 ```
 
 ---
 
 ## 3. Seção "O que muda na prática" — `differentialsCard`
+
+> **Referência:** Slide 5 (O que Você Recebe) do pitchdeck
 
 ### Label
 ```
@@ -88,17 +99,17 @@ O que muda na prática
 
 ### Métrica 1
 - **Valor:** `1 contexto`
-- **Descrição:** `Marca, arquivos e decisões no mesmo fluxo de trabalho`
+- **Descrição:** `marca, documentos e decisões no mesmo fluxo`
 
 ### Métrica 2
 - **Valor:** `0 recomeços`
-- **Descrição:** `Cada conversa parte do que você já construiu antes`
+- **Descrição:** `cada conversa parte do que já foi construído`
 
 ### Lista de diferenciais
 ```
-• Consolida identidade, público, posicionamento e oferta em uma camada de contexto permanente.
+• Consolida identidade, público, posicionamento e oferta em uma camada de contexto viva.
 • Lê anexos, referências e materiais enviados e transforma tudo em direção estratégica utilizável.
-• Mantém memória de marca com decisões, aprendizados e restrições que continuam presentes no uso diário.
+• Acumula memória de marca com decisões, aprendizados e restrições que continuam presentes no uso diário.
 • Cria documentos, linha editorial e planejamento de conteúdo no mesmo ambiente em que a conversa acontece.
 ```
 
@@ -106,52 +117,58 @@ O que muda na prática
 
 ## 4. Banner de destaque — `bannerCard`
 
+> **Referência:** Slide 7 (O Diferencial) do pitchdeck
+
 ### Label principal
 ```
-Sua marca evolui a cada conversa.
+Evolua sua estratégia de marca a cada conversa.
 ```
 
 ### Texto de apoio
 ```
-Peça ao assistente para salvar o que importa — e ele nunca esquece.
+Basta pedir para o assistente salvar o que realmente importa.
 ```
 
 ---
 
 ## 5. Seção "Como acessar" — `accessSection` + `stepsGrid`
 
+> **Referência:** Slide 4 (Como Funciona — em 3 tempos) do pitchdeck
+
 ### Label da seção
 ```
 Como acessar
 ```
 
-### Passo 1 — Crie seu acesso
+### Passo 1
 ```
-Title: Crie sua conta
-Text:  Acesse o app Planttô e registre-se para ativar seu ambiente de marca pessoal.
-```
-
-### Passo 2 — Copie o token
-```
-Title: Gere seu token
-Text:  Dentro da plataforma, crie o token de integração que conecta o Planttô ao ChatGPT.
+Title: Crie seu acesso
+Text:  Entre no app Planttô e cadastre sua conta para ativar seu ambiente de marca.
 ```
 
-### Passo 3 — Ative no ChatGPT
+### Passo 2
 ```
-Title: Conecte ao agente
-Text:  Abra o agente Planttô no ChatGPT, cole o token e seu contexto estratégico estará ativo.
+Title: Copie o token
+Text:  Gere seu token dentro da plataforma e deixe a integração pronta para uso.
 ```
 
-### Passo 4 — Comece com contexto
+### Passo 3
 ```
-Title: Opere com memória
-Text:  A partir de agora, cada conversa parte do que a sua marca já sabe sobre si mesma.
+Title: Ative no ChatGPT
+Text:  Abra o agente Planttô, cole o token e conecte seu contexto estratégico.
+```
+
+### Passo 4
+```
+Title: Comece com contexto
+Text:  Use o estrategista já alimentado com memória, direção e linguagem da sua marca.
 ```
 
 ---
 
 ## 6. Seção "O resultado" — `outcomeCard`
+
+> **Referência:** Slide 6 (Para Quem É) + Slide 5 (O que Você Recebe) do pitchdeck
 
 ### Label
 ```
@@ -167,14 +184,16 @@ mais consistente.
 
 ### Lista de outcomes
 ```
-• Menos improviso em conteúdo, posicionamento e comunicação de marca.
-• Mais continuidade entre conversas, documentos e próximas ações.
-• Uma operação de marca clara, acumulativa e utilizável todos os dias.
+• Menos improviso em decisões de conteúdo, posicionamento e comunicação.
+• Mais continuidade entre uma conversa, um documento e a próxima ação.
+• Uma operação de marca mais clara, acumulativa e utilizável no dia a dia.
 ```
 
 ---
 
 ## 7. Seção de encerramento — `closingCard`
+
+> **Referência:** Slide 8 (CTA) do pitchdeck
 
 ### Label
 ```
@@ -183,13 +202,13 @@ Vamos construir juntos?
 
 ### Corpo (2 parágrafos)
 ```
-Esta fase beta acontece com um grupo selecionado para garantir acompanhamento
-proximal e uma experiência realmente útil desde o primeiro uso.
+Esta fase beta acontece com um grupo limitado para garantir acompanhamento
+próximo e uma experiência realmente útil desde o início.
 ```
 
 ```
-Seu feedback molda o produto diretamente. E você sai dessa fase com uma base
-de marca organizada, documentada e pronta para crescer.
+Seu feedback ajuda a refinar o produto. Você sai dessa fase com uma base de
+marca mais organizada, documentada e pronta para crescer.
 ```
 
 ### CTA Principal
@@ -199,10 +218,16 @@ Entrar no beta
 
 ---
 
+## Tagline de referência (usar em rodapé ou meta OG)
+
+> **“Planttô é onde a sua marca finalmente encontra palavras.”**
+
+---
+
 ## Notas de tom e linguagem
 
-- **Voz:** Direta, confiante, sem jargão de marketing. A marca fala como um estrategista sênior — não como um SaaS genérico.
+- **Voz:** Direta, confiante, sem jargão de marketing. A marca fala como um estrategista sênior.
 - **Pessoa gramatical:** 2ª pessoa do singular (você). Nunca "sua empresa", sempre "sua marca".
 - **Verbos de ação preferidos:** construir, consolidar, operar, alimentar, reconhecer, evoluir.
-- **Evitar:** "revolucionar", "transformar sua vida", "poderosa IA", adjetivos genéricos de tech.
-- **Tagline de referência:** _"Planttô é onde a sua marca finalmente encontra palavras."_
+- **Evitar:** “revolucionário”, “transformar sua vida”, “poderosa IA”, adjetivos genéricos de tech.
+- **Problema central endereçado:** não é falta de estratégia — é fragmentação. A clareza existe em cacos.
