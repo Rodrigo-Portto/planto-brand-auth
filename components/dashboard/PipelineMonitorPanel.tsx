@@ -75,21 +75,16 @@ function formatDate(value?: string | null) {
 export function PipelineMonitorPanel({ monitor, styles, theme }: PipelineMonitorPanelProps) {
   const summary = monitor.summary;
 
+  // Bug 7 fix: replace two separate briefing cards with a progress bar
+  const briefingPct = summary.briefing_total > 0
+    ? Math.round((summary.briefing_answered / summary.briefing_total) * 100)
+    : 0;
+
   const counterCards = [
     {
       label: 'Conhecimento',
       value: `${summary.brand_knowledge_active}/${summary.brand_knowledge_total}`,
       featured: true,
-    },
-    {
-      label: 'Briefing respondidas',
-      value: `${summary.briefing_answered}/${summary.briefing_total}`,
-      featured: false,
-    },
-    {
-      label: 'Briefing pendentes',
-      value: String(summary.briefing_pending),
-      featured: false,
     },
     {
       label: 'Plataforma',
@@ -131,9 +126,42 @@ export function PipelineMonitorPanel({ monitor, styles, theme }: PipelineMonitor
           })}
         </div>
 
+        {/* Bug 7 fix: unified briefing progress bar */}
+        <div
+          style={{
+            border: `1px solid ${theme.borderAccent}`,
+            borderRadius: '16px',
+            background: theme.accentSoft,
+            padding: '10px 12px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <p style={{ ...styles.smallText, color: theme.accentMuted, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
+              Briefing
+            </p>
+            <p style={{ ...styles.listTitle, color: theme.accentMuted, fontSize: '0.82rem', margin: 0 }}>
+              {summary.briefing_answered}/{summary.briefing_total} ({briefingPct}%)
+            </p>
+          </div>
+          <div style={{ height: '5px', borderRadius: '5px', background: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
+            <div
+              style={{
+                height: '100%',
+                width: `${briefingPct}%`,
+                borderRadius: '5px',
+                background: theme.accent,
+                transition: 'width 0.6s ease',
+              }}
+            />
+          </div>
+        </div>
+
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <span style={styles.countBadge}>{summary.completed_items} arquivos processados</span>
-          <span style={styles.countBadge}>{summary.processing_items} em processamento</span>
+          {/* Bug 6 fix: only show processing badge when count > 0 */}
+          {summary.processing_items > 0 && (
+            <span style={styles.countBadge}>{summary.processing_items} em processamento</span>
+          )}
         </div>
       </div>
 
