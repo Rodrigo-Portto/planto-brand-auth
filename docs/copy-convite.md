@@ -1,13 +1,14 @@
 # Copy — Página `/convite`
 
-> Roteiro de copy por seção, baseado fielmente no **Roteiro de Copy do Pitchdeck Planttô**.
-> Cada bloco corresponde a uma seção do componente `ConvitePage` em `pages/convite.tsx`.
+> Escrito do zero a partir do pitchdeck e do roteiro de copy Planttô.
+> A lógica narrativa segue a mesma ordem do pitch: Momento → Problema → Promessa → Como funciona → O que você recebe → Para quem é → Diferencial → CTA.
+> Cada seção indica qual elemento do pitch ela traduz.
 
 ---
 
-## 1. Hero — `heroCard`
+## Seção 1 — Hero
 
-> **Referência:** Slide 1 (O Momento) + Slide 3 (A Promessa) do pitchdeck
+_Pitch de referência: Slide 1 (O Momento) + Slide 3 (A Promessa)_
 
 ### Eyebrow
 ```
@@ -21,76 +22,82 @@ Ela só ainda não
 foi organizada.
 ```
 
-### Subtítulo / Lead
+### Lead
 ```
 47 arquivos. 3 apresentações. 12 posts que performaram bem.
 E nenhuma frase que explica o que você realmente faz.
 
-O Planttô transforma o que você já produziu em uma leitura clara da sua marca —
-sem formulário interminável, sem consultoria cara, sem ter que saber se descrever
-before de começar.
+O Planttô transforma o que você já produziu em uma leitura
+clara da sua marca. Sem formulário interminável. Sem consultoria
+cara. Sem ter que saber se descrever antes de começar.
 ```
 
-### CTA Principal
+### CTA principal
 ```
 Entrar no beta
 ```
 
-### CTA Secundário
+### CTA secundário
 ```
 Ver como funciona
 ```
 
-### Nota de rodapé
+### Rodapé do hero
 ```
 Os limites de uso variam de acordo com o seu plano do ChatGPT.
 ```
 
-### Floating Note (badge flutuante)
+### Badge flutuante
 - **Título:** `Memória estratégica ativa`
 - **Texto:** `Seu contexto de marca continua vivo entre conversas, documentos e decisões.`
 
 ---
 
-## 2. Seção "O que é o Planttô" — `storyCard`
+## Seção 2 — O que é o Planttô
 
-> **Referência:** Slide 2 (O Problema Real) + Slide 4 (Como Funciona) do pitchdeck
+_Pitch de referência: Slide 2 (O Problema Real) + definição central do pitchdeck_
 
 ### Label
 ```
 O que é o Planttô
 ```
 
-### Título (h2)
+### Headline (h2)
 ```
-Uma camada estratégica
-entre a sua marca e
-o ChatGPT.
-```
-
-### Corpo (3 parágrafos)
-```
-Suas melhores ideias sobre o seu negócio estão numa apresentação que você não
-abre faz meses. Num post que bombou mas que você nunca entendeu como padrão.
-Numa conversa que revelou seu posicionamento real e foi esquecida no dia seguinte.
+O lugar onde você joga
+tudo que sabe sobre a sua
+marca e descobre o que
+ela realmente é.
 ```
 
+### Corpo
 ```
-O Planttô lê tudo isso, extrai o que é significativo, conecta os pontos e começa a
-devolver uma leitura da sua marca — não como você declarou, mas como ela realmente
-aparece no que você produz.
+Não é um formulário. Não é uma consultoria.
+Não é um gerador de conteúdo.
+
+O Planttô é um processo de revelação — silencioso, acumulativo
+e cada vez mais preciso — que acontece enquanto você vai vivendo
+o seu trabalho.
 ```
 
 ```
-Em vez de começar do zero a cada nova conversa, você opera com memória,
-direção e consistência. O processo acontece para você, não com você.
+Suas melhores ideias sobre o seu negócio estão numa apresentação
+que você não abre faz meses. Num post que bombou mas que você nunca
+entendeu como padrão. Numa conversa que revelou seu posicionamento
+real e foi esquecida no dia seguinte.
+
+A clareza existe — em cacos. O problema é que cacos não servem de bússola.
+```
+
+```
+O Planttô junta os pedaços. E te mostra o que eles formam.
 ```
 
 ---
 
-## 3. Seção "O que muda na prática" — `differentialsCard`
+## Seção 3 — O que muda na prática (métricas + diferenciais)
 
-> **Referência:** Slide 5 (O que Você Recebe) do pitchdeck
+_Pitch de referência: Slide 5 (O que você recebe) + Slide 7 (O diferencial)_
 
 ### Label
 ```
@@ -115,13 +122,14 @@ O que muda na prática
 
 ---
 
-## 4. Banner de destaque — `bannerCard`
+## Seção 4 — Banner de destaque
 
-> **Referência:** Slide 7 (O Diferencial) do pitchdeck
+_Pitch de referência: Slide 7 (O Diferencial)_
 
-### Label principal
+### Texto principal
 ```
-Evolua sua estratégia de marca a cada conversa.
+A base de conhecimento é sua.
+Por isso a leitura é sua.
 ```
 
 ### Texto de apoio
@@ -131,11 +139,11 @@ Basta pedir para o assistente salvar o que realmente importa.
 
 ---
 
-## 5. Seção "Como acessar" — `accessSection` + `stepsGrid`
+## Seção 5 — Como acessar (4 passos)
 
-> **Referência:** Slide 4 (Como Funciona — em 3 tempos) do pitchdeck
+_Pitch de referência: Slide 4 (Como funciona — em 3 tempos)_
 
-### Label da seção
+### Label
 ```
 Como acessar
 ```
@@ -161,73 +169,80 @@ Text:  Abra o agente Planttô, cole o token e conecte seu contexto estratégico.
 ### Passo 4
 ```
 Title: Comece com contexto
-Text:  Use o estrategista já alimentado com memória, direção e linguagem da sua marca.
+Text:  O processo acontece para você, não com você. Você não precisa estar
+       presente durante o trabalho pesado.
 ```
 
 ---
 
-## 6. Seção "O resultado" — `outcomeCard`
+## Seção 6 — O resultado
 
-> **Referência:** Slide 6 (Para Quem É) + Slide 5 (O que Você Recebe) do pitchdeck
+_Pitch de referência: Slide 5 (O que você recebe) + Slide 6 (Para quem é)_
 
 ### Label
 ```
 O resultado
 ```
 
-### Título (h2)
+### Headline (h2)
 ```
-Uma rotina de marca
-menos reativa e
-mais consistente.
+Não é um relatório.
+É um painel vivo que
+fica mais preciso com o tempo.
 ```
 
-### Lista de outcomes
+### Lista
 ```
-• Menos improviso em decisões de conteúdo, posicionamento e comunicação.
-• Mais continuidade entre uma conversa, um documento e a próxima ação.
-• Uma operação de marca mais clara, acumulativa e utilizável no dia a dia.
+• A leitura da sua identidade de marca — não como você declarou, mas como ela realmente aparece no que você produz.
+• Os padrões que o sistema identificou e as lacunas que ainda existem.
+• Os próximos passos concretos. Como uma foto que vai ganhando resolução.
 ```
 
 ---
 
-## 7. Seção de encerramento — `closingCard`
+## Seção 7 — Para quem é + Encerramento
 
-> **Referência:** Slide 8 (CTA) do pitchdeck
+_Pitch de referência: Slide 6 (Para quem é) + Slide 8 (CTA)_
 
 ### Label
 ```
 Vamos construir juntos?
 ```
 
-### Corpo (2 parágrafos)
+### Corpo
 ```
+Você sabe fazer bem o que faz. Tem clientes. Tem resultados.
+Mas quando alguém pergunta “o que você faz exatamente?”, você hesita.
+Quando vai criar conteúdo, começa do zero toda vez. Quando precisa
+explicar seu diferencial, usa palavras genéricas que não soam como você.
+```
+
+```
+O Planttô é o espelho que você nunca conseguiu segurar sozinho.
+
 Esta fase beta acontece com um grupo limitado para garantir acompanhamento
-próximo e uma experiência realmente útil desde o início.
+próximo e uma experiência realmente útil desde o início. Seu feedback ajuda
+a refinar o produto. Você sai dessa fase com uma base de marca mais
+organizada, documentada e pronta para crescer.
 ```
 
-```
-Seu feedback ajuda a refinar o produto. Você sai dessa fase com uma base de
-marca mais organizada, documentada e pronta para crescer.
-```
-
-### CTA Principal
+### CTA principal
 ```
 Entrar no beta
 ```
 
 ---
 
-## Tagline de referência (usar em rodapé ou meta OG)
+## Tagline (usar em meta OG, rodapé e referência geral de copy)
 
 > **“Planttô é onde a sua marca finalmente encontra palavras.”**
 
 ---
 
-## Notas de tom e linguagem
+## Notas de tom
 
-- **Voz:** Direta, confiante, sem jargão de marketing. A marca fala como um estrategista sênior.
-- **Pessoa gramatical:** 2ª pessoa do singular (você). Nunca "sua empresa", sempre "sua marca".
-- **Verbos de ação preferidos:** construir, consolidar, operar, alimentar, reconhecer, evoluir.
-- **Evitar:** “revolucionário”, “transformar sua vida”, “poderosa IA”, adjetivos genéricos de tech.
-- **Problema central endereçado:** não é falta de estratégia — é fragmentação. A clareza existe em cacos.
+- O problema central nunca é “falta de estratégia” — é sempre **fragmentação**.
+- O output do Planttô não é conteúdo, não é post, não é legenda. O output é **direção**.
+- Nunca posicionar como gerenciador de marca, consultor ou gerador de conteúdo.
+- O usuário **ainda está descobrindo** quem é sua marca. Não é alguém que já sabe e quer organizar.
+- A marca é a pessoa. Isso torna tudo mais difícil — e o Planttô é o único espelho que organiza sem pedir que você se descreva de forma artificial.
