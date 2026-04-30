@@ -662,10 +662,6 @@ export function DashboardCenterPanel({
                       color: theme.textMuted,
                       marginTop: '6px',
                       lineHeight: 1.5,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
                     }}
                   >
                     {pillar.branding_concept}
