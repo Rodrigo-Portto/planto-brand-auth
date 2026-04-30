@@ -6,7 +6,7 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 
 
 const ALLOWED_BRAND_KNOWLEDGE_STATUSES = new Set(["active", "archived"]);
-const ALLOWED_plataforma_marca_STATUSES = new Set(["active", "stale", "archived"]);
+
 const ALLOWED_NOTE_CONTEXT_TYPES = new Set([
   "nota_usuario",
   "insight_agente",
@@ -78,8 +78,6 @@ const EXECUTION_ACTIONS = [
   "ping",
   "get_execution_context",
   "execution_context",
-  "save_plataforma_marca",
-  "save_editorial_system",
 ] as const;
 
 // Mapa canônico das 28 perguntas do briefing
@@ -567,116 +565,9 @@ async function semanticSearch(userId: string, body: any) {
 
 
 
-function parseEditorialSystemRows(input: unknown) {
-  const rows = Array.isArray(input) ? input : [];
-  if (rows.length < 3 || rows.length > 10) {
-    throw new Error("A linha editorial precisa conter entre 3 e 10 linhas.");
-  }
 
-  const expectedSlots = Array.from({ length: rows.length }, (_, index) => String(index + 1).padStart(2, "0"));
-  return expectedSlots.map((slot, index) => {
-    const source = rows[index] && typeof rows[index] === "object" ? (rows[index] as Record<string, unknown>) : {};
-    if (String(source.slot || "").trim() !== slot) {
-      throw new Error(`Slots devem ser sequenciais: esperado '${slot}' em index ${index}.`);
-    }
 
-    const row: Record<string, unknown> = { slot };
-    for (const field of EDITORIAL_LINE_FIELDS) {
-      row[field] = typeof source[field] === "string" ? source[field] : "";
-    }
-    const rawIds = source.source_knowledge_ids;
-    row.source_knowledge_ids = Array.isArray(rawIds)
-      ? rawIds.filter((id: unknown) => typeof id === "string" && id.trim())
-      : null;
-    return row;
-  });
-}
 
-async function saveEditorialSystem(userId: string, body: any) {
-  let rows;
-  try {
-    rows = parseEditorialSystemRows(body?.rows);
-  } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Payload invalido." }, 400);
-  }
-
-  const now = isoNow();
-  const deleted = await supabaseFetch(`/rest/v1/editorial_system?user_id=eq.${encodeURIComponent(userId)}&status=eq.active`, {
-    method: "DELETE",
-    headers: { Prefer: "return=minimal" },
-  });
-  if (!deleted.response.ok) return json({ error: deleted.data?.message || deleted.data?.error || "Falha ao substituir editorial_system." }, 500);
-
-  const payload = rows.map((row, index) => ({
-    user_id: userId,
-    ...row,
-    status: "active",
-    sort_order: index + 1,
-    updated_at: now,
-  }));
-
-  const { response, data } = await supabaseFetch("/rest/v1/editorial_system", {
-    method: "POST",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) return json({ error: data?.message || data?.error || "Falha ao salvar editorial_system." }, 500);
-  return json({ success: true, layer: "execution", mode: "editorial_system_saved", editorial_system: Array.isArray(data) ? data : [] }, 200);
-}
-
-async function saveplataformaMarca(userId: string, body: any) {
-  const plataformaMarcaId = String(body?.plataforma_marca_id || body?.id || "").trim();
-  const modelKey = String(body?.model_key || "").trim();
-  const schemaVersion = String(body?.schema_version || "v1").trim() || "v1";
-  const status = String(body?.status || "active").trim().toLowerCase();
-  const outputJson = normalizeObject(body?.output_json ?? body?.model_json, {});
-  const inputItemIds = Array.isArray(body?.input_item_ids)
-    ? body.input_item_ids.filter((item: unknown) => typeof item === "string" && item.trim())
-    : undefined;
-
-  if (!plataformaMarcaId && !modelKey) return json({ error: "Campo 'plataforma_marca_id' ou 'model_key' e obrigatorio." }, 400);
-  if (!ALLOWED_plataforma_marca_STATUSES.has(status)) return json({ error: "Campo 'status' invalido para plataforma_marca." }, 400);
-  if (!plataformaMarcaId && Object.keys(outputJson).length === 0) return json({ error: "Campo 'output_json' e obrigatorio para criar plataforma_marca." }, 400);
-
-  let existing: any = null;
-  if (plataformaMarcaId) {
-    const byId = await supabaseFetch(`/rest/v1/plataforma_marca?id=eq.${encodeURIComponent(plataformaMarcaId)}&user_id=eq.${encodeURIComponent(userId)}&select=*&limit=1`);
-    if (!byId.response.ok) return json({ error: byId.data?.message || byId.data?.error || "Falha ao localizar plataforma_marca." }, 500);
-    existing = first(byId.data);
-  } else {
-    const byKey = await supabaseFetch(`/rest/v1/plataforma_marca?user_id=eq.${encodeURIComponent(userId)}&model_key=eq.${encodeURIComponent(modelKey)}&status=in.(active,stale)&select=*&order=updated_at.desc&limit=1`);
-    if (!byKey.response.ok) return json({ error: byKey.data?.message || byKey.data?.error || "Falha ao localizar plataforma_marca." }, 500);
-    existing = first(byKey.data);
-  }
-
-  const payload = {
-    user_id: userId,
-    model_key: modelKey || existing?.model_key,
-    schema_version: schemaVersion || existing?.schema_version || "v1",
-    output_json: Object.keys(outputJson).length > 0 ? outputJson : existing?.output_json ?? {},
-    status,
-    updated_at: isoNow(),
-    input_item_ids: inputItemIds ?? existing?.input_item_ids ?? [],
-  };
-
-  if (!payload.model_key) return json({ error: "Campo 'model_key' e obrigatorio." }, 400);
-
-  const result = existing
-    ? await supabaseFetch(`/rest/v1/plataforma_marca?id=eq.${encodeURIComponent(existing.id)}&user_id=eq.${encodeURIComponent(userId)}`, {
-        method: "PATCH",
-        headers: { Prefer: "return=representation" },
-        body: JSON.stringify(payload),
-      })
-    : await supabaseFetch("/rest/v1/plataforma_marca", {
-        method: "POST",
-        headers: { Prefer: "return=representation" },
-        body: JSON.stringify(payload),
-      });
-
-  if (!result.response.ok) return json({ error: result.data?.message || result.data?.error || "Falha ao salvar plataforma_marca." }, 500);
-  return json({ success: true, layer: "execution", mode: "plataforma_marca_saved", plataforma_marca: first(result.data) }, 200);
-}
 
 async function triggerStrategyRefresh(userId: string) {
   const headers: Record<string, string> = {
@@ -956,12 +847,6 @@ Deno.serve(async (req) => {
     if (layer === "execution") {
       if (action === "get_execution_context" || action === "execution_context") {
         return json(await getExecutionContext(userId), 200);
-      }
-      if (action === "save_plataforma_marca") {
-        return await saveplataformaMarca(userId, body);
-      }
-      if (action === "save_editorial_system") {
-        return await saveEditorialSystem(userId, body);
       }
       return unsupported(layer, EXECUTION_ACTIONS);
     }
