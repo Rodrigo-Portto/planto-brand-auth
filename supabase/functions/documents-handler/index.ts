@@ -509,13 +509,22 @@ async function updateProfile(userId: string, body: any) {
 
 async function semanticSearch(userId: string, body: any) {
   const query = String(body?.query || "").trim();
-  if (!query) return json({ error: "Campo 'query' e obrigatorio para semantic_search." }, 400);
+  if (!query) return json({ error: "Campo 'query' é obrigatório para semantic_search." }, 400);
 
-  if (!OPENAI_API_KEY) return json({ error: "OPENAI_API_KEY nao configurada no servidor." }, 500);
+  if (!OPENAI_API_KEY) return json({ error: "OPENAI_API_KEY não configurada no servidor." }, 500);
 
   const matchThreshold = Math.min(Math.max(Number.isFinite(Number(body?.match_threshold)) ? Number(body.match_threshold) : 0.5, 0), 1);
   const matchCount = Math.min(Math.max(Number.isFinite(Number(body?.match_count)) ? Math.floor(Number(body.match_count)) : 8, 1), 20);
+  // Fontes a buscar: permite filtrar por fonte específica ou busca em todas
+  const requestedSources: string[] = Array.isArray(body?.sources) ? body.sources : [
+    "brand_knowledge",
+    "brand_context_responses",
+    "memory_notes",
+    "plataforma_marca",
+    "user_attachments",
+  ];
 
+  // 1. Gerar embedding da query uma única vez
   const embeddingRes = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: {
@@ -535,21 +544,52 @@ async function semanticSearch(userId: string, body: any) {
 
   const embeddingData = await embeddingRes.json();
   const queryEmbedding: number[] = embeddingData?.data?.[0]?.embedding;
-  if (!queryEmbedding) return json({ error: "Embedding nao retornado pela OpenAI." }, 500);
+  if (!queryEmbedding) return json({ error: "Embedding não retornado pela OpenAI." }, 500);
 
-  const { response, data } = await supabaseFetch("/rest/v1/rpc/match_brand_knowledge", {
-    method: "POST",
-    body: JSON.stringify({
-      query_embedding: queryEmbedding,
-      p_user_id: userId,
-      match_threshold: matchThreshold,
-      match_count: matchCount,
-    }),
-  });
+  // 2. Mapa de RPCs por fonte
+  const RPC_MAP: Record<string, string> = {
+    brand_knowledge:          "match_brand_knowledge",
+    brand_context_responses:  "match_brand_context_responses",
+    memory_notes:             "match_memory_notes",
+    plataforma_marca:         "match_plataforma_marca",
+    user_attachments:         "match_user_attachments",
+  };
 
-  if (!response.ok) return json({ error: data?.message || data?.error || "Falha na busca semantica." }, 500);
+  // 3. Executar todas as buscas em paralelo
+  const searchPromises = requestedSources
+    .filter((src) => RPC_MAP[src])
+    .map(async (src) => {
+      const rpc = RPC_MAP[src];
+      const { response, data } = await supabaseFetch(`/rest/v1/rpc/${rpc}`, {
+        method: "POST",
+        body: JSON.stringify({
+          query_embedding: queryEmbedding,
+          p_user_id: userId,
+          match_threshold: matchThreshold,
+          match_count: matchCount,
+        }),
+      });
+      if (!response.ok) return { source: src, results: [], error: data?.message || data?.error };
+      const results = Array.isArray(data) ? data : [];
+      return {
+        source: src,
+        results: results.map((r: any) => ({ ...r, _source: src })),
+        count: results.length,
+      };
+    });
 
-  const results = Array.isArray(data) ? data : [];
+  const searchResults = await Promise.all(searchPromises);
+
+  // 4. Agregar e ordenar por similaridade (ranking global)
+  const allResults = searchResults.flatMap((r) => r.results);
+  allResults.sort((a: any, b: any) => (b.similarity ?? 0) - (a.similarity ?? 0));
+
+  // 5. Montar resposta estruturada por fonte
+  const bySource: Record<string, any[]> = {};
+  for (const r of searchResults) {
+    bySource[r.source] = r.results;
+  }
+
   return json({
     success: true,
     layer: "knowledge",
@@ -558,8 +598,13 @@ async function semanticSearch(userId: string, body: any) {
     query,
     match_threshold: matchThreshold,
     match_count: matchCount,
-    count: results.length,
-    brand_knowledge: results,
+    total_count: allResults.length,
+    // Resultados globais ordenados por relevância (útil para RAG direto)
+    ranked_results: allResults,
+    // Resultados agrupados por fonte (útil para contexto estruturado)
+    by_source: bySource,
+    // Retrocompatibilidade: brand_knowledge ainda presente no topo
+    brand_knowledge: bySource["brand_knowledge"] ?? [],
   }, 200);
 }
 
