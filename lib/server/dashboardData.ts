@@ -146,7 +146,29 @@ const RELATION_LABELS: Record<string, string> = {
   contradiz: 'Contradiz',
 };
 
+// Fallback heurístico alinhado com as 10 dimensões reais do banco (strategic_dimension_map)
 const MATURITY_DIMENSION_CONFIG = [
+  {
+    key: 'oferta_clareza',
+    label: 'Oferta Clareza',
+    knowledgeKeys: ['negocio.oferta_central', 'negocio.problema_que_resolve'],
+    platformKeys: ['proposta_valor'],
+    questionKeys: [] as string[],
+  },
+  {
+    key: 'publico_clareza',
+    label: 'Publico Clareza',
+    knowledgeKeys: ['publico_clareza', 'pessoas.publico_prioritario', 'pessoas.dor_principal'],
+    platformKeys: ['posicionamento'],
+    questionKeys: ['publico_clareza'],
+  },
+  {
+    key: 'diferenciacao',
+    label: 'Diferenciacao',
+    knowledgeKeys: [] as string[],
+    platformKeys: ['proposta_valor', 'posicionamento'],
+    questionKeys: ['diferenciacao'],
+  },
   {
     key: 'promessa',
     label: 'Promessa',
@@ -155,36 +177,29 @@ const MATURITY_DIMENSION_CONFIG = [
     questionKeys: [] as string[],
   },
   {
-    key: 'tom_de_voz',
-    label: 'Tom de Voz',
-    knowledgeKeys: ['tom_de_voz', 'comunicacao.tom_de_voz'],
+    key: 'prova',
+    label: 'Prova',
+    knowledgeKeys: ['prova', 'negocio.prova'],
     platformKeys: [] as string[],
-    questionKeys: ['tom_de_voz'],
+    questionKeys: ['prova'],
   },
   {
-    key: 'oferta',
-    label: 'Oferta',
-    knowledgeKeys: ['negocio.oferta_central', 'negocio.problema_que_resolve'],
-    platformKeys: ['proposta_valor'],
-    questionKeys: [] as string[],
+    key: 'autoridade',
+    label: 'Autoridade',
+    knowledgeKeys: ['prova', 'negocio.prova'],
+    platformKeys: [] as string[],
+    questionKeys: ['autoridade'],
   },
   {
-    key: 'publico',
-    label: 'Publico',
-    knowledgeKeys: ['publico_clareza', 'pessoas.publico_prioritario', 'pessoas.dor_principal'],
-    platformKeys: ['posicionamento'],
-    questionKeys: ['publico_clareza'],
-  },
-  {
-    key: 'narrativa',
-    label: 'Narrativa',
+    key: 'consistencia_narrativa',
+    label: 'Consistencia Narrativa',
     knowledgeKeys: ['comunicacao.editorial'],
     platformKeys: ['posicionamento'],
     questionKeys: ['editorial'],
   },
   {
-    key: 'editorial',
-    label: 'Editorial',
+    key: 'maturidade_editorial',
+    label: 'Maturidade Editorial',
     knowledgeKeys: ['maturidade_editorial', 'comunicacao.editorial'],
     platformKeys: [] as string[],
     questionKeys: ['maturidade_editorial', 'editorial'],
@@ -197,25 +212,11 @@ const MATURITY_DIMENSION_CONFIG = [
     questionKeys: ['objecoes'],
   },
   {
-    key: 'diferenciacao',
-    label: 'Diferenciacao',
-    knowledgeKeys: [] as string[],
-    platformKeys: ['proposta_valor', 'posicionamento'],
-    questionKeys: ['diferenciacao'],
-  },
-  {
-    key: 'autoridade',
-    label: 'Autoridade',
-    knowledgeKeys: ['prova', 'negocio.prova'],
+    key: 'tom_de_voz',
+    label: 'Tom de Voz',
+    knowledgeKeys: ['tom_de_voz', 'comunicacao.tom_de_voz'],
     platformKeys: [] as string[],
-    questionKeys: ['autoridade'],
-  },
-  {
-    key: 'prova',
-    label: 'Prova',
-    knowledgeKeys: ['prova', 'negocio.prova'],
-    platformKeys: [] as string[],
-    questionKeys: ['prova'],
+    questionKeys: ['tom_de_voz'],
   },
 ];
 
@@ -255,7 +256,7 @@ function findMatchingRisk(label: string, risks: string[]) {
   if (label === 'Publico') keywords.push('publico');
   if (label === 'Tom de Voz') keywords.push('tom');
   if (label === 'Oferta') keywords.push('oferta', 'valor');
-  if (label === 'Narrativa') keywords.push('narrativa');
+  if (label === 'Consistencia Narrativa') keywords.push('consistencia_narrativa');
 
   return risks.find((risk) => keywords.some((keyword) => risk.toLowerCase().includes(keyword))) || '';
 }
