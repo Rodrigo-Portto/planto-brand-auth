@@ -1,0 +1,412 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Plantto Brand OS Action API",
+    "version": "11.0.0",
+    "description": "Action publica do GPT para operar o Brand OS do Plantto em tres camadas: conhecimento, estrategia e execucao. Use Authorization: envie gpt_token no body. Depois de validado, reutilize o mesmo gpt_token na sessao."
+  },
+  "servers": [
+    {
+      "url": "https://oeupmzkffkzzpkldbynz.supabase.co/functions/v1"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "x-brand-os": {
+    "public_action_contract": {
+      "safe_for_gpt": [
+        "documents-handler/knowledge",
+        "documents-handler/strategy",
+        "documents-handler/execution"
+      ],
+      "session_authorization": "Depois que o GPT validar um gpt_token ativo, deve reutilizar esse token durante a mesma conversa e executar operacoes permitidas sem solicitar nova autorizacao/acesso ao usuario.",
+      "internal_backend_functions": [
+        "extract-content",
+        "process-embeddings",
+        "briefing-from-attachments",
+        "process-brand-briefing",
+        "promote-knowledge",
+        "generate-plataforma-marca",
+        "link-knowledge",
+        "evaluate-strategy",
+        "strategy-phase1-diagnostics"
+      ],
+      "internal_tables": [
+        "brand_context_responses",
+        "gpt_access_tokens",
+        "knowledge_links",
+        "embedding_queue"
+      ],
+      "why_internal": "Essas funcoes e tabelas internas usam service_role, processamento em lote ou user_id direto. O GPT nao deve chamalas fora das actions publicas segmentadas por camada."
+    },
+    "layers": {
+      "knowledge": {
+        "reads": [
+          "brand_knowledge",
+          "user_profiles",
+          "user_attachments",
+          "memory_notes",
+          "brand_context_responses",
+          "plataforma_marca"
+        ],
+        "writes": [
+          "user_profiles",
+          "memory_notes"
+        ]
+      },
+      "strategy": {
+        "reads": [
+          "strategic_assessments",
+          "strategic_conflicts",
+          "strategic_diagnostics",
+          "strategic_dimension_map",
+          "strategic_evidence_links",
+          "strategic_next_questions"
+        ],
+        "writes": [
+          "answer_strategic_question"
+        ]
+      },
+      "execution": {
+        "reads": [
+          "plataforma_marca",
+          "editorial_system"
+        ],
+        "writes": []
+      }
+    }
+  },
+  "paths": {
+    "/documents-handler/knowledge": {
+      "post": {
+        "operationId": "documentsHandlerKnowledge",
+        "summary": "Le e atualiza apenas a camada de conhecimento",
+        "description": "Valida gpt_token, resolve o usuario e opera somente sobre conhecimento: brand_knowledge, user_profiles, user_attachments e memory_notes. Inclui busca semantica multi-fonte.",
+        "x-openai-isConsequential": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resposta de sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LayerResponse"
+                }
+              }
+            }
+          },
+          "400": { "description": "Body invalido ou action nao suportada nessa camada." },
+          "401": { "description": "Token GPT ausente, invalido, revogado ou expirado." },
+          "500": { "description": "Erro interno ao consultar ou gravar no Supabase." }
+        }
+      }
+    },
+    "/documents-handler/strategy": {
+      "post": {
+        "operationId": "documentsHandlerStrategy",
+        "summary": "Le e atualiza apenas a camada de estrategia",
+        "description": "Valida gpt_token, resolve o usuario e opera somente sobre diagnosticos estrategicos e answer_strategic_question.",
+        "x-openai-isConsequential": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StrategyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resposta de sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LayerResponse"
+                }
+              }
+            }
+          },
+          "400": { "description": "Body invalido ou action nao suportada nessa camada." },
+          "401": { "description": "Token GPT ausente, invalido, revogado ou expirado." },
+          "500": { "description": "Erro interno ao consultar ou gravar no Supabase." }
+        }
+      }
+    },
+    "/documents-handler/execution": {
+      "post": {
+        "operationId": "documentsHandlerExecution",
+        "summary": "Le apenas a camada de execucao",
+        "description": "Valida gpt_token, resolve o usuario e le plataforma_marca e editorial_system. Nao permite escrita.",
+        "x-openai-isConsequential": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resposta de sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LayerResponse"
+                }
+              }
+            }
+          },
+          "400": { "description": "Body invalido ou action nao suportada nessa camada." },
+          "401": { "description": "Token GPT ausente, invalido, revogado ou expirado." },
+          "500": { "description": "Erro interno ao consultar ou gravar no Supabase." }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Use Authorization: O usuario final e identificado no body por gpt_token ou user_token."
+      }
+    },
+    "schemas": {
+      "KnowledgeAction": {
+        "type": "string",
+        "enum": [
+          "health",
+          "ping",
+          "get_knowledge_context",
+          "knowledge_context",
+          "get_brand_knowledge",
+          "list_brand_knowledge",
+          "read_brand_knowledge",
+          "list_attachments",
+          "read_attachments",
+          "attachments",
+          "save_memory_note",
+          "memory_note",
+          "note",
+          "save_entry",
+          "update_memory_note",
+          "update_profile",
+          "semantic_search"
+        ]
+      },
+      "StrategyAction": {
+        "type": "string",
+        "enum": [
+          "health",
+          "ping",
+          "get_strategy_context",
+          "strategy_context",
+          "answer_strategic_question"
+        ]
+      },
+      "ExecutionAction": {
+        "type": "string",
+        "enum": [
+          "health",
+          "ping",
+          "get_execution_context",
+          "execution_context"
+        ]
+      },
+      "KnowledgeRequest": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "gpt_token": {
+            "type": "string",
+            "description": "Token GPT do usuario no formato planto_... Informe gpt_token ou user_token."
+          },
+          "user_token": {
+            "type": "string",
+            "description": "Alias legado de gpt_token."
+          },
+          "action": {
+            "$ref": "#/components/schemas/KnowledgeAction"
+          },
+          "include_signed_urls": {
+            "type": "boolean",
+            "default": true
+          },
+          "signed_url_expires_in": {
+            "type": "integer",
+            "minimum": 60,
+            "maximum": 86400,
+            "default": 3600
+          },
+          "item_group": { "type": "string" },
+          "item_key": { "type": "string" },
+          "status": { "type": "string" },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "note_id": { "type": "string", "format": "uuid" },
+          "note_title": { "type": "string" },
+          "note_content": { "type": "string" },
+          "tag": { "type": "string" },
+          "note_tag": { "type": "string" },
+          "source": { "type": "string" },
+          "context_type": {
+            "type": "string",
+            "enum": [
+              "nota_usuario",
+              "insight_agente",
+              "decisao_estrategica",
+              "observacao_mercado",
+              "feedback_cliente"
+            ]
+          },
+          "query": {
+            "type": "string",
+            "description": "Texto livre para busca semantica multi-fonte. Obrigatorio quando action = semantic_search. O servidor vetoriza o texto usando text-embedding-3-small e busca por similaridade coseno."
+          },
+          "match_threshold": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.5,
+            "description": "Limiar minimo de similaridade coseno (0 a 1). Padrao 0.5. Use valores menores para resultados mais amplos."
+          },
+          "match_count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20,
+            "default": 8,
+            "description": "Numero maximo de itens retornados por fonte na busca semantica. Padrao 8."
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "brand_knowledge",
+                "brand_context_responses",
+                "memory_notes",
+                "plataforma_marca",
+                "user_attachments"
+              ]
+            },
+            "description": "Opcional. Array de fontes para restringir a busca semantica. Se omitido, busca em todas as 5 fontes vetorizadas em paralelo."
+          },
+          "profile": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "surname": { "type": "string" },
+              "email": { "type": "string" },
+              "phone": { "type": "string" },
+              "address": { "type": "string" },
+              "website": { "type": "string" },
+              "instagram": { "type": "string" },
+              "market_niche": { "type": "string" },
+              "education": { "type": "string" },
+              "specialties": { "type": "string" },
+              "avatar_url": { "type": "string" },
+              "modalidade": { "type": "string" },
+              "business_stage": {
+                "type": "string",
+                "enum": ["inicio", "validacao", "crescimento", "reposicionamento", "escala"]
+              },
+              "main_services": { "type": "string" },
+              "ideal_client": { "type": "string" },
+              "client_maturity": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "priority_channels": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "weekly_content_frequency": { "type": "integer" },
+              "main_marketing_difficulty": { "type": "string" }
+            }
+          }
+        }
+      },
+      "StrategyRequest": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "gpt_token": {
+            "type": "string",
+            "description": "Token GPT do usuario no formato planto_... Informe gpt_token ou user_token."
+          },
+          "user_token": {
+            "type": "string",
+            "description": "Alias legado de gpt_token."
+          },
+          "action": { "$ref": "#/components/schemas/StrategyAction" },
+          "question_id": { "type": "string", "format": "uuid" },
+          "answer_text": { "type": "string" },
+          "answer_json": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "ExecutionRequest": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "gpt_token": {
+            "type": "string",
+            "description": "Token GPT do usuario no formato planto_... Informe gpt_token ou user_token."
+          },
+          "user_token": {
+            "type": "string",
+            "description": "Alias legado de gpt_token."
+          },
+          "action": { "$ref": "#/components/schemas/ExecutionAction" }
+        }
+      },
+      "LayerResponse": {
+        "type": "object",
+        "description": "Resposta dinamica da camada chamada.",
+        "properties": {
+          "success": { "type": "boolean" },
+          "ok": { "type": "boolean" },
+          "error": { "type": "string" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "count": { "type": "integer" },
+          "mode": { "type": "string" },
+          "layer": { "type": "string" },
+          "document_id": { "type": "string", "format": "uuid" },
+          "assessment_id": { "type": "string", "format": "uuid" },
+          "ranked_results": {
+            "type": "array",
+            "description": "Resultados da busca semantica ordenados globalmente por similaridade.",
+            "items": { "type": "object", "additionalProperties": true }
+          },
+          "by_source": {
+            "type": "object",
+            "description": "Resultados da busca semantica agrupados por tabela fonte.",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  }
+}
