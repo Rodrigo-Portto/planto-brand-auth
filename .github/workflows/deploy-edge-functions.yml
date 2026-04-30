@@ -1,0 +1,58 @@
+name: Deploy Edge Functions to Supabase
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'supabase/functions/**'
+
+jobs:
+  deploy:
+    name: Deploy changed edge functions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Detect changed functions
+        id: changed
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD -- 'supabase/functions/' \
+            | grep '^supabase/functions/' \
+            | awk -F'/' '{print $3}' \
+            | sort -u \
+            | grep -v '^$')
+          echo "Functions changed:"
+          echo "$CHANGED"
+          JSON=$(echo "$CHANGED" | jq -R -s 'split("\n") | map(select(length > 0))')
+          echo "matrix=$JSON" >> $GITHUB_OUTPUT
+
+      - name: Deploy each changed function
+        if: steps.changed.outputs.matrix != '[]'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          FUNCTIONS='${{ steps.changed.outputs.matrix }}'
+          echo "$FUNCTIONS" | jq -r '.[]' | while read fn; do
+            echo "Deploying: $fn"
+            supabase functions deploy "$fn" \
+              --project-ref "$SUPABASE_PROJECT_ID" \
+              --no-verify-jwt 2>/dev/null || \
+            supabase functions deploy "$fn" \
+              --project-ref "$SUPABASE_PROJECT_ID"
+            echo "✓ $fn deployed"
+          done
+
+      - name: No functions changed
+        if: steps.changed.outputs.matrix == '[]'
+        run: echo "No edge functions changed in this push."
