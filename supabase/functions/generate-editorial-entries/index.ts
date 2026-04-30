@@ -1,12 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
+// Corrigido: campos alinhados com as colunas reais da tabela editorial_system
 interface EditorialEntry {
-  assessment_id: string;
-  content: string;
-  topic: string;
-  suggested_platforms: string[];
-  tone: string;
-  content_type: string;
+  title: string;
+  core_message: string;
+  format: string;
+  audience_moment: string;
+  cta_type: string;
 }
 
 interface BrandContext {
@@ -24,18 +24,18 @@ interface BrandContext {
     ideal_client: string;
     priority_channels: string[];
   };
+  // Corrigido: campo real é reasoning_json, não assessment_json
   recent_assessments: Array<{
     id: string;
-    assessment_json: Record<string, unknown>;
+    reasoning_json: Record<string, unknown>;
   }>;
 }
 
 async function generateEditorialContent(
   brandContext: BrandContext,
-  assessmentId: string,
   openaiApiKey: string
 ): Promise<EditorialEntry[]> {
-  const prompt = buildPrompt(brandContext, assessmentId);
+  const prompt = buildPrompt(brandContext);
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -49,7 +49,7 @@ async function generateEditorialContent(
         {
           role: "system",
           content: `Você é um especialista em estratégia de conteúdo e branding.
-Seu objetivo é gerar sugestões de conteúdo editorial baseado na análise estratégica da marca.
+Seu objetivo é gerar linhas editoriais baseadas na análise estratégica da marca.
 Cada entrada deve ser uma linha editorial clara, acionável e alinhada com os objetivos estratégicos.`,
         },
         {
@@ -74,12 +74,10 @@ Cada entrada deve ser uma linha editorial clara, acionável e alinhada com os ob
     throw new Error("Empty response from OpenAI");
   }
 
-  // Parse a resposta JSON da OpenAI
-  const entries = parseEditorialEntries(content, assessmentId);
-  return entries;
+  return parseEditorialEntries(content);
 }
 
-function buildPrompt(brandContext: BrandContext, assessmentId: string): string {
+function buildPrompt(brandContext: BrandContext): string {
   const { brand_knowledge, user_profile, recent_assessments } = brandContext;
 
   const knowledgeContext = brand_knowledge
@@ -95,12 +93,13 @@ Cliente Ideal: ${user_profile.ideal_client}
 Canais Prioritários: ${user_profile.priority_channels?.join(", ") || "Não definido"}
 `;
 
-  const assessmentSummary = recent_assessments[0]?.assessment_json
-    ? JSON.stringify(recent_assessments[0].assessment_json, null, 2)
+  // Corrigido: campo real é reasoning_json, não assessment_json
+  const assessmentSummary = recent_assessments[0]?.reasoning_json
+    ? JSON.stringify(recent_assessments[0].reasoning_json, null, 2)
     : "Sem dados anteriores";
 
   return `
-Com base na análise estratégica da marca, gere 7-10 LINHAS EDITORIAIS (tópicos/ideias de conteúdo) para o calendário futuro.
+Com base na análise estratégica da marca, gere 7-10 LINHAS EDITORIAIS para o calendário de conteúdo.
 
 CONTEXTO DA MARCA:
 ${profileContext}
@@ -112,34 +111,34 @@ ANÁLISE ESTRATÉGICA MAIS RECENTE:
 ${assessmentSummary}
 
 INSTRUÇÕES:
-1. Retorne um JSON array com objetos tendo: topic, content (breve descrição), suggested_platforms (array de canais), tone (tom de voz), content_type (blog/video/social/infografic/etc)
-2. Cada entrada deve ser acionável - pronta pra criar um calendário
+1. Retorne um JSON array com objetos tendo os campos:
+   - title: título da linha editorial
+   - core_message: mensagem central ou breve descrição do conteúdo
+   - format: formato do conteúdo (blog/video/social/infografico/etc)
+   - audience_moment: momento da jornada do público (ex: descoberta, consideração, decisão)
+   - cta_type: tipo de chamada para ação (ex: engajamento, captura, conversao)
+2. Cada entrada deve ser acionável — pronta para criar um calendário
 3. Respeite os canais prioritários da marca
-4. Alinha-se com a estratégia identificada
-5. Varie tipos de conteúdo
+4. Alinhe-se com a estratégia identificada
+5. Varie os formatos de conteúdo
 
 Retorne APENAS o JSON array, sem markdown ou explicações adicionais.
 Exemplo de formato:
 [
   {
-    "topic": "Como escolher ferramentas de produtividade",
-    "content": "Guia prático sobre seleção de ferramentas...",
-    "suggested_platforms": ["blog", "linkedin"],
-    "tone": "Educativo e técnico",
-    "content_type": "blog"
+    "title": "Como escolher ferramentas de produtividade",
+    "core_message": "Guia prático sobre seleção de ferramentas para profissionais...",
+    "format": "blog",
+    "audience_moment": "consideração",
+    "cta_type": "engajamento"
   }
 ]`;
 }
 
-function parseEditorialEntries(
-  response: string,
-  assessmentId: string
-): EditorialEntry[] {
+function parseEditorialEntries(response: string): EditorialEntry[] {
   try {
-    // Tenta fazer parse do JSON diretamente
     const parsed = JSON.parse(response);
 
-    // Valida e formata
     const entries = Array.isArray(parsed)
       ? parsed
       : Array.isArray(parsed.entries)
@@ -148,138 +147,80 @@ function parseEditorialEntries(
 
     return entries
       .map((entry: Record<string, unknown>) => ({
-        assessment_id: assessmentId,
-        topic: String(entry.topic || ""),
-        content: String(entry.content || ""),
-        suggested_platforms: Array.isArray(entry.suggested_platforms)
-          ? entry.suggested_platforms.map(String)
-          : [],
-        tone: String(entry.tone || "Profissional"),
-        content_type: String(entry.content_type || "social"),
+        title: String(entry.title || ""),
+        core_message: String(entry.core_message || ""),
+        format: String(entry.format || "social"),
+        audience_moment: String(entry.audience_moment || ""),
+        cta_type: String(entry.cta_type || "engajamento"),
       }))
-      .filter((e) => e.topic && e.content);
+      .filter((e) => e.title && e.core_message);
   } catch (error) {
     console.error("Failed to parse OpenAI response:", response);
     throw new Error(`Invalid editorial entries format: ${error}`);
   }
 }
 
-async function processQueue(
+async function processForAssessment(
   supabase: ReturnType<typeof createClient>,
+  assessmentId: string,
   openaiApiKey: string
 ) {
-  // Busca jobs pendentes
-  const { data: queueItems, error: queueError } = await supabase
-    .from("editorial_generation_queue")
-    .select("id, assessment_id")
-    .eq("status", "pending")
-    .limit(5);
+  // Busca assessment e user_id
+  const { data: assessment, error: assessmentError } = await supabase
+    .from("strategic_assessments")
+    .select("id, user_id")
+    .eq("id", assessmentId)
+    .single();
 
-  if (queueError) {
-    throw new Error(`Failed to fetch queue: ${queueError.message}`);
+  if (assessmentError || !assessment) {
+    throw new Error(
+      `Assessment not found: ${assessmentError?.message || "Unknown error"}`
+    );
   }
 
-  if (!queueItems || queueItems.length === 0) {
-    console.log("No pending editorial generation tasks");
-    return { processed: 0, success: 0, failed: 0 };
+  // Busca contexto da marca via função RPC existente no banco
+  const { data: brandContext, error: contextError } = await supabase.rpc(
+    "get_strategic_context",
+    { p_user_id: assessment.user_id }
+  );
+
+  if (contextError || !brandContext) {
+    throw new Error(
+      `Failed to get brand context: ${contextError?.message || "Unknown error"}`
+    );
   }
 
-  let success = 0;
-  let failed = 0;
+  // Gera conteúdo editorial via OpenAI
+  const editorialEntries = await generateEditorialContent(
+    brandContext as BrandContext,
+    openaiApiKey
+  );
 
-  for (const queueItem of queueItems) {
-    try {
-      // Marca como processando
-      await supabase
-        .from("editorial_generation_queue")
-        .update({ status: "processing" })
-        .eq("id", queueItem.id);
-
-      // Busca assessment
-      const { data: assessment, error: assessmentError } = await supabase
-        .from("strategic_assessments")
-        .select("id, user_id")
-        .eq("id", queueItem.assessment_id)
-        .single();
-
-      if (assessmentError || !assessment) {
-        throw new Error(
-          `Assessment not found: ${assessmentError?.message || "Unknown error"}`
-        );
-      }
-
-      // Busca contexto da marca via função PostgreSQL
-      const { data: brandContext, error: contextError } = await supabase.rpc(
-        "get_brand_context_for_editorial",
-        { user_id_param: assessment.user_id }
+  // Insere em editorial_system com os campos corretos da tabela
+  if (editorialEntries.length > 0) {
+    const { error: insertError } = await supabase
+      .from("editorial_system")
+      .insert(
+        editorialEntries.map((entry) => ({
+          // Corrigido: assessment_id não existe em editorial_system — removido
+          user_id: assessment.user_id,
+          title: entry.title,
+          core_message: entry.core_message,
+          format: entry.format,
+          audience_moment: entry.audience_moment,
+          cta_type: entry.cta_type,
+          status: "active",
+        }))
       );
 
-      if (contextError || !brandContext) {
-        throw new Error(
-          `Failed to get brand context: ${contextError?.message || "Unknown error"}`
-        );
-      }
-
-      // Gera conteúdo editorial via OpenAI
-      const editorialEntries = await generateEditorialContent(
-        brandContext,
-        queueItem.assessment_id,
-        openaiApiKey
+    if (insertError) {
+      throw new Error(
+        `Failed to insert editorial entries: ${insertError.message}`
       );
-
-      // Insere em editorial_system
-      if (editorialEntries.length > 0) {
-        const { error: insertError } = await supabase
-          .from("editorial_system")
-          .insert(
-            editorialEntries.map((entry) => ({
-              assessment_id: entry.assessment_id,
-              topic: entry.topic,
-              content: entry.content,
-              suggested_platforms: entry.suggested_platforms,
-              tone: entry.tone,
-              content_type: entry.content_type,
-              user_id: assessment.user_id,
-              status: "active",
-            }))
-          );
-
-        if (insertError) {
-          throw new Error(
-            `Failed to insert editorial entries: ${insertError.message}`
-          );
-        }
-      }
-
-      // Marca como completo
-      await supabase.rpc("mark_editorial_generated", {
-        assessment_id: queueItem.assessment_id,
-        success: true,
-      });
-
-      success++;
-      console.log(`✅ Generated ${editorialEntries.length} entries for assessment ${queueItem.assessment_id}`);
-    } catch (error) {
-      failed++;
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error(
-        `❌ Failed to generate editorial for ${queueItem.assessment_id}: ${errorMsg}`
-      );
-
-      // Marca como falha
-      await supabase.rpc("mark_editorial_generated", {
-        assessment_id: queueItem.assessment_id,
-        success: false,
-        error_msg: errorMsg,
-      });
     }
   }
 
-  return {
-    processed: queueItems.length,
-    success,
-    failed,
-  };
+  return editorialEntries.length;
 }
 
 Deno.serve(async (req) => {
@@ -309,17 +250,27 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Cria cliente Supabase
+    // Corrigido: a tabela editorial_generation_queue não existe no banco.
+    // O assessment_id é recebido diretamente no body da requisição.
+    const body = await req.json().catch(() => ({}));
+    const assessmentId = body?.assessment_id as string | undefined;
+
+    if (!assessmentId) {
+      return new Response(
+        JSON.stringify({ error: "assessment_id é obrigatório no body da requisição." }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Processa fila
-    const result = await processQueue(supabase, openaiApiKey);
+    const generatedCount = await processForAssessment(supabase, assessmentId, openaiApiKey);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Processados ${result.processed} jobs: ${result.success} sucesso, ${result.failed} falhas`,
-        result,
+        message: `Geradas ${generatedCount} linhas editoriais para o assessment ${assessmentId}`,
+        generated: generatedCount,
       }),
       {
         status: 200,

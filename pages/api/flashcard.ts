@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getAuthenticatedUser } from '../../lib/supabase/api';
+import { getAuthenticatedUser, supabaseRest } from '../../lib/supabase/api';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import type { StrategicQuestion } from '../../types/dashboard';
 
@@ -79,17 +79,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (insertError) return res.status(500).json({ error: insertError.message });
 
-    const { error: updateError } = await supabase
-      .from('strategic_next_questions')
-      .update({
-        status: 'answered',
-        answered_at: new Date().toISOString(),
-        answer_response_id: insertedResponse?.id ?? null,
-      })
-      .eq('id', question_id)
-      .eq('user_id', user.id);
+    // Corrigido: a tabela strategic_next_questions não possui política RLS para UPDATE.
+    // Usamos a Service Role Key via supabaseRest para contornar a restrição.
+    const updateRes = await supabaseRest(
+      `/rest/v1/strategic_next_questions?id=eq.${encodeURIComponent(question_id)}&user_id=eq.${encodeURIComponent(user.id)}`,
+      {
+        method: 'PATCH',
+        body: {
+          status: 'answered',
+          answered_at: new Date().toISOString(),
+          answer_response_id: insertedResponse?.id ?? null,
+        },
+        serviceRole: true,
+      }
+    );
 
-    if (updateError) return res.status(500).json({ error: updateError.message });
+    if (!updateRes.response.ok) {
+      return res.status(500).json({ error: 'Falha ao atualizar status da pergunta.' });
+    }
 
     return res.status(200).json({ success: true });
   }

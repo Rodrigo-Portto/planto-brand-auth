@@ -71,11 +71,12 @@ type DiagnosticRow = {
   confidence: number | null;
 };
 
+// Mapeado para a tabela real `strategic_issues` (strategic_gaps não existe no banco)
 type StrategicGapRow = {
-  gap_key: string;
-  gap_title: string;
+  dimension_key: string | null;
+  title: string;
   severity: DashboardStrategicGap['severity'];
-  gap_description: string | null;
+  description: string | null;
   suggested_action: string | null;
 };
 
@@ -589,7 +590,8 @@ export async function buildDashboardOverview(
         `/rest/v1/strategic_diagnostics?assessment_id=eq.${selectedAssessmentId}&status=eq.active&select=dimension_key,dimension_label,score,maturity_level,diagnosis,recommendation,confidence&order=score.asc.nullslast&limit=100`
       ),
       supabaseRest(
-        `/rest/v1/strategic_gaps?assessment_id=eq.${selectedAssessmentId}&status=eq.active&select=gap_key,gap_title,severity,gap_description,suggested_action&limit=100`
+        // Corrigido: tabela real é `strategic_issues` (strategic_gaps não existe no banco)
+        `/rest/v1/strategic_issues?assessment_id=eq.${selectedAssessmentId}&status=eq.active&select=dimension_key,title,severity,description,suggested_action&limit=100`
       ),
     ]);
 
@@ -698,12 +700,13 @@ export async function buildDashboardOverview(
   const heuristicGaps = heuristicStrategicGaps(heuristicDimensions, selectedAssessment);
   const strategicGaps: DashboardStrategicGap[] =
     dbGapsRows.length > 0
-      ? dbGapsRows.map((gap) => ({
-          key: gap.gap_key,
-          label: gap.gap_title,
-          severity: normalizeGapSeverity(gap.severity),
-          description: gap.gap_description || gap.gap_title,
-          suggested_action: gap.suggested_action,
+      ? dbGapsRows.map((issue) => ({
+          // Mapeado de strategic_issues: dimension_key→key, title→label, description→description
+          key: issue.dimension_key || 'geral',
+          label: issue.title,
+          severity: normalizeGapSeverity(issue.severity),
+          description: issue.description || issue.title,
+          suggested_action: issue.suggested_action,
         }))
       : heuristicGaps;
 

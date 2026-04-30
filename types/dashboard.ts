@@ -93,6 +93,7 @@ export interface StrategicQuestion {
   priority: number;
   expected_unlock: string | null;
   severity: 'high' | 'medium' | 'low';
+  briefing_field_key?: string | null; // campo usado em flashcard.ts para mapear a resposta
 }
 
 export type DashboardDomainKey = 'comunicacao' | 'identidade' | 'negocio' | 'pessoas';
