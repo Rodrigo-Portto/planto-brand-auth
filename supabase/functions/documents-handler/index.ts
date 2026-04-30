@@ -522,6 +522,10 @@ async function semanticSearch(userId: string, body: any) {
     "memory_notes",
     "plataforma_marca",
     "user_attachments",
+    "strategic_diagnostics",
+    "strategic_issues",
+    "strategic_next_questions",
+    "strategic_assessments",
   ];
 
   // 1. Gerar embedding da query uma única vez
@@ -548,11 +552,15 @@ async function semanticSearch(userId: string, body: any) {
 
   // 2. Mapa de RPCs por fonte
   const RPC_MAP: Record<string, string> = {
-    brand_knowledge:          "match_brand_knowledge",
-    brand_context_responses:  "match_brand_context_responses",
-    memory_notes:             "match_memory_notes",
-    plataforma_marca:         "match_plataforma_marca",
-    user_attachments:         "match_user_attachments",
+    brand_knowledge:             "match_brand_knowledge",
+    brand_context_responses:     "match_brand_context_responses",
+    memory_notes:                "match_memory_notes",
+    plataforma_marca:            "match_plataforma_marca",
+    user_attachments:            "match_user_attachments",
+    strategic_diagnostics:       "match_strategic_diagnostics",
+    strategic_issues:            "match_strategic_issues",
+    strategic_next_questions:    "match_strategic_next_questions",
+    strategic_assessments:       "match_strategic_assessments",
   };
 
   // 3. Executar todas as buscas em paralelo

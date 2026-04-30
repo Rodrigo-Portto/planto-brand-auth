@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Plantto Brand OS Action API",
-    "version": "11.0.0",
-    "description": "Action publica do GPT para operar o Brand OS do Plantto em tres camadas: conhecimento, estrategia e execucao. Use Authorization: envie gpt_token no body. Depois de validado, reutilize o mesmo gpt_token na sessao."
+    "version": "11.1.0",
+    "description": "Action publica do GPT para operar o Brand OS do Plantto em tres camadas: conhecimento, estrategia e execucao. Use Authorization: envie gpt_token no body. Depois de validado, reutilize o mesmo gpt_token na sessao. A semantic_search busca em 9 fontes vetorizadas em paralelo: 5 de conhecimento (brand_knowledge, brand_context_responses, memory_notes, plataforma_marca, user_attachments) e 4 de estrategia (strategic_diagnostics, strategic_issues, strategic_next_questions, strategic_assessments)."
   },
   "servers": [
     {
@@ -307,10 +307,14 @@
                 "brand_context_responses",
                 "memory_notes",
                 "plataforma_marca",
-                "user_attachments"
+                "user_attachments",
+                "strategic_diagnostics",
+                "strategic_issues",
+                "strategic_next_questions",
+                "strategic_assessments"
               ]
             },
-            "description": "Opcional. Array de fontes para restringir a busca semantica. Se omitido, busca em todas as 5 fontes vetorizadas em paralelo."
+            "description": "Opcional. Array de fontes para restringir a busca semantica. Se omitido, busca em todas as 9 fontes vetorizadas em paralelo (5 de conhecimento + 4 de estrategia)."
           },
           "profile": {
             "type": "object",
