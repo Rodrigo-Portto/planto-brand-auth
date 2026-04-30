@@ -151,7 +151,7 @@ export async function createSignedStorageUrl(bucket: string, storagePath: string
     '';
 
   if (!signedRelativePath) {
-    throw new Error('Supabase nao retornou URL assinada do avatar.');
+    throw new Error('Supabase não retornou URL assinada do avatar.');
   }
 
   if (signedRelativePath.startsWith('http://') || signedRelativePath.startsWith('https://')) {

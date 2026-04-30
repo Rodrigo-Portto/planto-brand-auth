@@ -150,14 +150,14 @@ export function SidebarAgentPanel({
                 Ainda preparando contexto
               </div>
               <p style={{ ...styles.smallText, fontSize: '0.9rem', lineHeight: 1.65, marginTop: '6px' }}>
-                O agente nao abre no vazio. Primeiro a base precisa acumular sinais suficientes de marca.
+                O agente não abre no vazio. Primeiro a base precisa acumular sinais suficientes de marca.
               </p>
             </div>
           </div>
 
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
-              <span style={styles.smallText}>Prontidao atual</span>
+              <span style={styles.smallText}>Prontidão atual</span>
               <span style={{ fontSize: '0.85rem', fontWeight: 700, color: readinessTone.text }}>
                 {agentReadiness}/{AGENT_READINESS_THRESHOLD}%
               </span>

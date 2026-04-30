@@ -362,13 +362,13 @@ export function DashboardCenterPanel({
           </p>
           <h2 style={{ ...styles.panelTitle, fontSize: '1.62rem', lineHeight: 1.16 }}>
             {isWelcome
-              ? 'Adicione materiais para alimentar os proximos paineis do dashboard.'
-              : 'O Plantto ja esta organizando a base para revelar os primeiros sinais da marca.'}
+              ? 'Adicione materiais para alimentar os próximos painéis do dashboard.'
+              : 'O Planntô já está organizando a base para revelar os primeiros sinais da marca.'}
           </h2>
           <p style={{ ...styles.smallText, fontSize: '0.96rem', lineHeight: 1.75 }}>
             {isWelcome
               ? 'O restante do dashboard aparece depois que o primeiro contexto for enviado.'
-              : 'Extracao, vetorizacao e promocao ao conhecimento acontecem aqui. Assim que o contexto amadurece, o painel analitico assume a frente.'}
+              : 'Extração, vetorização e promoção ao conhecimento acontecem aqui. Assim que o contexto amadurece, o painel analítico assume a frente.'}
           </p>
         </div>
 
@@ -476,7 +476,7 @@ export function DashboardCenterPanel({
       >
         <div style={{ display: 'grid', gap: '14px' }}>
           <div style={{ fontSize: '0.84rem', color: theme.textMuted, lineHeight: 1.6 }}>
-            Seus arquivos deixaram de ser documentos soltos. Cada ativo agora se conecta e alimenta o proximo.
+            Seus arquivos deixaram de ser documentos soltos. Cada ativo agora se conecta e alimenta o próximo.
           </div>
           <div style={{ display: 'grid', gap: '8px' }}>
             {overview.knowledge_relations.map((relation) => {
@@ -594,7 +594,7 @@ export function DashboardCenterPanel({
               color: theme.text,
             }}
           >
-            Nenhuma lacuna critica foi detectada nesta etapa da base.
+            Nenhuma lacuna crítica foi detectada nesta etapa da base.
           </div>
         )}
 

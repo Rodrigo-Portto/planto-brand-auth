@@ -8,12 +8,12 @@ function hashToken(token: string) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Record<string, unknown> | { error: string }>) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Metodo nao permitido.' });
+    return res.status(405).json({ error: 'Método não permitido.' });
   }
 
   const token = String(req.body?.token || '').trim();
   if (!token) {
-    return res.status(400).json({ error: 'Token obrigatorio.' });
+    return res.status(400).json({ error: 'Token obrigatório.' });
   }
 
   try {
@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const row = Array.isArray(data) && data.length ? (data[0] as Record<string, unknown>) : null;
     if (!row?.user_id) {
-      return res.status(401).json({ error: 'Token invalido ou revogado.' });
+      return res.status(401).json({ error: 'Token inválido ou revogado.' });
     }
 
     return res.status(200).json({

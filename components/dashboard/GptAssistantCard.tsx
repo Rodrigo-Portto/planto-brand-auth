@@ -65,7 +65,7 @@ export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCar
 
       <p style={{ margin: '0 0 12px', ...styles.bodyText, fontSize: '0.92rem', lineHeight: 1.6 }}>
         {isUnlocked
-          ? 'A base de contexto esta pronta. O assistente pode orientar e criar com precisao.'
+          ? 'A base de contexto está pronta. O assistente pode orientar e criar com precisão.'
           : `Ainda construindo contexto. Faltam ${missing}% para liberar o assistente.`}
       </p>
 

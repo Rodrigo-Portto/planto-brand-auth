@@ -67,7 +67,7 @@ export function buildDashboardNextAction({
   if (stage === 'welcome') {
     return {
       title: 'Traga seus primeiros arquivos',
-      description: 'Apresentacoes, bios, propostas e qualquer material da marca ja servem para iniciar o contexto.',
+      description: 'Apresentações, bios, propostas e qualquer material da marca já servem para iniciar o contexto.',
       cta_label: 'Adicionar ao contexto',
       target: 'upload',
     };
@@ -75,8 +75,8 @@ export function buildDashboardNextAction({
 
   if (!agentUnlocked && strategicQuestionCount > 0) {
     return {
-      title: 'Responder perguntas estrategicas',
-      description: 'As perguntas laterais ajudam a fechar lacunas de autoridade, prova, publico e diferenciacao.',
+      title: 'Responder perguntas estratégicas',
+      description: 'As perguntas laterais ajudam a fechar lacunas de autoridade, prova, público e diferenciação.',
       cta_label: 'Ir para cards',
       target: 'cards',
     };
@@ -85,7 +85,7 @@ export function buildDashboardNextAction({
   if (!agentUnlocked) {
     return {
       title: 'Continuar alimentando o contexto',
-      description: 'Mais arquivos e mais respostas aumentam a prontidao da base e aproximam a liberacao do agente.',
+      description: 'Mais arquivos e mais respostas aumentam a prontidão da base e aproximam a liberação do agente.',
       cta_label: 'Adicionar ao contexto',
       target: 'upload',
     };
@@ -94,15 +94,15 @@ export function buildDashboardNextAction({
   if (!hasActiveToken) {
     return {
       title: 'Ativar o agente',
-      description: 'A base ja atingiu contexto suficiente. O proximo passo e gerar o token para usar o agente no GPT.',
+      description: 'A base já atingiu contexto suficiente. O próximo passo é gerar o token para usar o agente no GPT.',
       cta_label: 'Gerar token',
       target: 'agent',
     };
   }
 
   return {
-    title: 'Abrir o agente estrategico',
-    description: 'O contexto ja esta pronto e o token ativo. Agora o agente pode orientar, criar e executar com direcao.',
+      title: 'Abrir o agente estratégico',
+      description: 'O contexto já está pronto e o token ativo. Agora o agente pode orientar, criar e executar com direção.',
     cta_label: 'Ir para o agente',
     target: 'agent',
   };

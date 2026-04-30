@@ -44,14 +44,14 @@ export async function requestJson<T>(path: string, options: RequestJsonOptions =
     }
 
     if (options.authRequired && (response.status === 401 || response.status === 403)) {
-      throw new Error('Sessao expirada. Faca login novamente.');
+      throw new Error('Sessão expirada. Faça login novamente.');
     }
 
     if (response.status === 413) {
       throw new Error('Arquivo muito grande para envio.');
     }
 
-    throw new Error(`Erro na requisicao (${response.status}).`);
+    throw new Error(`Erro na requisição (${response.status}).`);
   }
 
   return data;

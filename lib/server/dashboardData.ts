@@ -110,20 +110,20 @@ type AttachmentResponseSummary = {
 };
 
 const DOMAIN_LABELS: Record<DashboardDomainCoverageStat['key'], string> = {
-  comunicacao: 'Comunicacao',
+  comunicacao: 'Comunicação',
   identidade: 'Identidade',
-  negocio: 'Negocio',
+  negocio: 'Negócio',
   pessoas: 'Pessoas',
 };
 
 const PLATFORM_PILLAR_LABELS: Record<string, string> = {
-  proposito: 'Proposito',
+  proposito: 'Propósito',
   proposta_valor: 'Proposta de Valor',
   promessa: 'Promessa',
   posicionamento: 'Posicionamento',
   pilares_marca: 'Pilares de Marca',
-  temas_conteudo: 'Temas de Conteudo',
-  territorios_narrativos: 'Territorios Narrativos',
+  temas_conteudo: 'Temas de Conteúdo',
+  territorios_narrativos: 'Territórios Narrativos',
 };
 
 const PLATFORM_PILLAR_ORDER = [
@@ -150,21 +150,21 @@ const RELATION_LABELS: Record<string, string> = {
 const MATURITY_DIMENSION_CONFIG = [
   {
     key: 'oferta_clareza',
-    label: 'Oferta Clareza',
+    label: 'Clareza da Oferta',
     knowledgeKeys: ['negocio.oferta_central', 'negocio.problema_que_resolve'],
     platformKeys: ['proposta_valor'],
     questionKeys: [] as string[],
   },
   {
     key: 'publico_clareza',
-    label: 'Publico Clareza',
+    label: 'Clareza do Público',
     knowledgeKeys: ['publico_clareza', 'pessoas.publico_prioritario', 'pessoas.dor_principal'],
     platformKeys: ['posicionamento'],
     questionKeys: ['publico_clareza'],
   },
   {
     key: 'diferenciacao',
-    label: 'Diferenciacao',
+    label: 'Diferenciação',
     knowledgeKeys: [] as string[],
     platformKeys: ['proposta_valor', 'posicionamento'],
     questionKeys: ['diferenciacao'],
@@ -192,7 +192,7 @@ const MATURITY_DIMENSION_CONFIG = [
   },
   {
     key: 'consistencia_narrativa',
-    label: 'Consistencia Narrativa',
+    label: 'Consistência Narrativa',
     knowledgeKeys: ['comunicacao.editorial'],
     platformKeys: ['posicionamento'],
     questionKeys: ['editorial'],
@@ -206,7 +206,7 @@ const MATURITY_DIMENSION_CONFIG = [
   },
   {
     key: 'objecoes',
-    label: 'Objecoes',
+    label: 'Objeções',
     knowledgeKeys: ['objecoes', 'pessoas.objecoes'],
     platformKeys: [] as string[],
     questionKeys: ['objecoes'],
@@ -253,10 +253,10 @@ function collectMainRisks(assessment?: AssessmentRow | null): string[] {
 
 function findMatchingRisk(label: string, risks: string[]) {
   const keywords = [label.toLowerCase()];
-  if (label === 'Publico') keywords.push('publico');
+  if (label === 'Clareza do Público') keywords.push('publico');
   if (label === 'Tom de Voz') keywords.push('tom');
   if (label === 'Oferta') keywords.push('oferta', 'valor');
-  if (label === 'Consistencia Narrativa') keywords.push('consistencia_narrativa');
+  if (label === 'Consistência Narrativa') keywords.push('consistencia_narrativa');
 
   return risks.find((risk) => keywords.some((keyword) => risk.toLowerCase().includes(keyword))) || '';
 }

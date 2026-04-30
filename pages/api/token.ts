@@ -46,7 +46,7 @@ export default async function handler(
 
       if (readiness < AGENT_READINESS_THRESHOLD) {
         return res.status(403).json({
-          error: `A base ainda nao tem contexto suficiente para gerar o token. Faltam ${AGENT_READINESS_THRESHOLD - readiness}% de prontidao.`,
+          error: `A base ainda não tem contexto suficiente para gerar o token. Faltam ${AGENT_READINESS_THRESHOLD - readiness}% de prontidão.`,
         });
       }
 
@@ -60,7 +60,7 @@ export default async function handler(
 
       const existingToken = Array.isArray(existingData) && existingData.length ? (existingData[0] as GptToken) : null;
       if (existingToken?.token_value) {
-        return res.status(409).json({ error: 'Ja existe um token ativo para esta conta. Use o token atual.' });
+        return res.status(409).json({ error: 'Já existe um token ativo para esta conta. Use o token atual.' });
       }
 
       const plainToken = `planto_${userId.slice(0, 8)}_${randomBytes(24).toString('hex')}`;

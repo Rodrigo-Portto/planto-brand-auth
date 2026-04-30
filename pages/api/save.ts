@@ -68,7 +68,7 @@ export default async function handler(
   res: NextApiResponse<{ success: boolean; profile: Profile } | { error: string }>
 ) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Metodo nao permitido.' });
+    return res.status(405).json({ error: 'Método não permitido.' });
   }
 
   const auth = await getAuthenticatedUser(req, res);
@@ -78,7 +78,7 @@ export default async function handler(
 
   const resource = String(req.body?.resource || '').trim();
   if (resource !== 'profile') {
-    return res.status(400).json({ error: `Resource nao suportado: ${resource || 'vazio'}` });
+    return res.status(400).json({ error: `Recurso não suportado: ${resource || 'vazio'}` });
   }
 
   try {

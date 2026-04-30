@@ -99,7 +99,7 @@ async function deleteStorageObject(bucket: string, storagePath: string) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Record<string, unknown> | { error: string }>) {
   if (req.method !== 'POST' && req.method !== 'DELETE') {
-    return res.status(405).json({ error: 'Metodo nao permitido.' });
+    return res.status(405).json({ error: 'Método não permitido.' });
   }
 
   const auth = await getAuthenticatedUser(req, res);
@@ -112,17 +112,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   if (req.method === 'DELETE') {
     const attachmentId = String(req.body?.id || req.query?.id || '').trim();
     if (!attachmentId) {
-      return res.status(400).json({ error: 'ID do anexo e obrigatorio.' });
+      return res.status(400).json({ error: 'ID do anexo é obrigatório.' });
     }
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-      return res.status(500).json({ error: 'Configuracao de storage ausente.' });
+      return res.status(500).json({ error: 'Configuração de storage ausente.' });
     }
 
     try {
       const attachment = await fetchAttachment(userId, attachmentId);
       if (!attachment) {
-        return res.status(404).json({ error: 'Anexo nao encontrado.' });
+        return res.status(404).json({ error: 'Anexo não encontrado.' });
       }
 
       const bucket = String(attachment.storage_bucket || BUCKET);
@@ -153,17 +153,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const base64 = normalizeBase64(String(req.body?.base64 || ''));
 
   if (!filename || !base64) {
-    return res.status(400).json({ error: 'filename e base64 sao obrigatorios.' });
+    return res.status(400).json({ error: 'filename e base64 são obrigatórios.' });
   }
 
   const extension = extensionOf(filename);
   if (!ALLOWED_EXTENSIONS.has(extension)) {
-    return res.status(400).json({ error: 'Formato nao suportado. Use DOC, DOCX, PDF, MD ou TXT.' });
+    return res.status(400).json({ error: 'Formato não suportado. Use DOC, DOCX, PDF, MD ou TXT.' });
   }
 
   const fileBuffer = Buffer.from(base64, 'base64');
   if (!fileBuffer.length) {
-    return res.status(400).json({ error: 'Arquivo invalido.' });
+    return res.status(400).json({ error: 'Arquivo inválido.' });
   }
 
   if (fileBuffer.length > MAX_FILE_SIZE) {
@@ -171,7 +171,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-    return res.status(500).json({ error: 'Configuracao de storage ausente.' });
+    return res.status(500).json({ error: 'Configuração de storage ausente.' });
   }
 
   try {

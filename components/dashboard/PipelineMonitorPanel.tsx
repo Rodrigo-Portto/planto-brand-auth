@@ -159,10 +159,10 @@ export function PipelineMonitorPanel({
 
           <p style={{ ...styles.smallText, lineHeight: 1.6 }}>
             {isUnlocked
-              ? 'A base ja sustenta o assistente com contexto suficiente para orientar e criar.'
+              ? 'A base já sustenta o assistente com contexto suficiente para orientar e criar.'
               : strategicQuestionCount > 0
-              ? `${strategicQuestionCount} perguntas estrategicas podem desbloquear contexto e acelerar a liberacao do GPT.`
-              : 'O pipeline ja esta centralizado aqui. Complete briefing, plataforma e conhecimento para liberar o GPT.'}
+              ? `${strategicQuestionCount} perguntas estratégicas podem desbloquear contexto e acelerar a liberação do GPT.`
+              : 'O pipeline já está centralizado aqui. Complete briefing, plataforma e conhecimento para liberar o GPT.'}
           </p>
         </div>
       ) : null}

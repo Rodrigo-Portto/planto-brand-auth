@@ -12,7 +12,7 @@ function strategicQuestionSeverity(priority: number): StrategicQuestion['severit
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const auth = await getAuthenticatedUser(req, res);
   if (!auth.ok) {
-    return res.status(auth.status ?? 401).json({ error: auth.error ?? 'Nao autenticado.' });
+    return res.status(auth.status ?? 401).json({ error: auth.error ?? 'Não autenticado.' });
   }
 
   const supabase = createSupabaseServerClient(req, res);
@@ -101,5 +101,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ success: true });
   }
 
-  return res.status(405).json({ error: 'Metodo nao permitido.' });
+  return res.status(405).json({ error: 'Método não permitido.' });
 }

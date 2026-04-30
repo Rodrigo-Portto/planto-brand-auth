@@ -24,12 +24,12 @@ export default async function handler(
   res: NextApiResponse<DashboardPayload | { error: string }>
 ) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Metodo nao permitido.' });
+    return res.status(405).json({ error: 'Método não permitido.' });
   }
 
   const auth = await getAuthenticatedUser(req, res);
   if (!auth.ok) {
-    return res.status(auth.status ?? 401).json({ error: auth.error ?? 'Nao autenticado.' });
+    return res.status(auth.status ?? 401).json({ error: auth.error ?? 'Não autenticado.' });
   }
 
   const userId = auth.user.id;
@@ -66,7 +66,7 @@ export default async function handler(
     }
     if (!strategicQuestionsRes.response.ok) {
       throw new Error(
-        extractErrorMessage(strategicQuestionsRes.data, 'Falha ao carregar perguntas estrategicas.')
+        extractErrorMessage(strategicQuestionsRes.data, 'Falha ao carregar perguntas estratégicas.')
       );
     }
 

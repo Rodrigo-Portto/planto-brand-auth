@@ -12,15 +12,15 @@ interface FlashcardPanelProps {
 const DIMENSION_META: Record<string, { icon: string; label: string; opacity: number }> = {
   prova: { icon: 'P', label: 'Prova', opacity: 1 },
   autoridade: { icon: 'A', label: 'Autoridade', opacity: 0.92 },
-  pessoas: { icon: 'U', label: 'Publico', opacity: 0.84 },
-  diferenciacao: { icon: 'D', label: 'Diferenciacao', opacity: 0.76 },
+  pessoas: { icon: 'U', label: 'Público', opacity: 0.84 },
+  diferenciacao: { icon: 'D', label: 'Diferenciação', opacity: 0.76 },
   editorial: { icon: 'E', label: 'Editorial', opacity: 0.88 },
-  negocio: { icon: 'N', label: 'Negocio', opacity: 0.8 },
+  negocio: { icon: 'N', label: 'Negócio', opacity: 0.8 },
   identidade: { icon: 'I', label: 'Identidade', opacity: 0.96 },
-  comunicacao: { icon: 'C', label: 'Comunicacao', opacity: 0.72 },
+  comunicacao: { icon: 'C', label: 'Comunicação', opacity: 0.72 },
 };
 
-const DEFAULT_META = { icon: 'S', label: 'Estrategico', opacity: 0.9 };
+const DEFAULT_META = { icon: 'S', label: 'Estratégico', opacity: 0.9 };
 
 function alpha(hex: string, opacity: number) {
   const normalized = hex.replace('#', '');
@@ -125,7 +125,7 @@ export function FlashcardPanel({ styles, colors, questions, onAnswered, embedded
     return (
       <section style={embedded ? { display: 'grid', gap: '14px' } : styles.panelCard}>
         <div style={styles.panelCardHeader}>
-          <h2 style={styles.panelTitle}>Perguntas Estrategicas</h2>
+          <h2 style={styles.panelTitle}>Perguntas Estratégicas</h2>
           <span
             style={{
               ...styles.countBadge,
@@ -147,7 +147,7 @@ export function FlashcardPanel({ styles, colors, questions, onAnswered, embedded
   return (
     <section style={containerStyle}>
       <div style={styles.panelCardHeader}>
-        <h2 style={styles.panelTitle}>Perguntas Estrategicas</h2>
+        <h2 style={styles.panelTitle}>Perguntas Estratégicas</h2>
         <span
           style={{
             ...styles.countBadge,
