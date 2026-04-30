@@ -139,6 +139,7 @@ export interface DashboardPlatformPillar {
   key: string;
   label: string;
   active: boolean;
+  branding_concept?: string | null;
 }
 
 export interface DashboardPipelineStep {

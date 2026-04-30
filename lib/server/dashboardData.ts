@@ -100,6 +100,7 @@ type PlatformRow = {
   model_key: string;
   output_json?: Record<string, unknown> | null;
   status?: string | null;
+  branding_concept?: string | null;
 };
 
 type AttachmentResponseSummary = {
@@ -535,7 +536,7 @@ export async function buildDashboardOverview(
       `/rest/v1/knowledge_links?user_id=eq.${encoded}&select=id,from_item_id,to_item_id,relation_type&limit=1000`
     ),
     supabaseRest(
-      `/rest/v1/plataforma_marca?user_id=eq.${encoded}&status=eq.active&output_json=not.is.null&select=model_key,output_json,status&limit=1000`
+      `/rest/v1/plataforma_marca?user_id=eq.${encoded}&status=eq.active&output_json=not.is.null&select=model_key,output_json,status,branding_concept&limit=1000`
     ),
     supabaseRest(`/rest/v1/memory_notes?user_id=eq.${encoded}&select=id&limit=1000`),
     supabaseRest(`/rest/v1/brand_context_responses?user_id=eq.${encoded}&response_status=eq.active&select=id&limit=1000`),
@@ -667,10 +668,17 @@ export async function buildDashboardOverview(
 
   const platformRows = (Array.isArray(platformRes.data) ? platformRes.data : []) as PlatformRow[];
   const activePlatformKeys = new Set(platformRows.filter((row) => row.status !== 'archived').map((row) => row.model_key));
+  // Indexa branding_concept por model_key para lookup O(1)
+  const brandingConceptMap = new Map(
+    platformRows
+      .filter((row) => row.branding_concept)
+      .map((row) => [row.model_key, row.branding_concept ?? null])
+  );
   const platformPillars: DashboardPlatformPillar[] = PLATFORM_PILLAR_ORDER.map((key) => ({
     key,
     label: PLATFORM_PILLAR_LABELS[key] || slugToLabel(key),
     active: activePlatformKeys.has(key),
+    branding_concept: brandingConceptMap.get(key) ?? null,
   }));
 
   const heuristicDimensions = heuristicMaturityDimensions(

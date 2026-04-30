@@ -633,7 +633,7 @@ export function DashboardCenterPanel({
                 padding: '12px',
                 display: 'flex',
                 gap: '10px',
-                alignItems: 'center',
+                alignItems: 'flex-start',
               }}
             >
               <div
@@ -650,11 +650,27 @@ export function DashboardCenterPanel({
               >
                 {pillar.active ? '+' : '-'}
               </div>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '0.84rem', fontWeight: 700, color: theme.textStrong }}>{pillar.label}</div>
                 <div style={{ fontSize: '0.72rem', color: pillar.active ? theme.accentMuted : theme.textMuted, marginTop: '2px' }}>
                   {pillar.active ? 'Gerado' : 'Pendente'}
                 </div>
+                {pillar.branding_concept ? (
+                  <div
+                    style={{
+                      fontSize: '0.72rem',
+                      color: theme.textMuted,
+                      marginTop: '6px',
+                      lineHeight: 1.5,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {pillar.branding_concept}
+                  </div>
+                ) : null}
               </div>
             </div>
           ))}
