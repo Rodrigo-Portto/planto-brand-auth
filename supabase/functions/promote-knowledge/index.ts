@@ -83,7 +83,7 @@ async function safeRows<T>(query: PromiseLike<{ data: T[] | null; error: any }>)
   return data ?? [];
 }
 
-function normalizeItem(userId: string, item: any) {
+function normalizeItem(userId: string, item: any, sourceAttachmentId?: string | null) {
   const itemKey = String(item?.item_key || "").trim();
   const itemGroup = String(item?.item_group || "").trim();
   const itemKind = String(item?.item_kind || "").trim();
@@ -112,6 +112,7 @@ function normalizeItem(userId: string, item: any) {
     status: "active",
     source_table: sourceTable,
     source_id: sourceId,
+    source_attachment_id: sourceAttachmentId ?? null,
   };
 }
 
@@ -195,19 +196,19 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const entries: { source_table: string; id: string; text: string }[] = [];
+      const entries: { source_table: string; id: string; text: string; source_attachment_id?: string | null }[] = [];
 
-      const notes = await safeRows<{ id: string; note_content: string | null; context_type: string | null }>(
+      const notes = await safeRows<{ id: string; note_content: string | null; context_type: string | null; source_attachment_id: string | null }>(
         supabase
           .from("memory_notes")
-          .select("id,note_content,context_type")
+          .select("id,note_content,context_type,source_attachment_id")
           .eq("user_id", userId)
           .is("promoted_at", null)
           .in("context_type", ["decisao_estrategica", "insight_agente", "nota_usuario", "observacao_mercado"])
           .limit(BATCH_SIZE),
       );
       for (const note of notes) {
-        if (note.note_content?.trim()) entries.push({ source_table: "memory_notes", id: note.id, text: note.note_content });
+        if (note.note_content?.trim()) entries.push({ source_table: "memory_notes", id: note.id, text: note.note_content, source_attachment_id: note.source_attachment_id ?? null });
       }
 
       const attachments = await safeRows<{ id: string; content_text: string | null }>(
@@ -221,14 +222,15 @@ Deno.serve(async (req: Request) => {
       );
       for (const attachment of attachments) {
         if (attachment.content_text?.trim()) {
-          entries.push({ source_table: "user_attachments", id: attachment.id, text: attachment.content_text.slice(0, 3000) });
+          // Anexo é sua própria fonte — source_attachment_id = o próprio id
+          entries.push({ source_table: "user_attachments", id: attachment.id, text: attachment.content_text.slice(0, 3000), source_attachment_id: attachment.id });
         }
       }
 
-      const briefingResponses = await safeRows<{ id: string; field_key: string | null; value_text: string | null; value_json: unknown | null }>(
+      const briefingResponses = await safeRows<{ id: string; field_key: string | null; value_text: string | null; value_json: unknown | null; source_attachment_id: string | null }>(
         supabase
           .from("brand_context_responses")
-          .select("id,field_key,value_text,value_json")
+          .select("id,field_key,value_text,value_json,source_attachment_id")
           .eq("user_id", userId)
           .eq("response_status", "active")
           .eq("answer_type", "briefing")
@@ -256,6 +258,7 @@ Deno.serve(async (req: Request) => {
         entries.push({
           source_table: "brand_context_responses",
           id: response.id,
+          source_attachment_id: response.source_attachment_id ?? null,
           text: JSON.stringify({
             field_key: response.field_key,
             value_text: response.value_text,
@@ -293,7 +296,16 @@ Deno.serve(async (req: Request) => {
         const outputText = aiData.choices?.[0]?.message?.content || "{\"items\":[]}";
         const parsed = JSON.parse(outputText);
         const rawItems = Array.isArray(parsed?.items) ? parsed.items : [];
-        const validItems = rawItems.map((item: any) => normalizeItem(userId, item)).filter(Boolean);
+        // Construir mapa de source_attachment_id por entry para propagar ao knowledge
+        const attachmentIdByEntry = new Map<string, string | null>();
+        for (const entry of entries) {
+          attachmentIdByEntry.set(`${entry.source_table}:${entry.id}`, entry.source_attachment_id ?? null);
+        }
+
+        const validItems = rawItems.map((item: any) => {
+          const attachId = attachmentIdByEntry.get(`${item.source_table}:${item.source_id}`) ?? null;
+          return normalizeItem(userId, item, attachId);
+        }).filter(Boolean);
 
         const itemsByKey = new Map<string, any>();
         for (const item of validItems) {
