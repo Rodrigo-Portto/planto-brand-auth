@@ -1,4 +1,3 @@
-import { AGENT_READINESS_THRESHOLD } from '../../lib/domain/agentReadiness';
 import type {
   DashboardStyles,
   DashboardThemeColors,
@@ -95,6 +94,7 @@ export function SidebarAgentPanel({
   onJumpToUpload,
 }: SidebarAgentPanelProps) {
   const tokenPreview = createdToken ? `${createdToken.slice(0, 20)}...` : 'Nenhum token ativo ainda.';
+  const tokenAccessUnlocked = true;
   const readinessFactors = [
     {
       key: 'conhecimento',
@@ -125,11 +125,11 @@ export function SidebarAgentPanel({
           Agente
         </p>
         <p style={{ ...styles.smallText, color: theme.text, lineHeight: 1.6 }}>
-          O token so pode nascer quando a base sustenta contexto de marca suficiente.
+          Gere o token assim que a conta estiver cadastrada e logada.
         </p>
       </div>
 
-      {!agentUnlocked && !createdToken ? (
+      {!tokenAccessUnlocked && !createdToken ? (
         <div style={agentPanelSurface(theme)}>
           <div style={{ display: 'grid', gap: '10px', justifyItems: 'center', textAlign: 'center' }}>
             <div
@@ -159,7 +159,7 @@ export function SidebarAgentPanel({
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
               <span style={styles.smallText}>Prontidão atual</span>
               <span style={{ fontSize: '0.85rem', fontWeight: 700, color: readinessTone.text }}>
-                {agentReadiness}/{AGENT_READINESS_THRESHOLD}%
+                {agentReadiness}%
               </span>
             </div>
             <div style={{ height: '7px', borderRadius: 'var(--planto-radius-pill)', background: theme.progressTrack, overflow: 'hidden' }}>
@@ -217,8 +217,8 @@ export function SidebarAgentPanel({
         <div
           style={{
             ...agentPanelSurface(theme),
-            border: `1px solid ${agentUnlocked ? theme.borderAccent : theme.border}`,
-            background: agentUnlocked ? theme.statusActiveSoft : theme.surfaceSoft,
+            border: `1px solid ${tokenAccessUnlocked ? theme.borderAccent : theme.border}`,
+            background: tokenAccessUnlocked ? theme.statusActiveSoft : theme.surfaceSoft,
           }}
         >
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -229,20 +229,20 @@ export function SidebarAgentPanel({
                 borderRadius: 'var(--planto-radius-surface)',
                 display: 'grid',
                 placeItems: 'center',
-                background: agentUnlocked ? alpha(theme.statusActive, 0.14) : theme.statusMutedSoft,
-                color: agentUnlocked ? theme.statusActive : theme.textMuted,
-                border: `1px solid ${agentUnlocked ? theme.borderAccent : theme.border}`,
+                background: tokenAccessUnlocked ? alpha(theme.statusActive, 0.14) : theme.statusMutedSoft,
+                color: tokenAccessUnlocked ? theme.statusActive : theme.textMuted,
+                border: `1px solid ${tokenAccessUnlocked ? theme.borderAccent : theme.border}`,
               }}
             >
-              {agentUnlocked ? <SparklesIcon color={theme.statusActive} /> : <KeyIcon color={theme.textMuted} />}
+              {tokenAccessUnlocked ? <SparklesIcon color={theme.statusActive} /> : <KeyIcon color={theme.textMuted} />}
             </span>
             <div>
-              <div style={{ fontSize: '1rem', fontWeight: 800, color: agentUnlocked ? theme.statusActiveText : theme.textStrong }}>
-                {agentUnlocked ? 'Agente liberado' : 'Token existente'}
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: tokenAccessUnlocked ? theme.statusActiveText : theme.textStrong }}>
+                {tokenAccessUnlocked ? 'Agente liberado' : 'Token existente'}
               </div>
               <p style={{ ...styles.smallText, fontSize: '0.9rem', lineHeight: 1.65, marginTop: '4px', color: theme.text }}>
-                {agentUnlocked
-                  ? 'O contexto acumulado ja sustenta conversas, orientacao e criacao com mais precisao.'
+                {tokenAccessUnlocked
+                  ? 'O token pode ser gerado sem exigir contexto minimo da base.'
                   : 'Mesmo que a prontidao caia depois, o token atual continua acessivel para copia.'}
               </p>
             </div>
@@ -279,7 +279,7 @@ export function SidebarAgentPanel({
             </div>
 
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {agentUnlocked && canGenerateToken ? (
+              {canGenerateToken ? (
                 <button type="button" style={styles.primaryButton} onClick={onCreateToken} disabled={savingToken}>
                   {savingToken ? 'Gerando...' : 'Gerar token'}
                 </button>
@@ -302,7 +302,7 @@ export function SidebarAgentPanel({
             </div>
           </div>
 
-          {agentUnlocked ? (
+          {tokenAccessUnlocked ? (
             <a
               href={PLANTTO_GPT_URL}
               target="_blank"

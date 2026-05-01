@@ -1,5 +1,5 @@
 import type { DashboardStyles, PipelineMonitorSummary } from '../../types/dashboard';
-import { calcAgentReadiness, AGENT_READINESS_THRESHOLD } from '../../hooks/useAgentReadiness';
+import { calcAgentReadiness } from '../../hooks/useAgentReadiness';
 import { ChatIcon } from './icons';
 
 interface GptAssistantCardProps {
@@ -13,8 +13,6 @@ const PLANTTO_GPT_URL =
 
 export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCardProps) {
   const score = calcAgentReadiness(summary);
-  const isUnlocked = score >= AGENT_READINESS_THRESHOLD;
-  const missing = AGENT_READINESS_THRESHOLD - score;
 
   return (
     <section style={styles.panelCard}>
@@ -35,7 +33,7 @@ export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCar
               ...styles.bodyText,
               fontSize: '0.78rem',
               fontWeight: 700,
-              color: isUnlocked ? 'var(--planto-accent)' : '#f59e0b',
+              color: 'var(--planto-accent)',
             }}
           >
             {score}%
@@ -54,9 +52,7 @@ export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCar
               height: '100%',
               width: `${score}%`,
               borderRadius: 'var(--planto-radius-xs)',
-              background: isUnlocked
-                ? 'var(--planto-accent)'
-                : 'linear-gradient(90deg, #3b82f6, #f59e0b)',
+              background: 'var(--planto-accent)',
               transition: 'width 1s ease',
             }}
           />
@@ -64,47 +60,26 @@ export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCar
       </div>
 
       <p style={{ margin: '0 0 12px', ...styles.bodyText, fontSize: '0.92rem', lineHeight: 1.6 }}>
-        {isUnlocked
-          ? 'A base de contexto está pronta. O assistente pode orientar e criar com precisão.'
-          : `Ainda construindo contexto. Faltam ${missing}% para liberar o assistente.`}
+        O assistente fica disponivel para usuarios cadastrados e logados. A prontidao e apenas informativa.
       </p>
 
-      {isUnlocked ? (
-        <a
-          href={PLANTTO_GPT_URL}
-          target="_blank"
-          rel="noreferrer"
-          style={{
-            ...styles.primaryButton,
-            textDecoration: 'none',
-            width: '100%',
-            background: 'var(--planto-light-accent)',
-            color: 'var(--planto-light-accent-text)',
-            border: '1px solid rgba(17, 32, 25, 0.08)',
-            justifyContent: 'center',
-            textAlign: 'center',
-          }}
-        >
-          Acessar assistente
-        </a>
-      ) : (
-        <div
-          style={{
-            ...styles.primaryButton,
-            width: '100%',
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.25)',
-            justifyContent: 'center',
-            textAlign: 'center',
-            cursor: 'default',
-            userSelect: 'none',
-            pointerEvents: 'none',
-          }}
-        >
-          Disponivel em {missing}%
-        </div>
-      )}
+      <a
+        href={PLANTTO_GPT_URL}
+        target="_blank"
+        rel="noreferrer"
+        style={{
+          ...styles.primaryButton,
+          textDecoration: 'none',
+          width: '100%',
+          background: 'var(--planto-light-accent)',
+          color: 'var(--planto-light-accent-text)',
+          border: '1px solid rgba(17, 32, 25, 0.08)',
+          justifyContent: 'center',
+          textAlign: 'center',
+        }}
+      >
+        Acessar assistente
+      </a>
     </section>
   );
 }

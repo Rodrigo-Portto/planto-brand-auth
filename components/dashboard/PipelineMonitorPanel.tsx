@@ -1,4 +1,4 @@
-import { AGENT_READINESS_THRESHOLD, calcAgentReadiness } from '../../hooks/useAgentReadiness';
+import { calcAgentReadiness } from '../../hooks/useAgentReadiness';
 import type {
   DashboardStyles,
   DashboardThemeColors,
@@ -88,8 +88,7 @@ export function PipelineMonitorPanel({
 }: PipelineMonitorPanelProps) {
   const summary = monitor.summary;
   const readiness = calcAgentReadiness(summary);
-  const isUnlocked = readiness >= AGENT_READINESS_THRESHOLD;
-  const missing = Math.max(0, AGENT_READINESS_THRESHOLD - readiness);
+  const isUnlocked = true;
 
   // Bug 7 fix: replace two separate briefing cards with a progress bar
   const briefingPct = summary.briefing_total > 0
@@ -136,7 +135,7 @@ export function PipelineMonitorPanel({
                 color: isUnlocked ? theme.statusActiveText : theme.statusMutedText,
               }}
             >
-              {isUnlocked ? 'GPT liberado' : `Faltam ${missing}%`}
+              GPT liberado
             </span>
           </div>
 
@@ -159,11 +158,7 @@ export function PipelineMonitorPanel({
           </div>
 
           <p style={{ ...styles.smallText, lineHeight: 1.6 }}>
-            {isUnlocked
-              ? 'A base já sustenta o assistente com contexto suficiente para orientar e criar.'
-              : strategicQuestionCount > 0
-              ? `${strategicQuestionCount} perguntas estratégicas podem desbloquear contexto e acelerar a liberação do GPT.`
-              : 'O pipeline já está centralizado aqui. Complete briefing, plataforma e conhecimento para liberar o GPT.'}
+            O token do GPT esta liberado para usuarios cadastrados e logados. A prontidao continua apenas como sinal de qualidade da base.
           </p>
         </div>
       ) : null}

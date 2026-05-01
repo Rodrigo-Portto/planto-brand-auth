@@ -28,7 +28,7 @@ export function calcAgentReadiness(summary: PipelineMonitorSummary): number {
 }
 
 export function isAgentUnlocked(readiness: number): boolean {
-  return readiness >= AGENT_READINESS_THRESHOLD;
+  return true;
 }
 
 export function resolveDashboardStage(
@@ -64,39 +64,21 @@ export function buildDashboardNextAction({
   agentUnlocked,
   hasActiveToken,
 }: BuildDashboardNextActionOptions): DashboardNextAction {
+  if (!hasActiveToken) {
+    return {
+      title: 'Ativar o agente',
+      description: 'Gere seu token para usar o agente no GPT. Basta estar cadastrado e logado.',
+      cta_label: 'Gerar token',
+      target: 'agent',
+    };
+  }
+
   if (stage === 'welcome') {
     return {
       title: 'Traga seus primeiros arquivos',
       description: 'Apresentações, bios, propostas e qualquer material da marca já servem para iniciar o contexto.',
       cta_label: 'Adicionar ao contexto',
       target: 'upload',
-    };
-  }
-
-  if (!agentUnlocked && strategicQuestionCount > 0) {
-    return {
-      title: 'Responder perguntas estratégicas',
-      description: 'As perguntas laterais ajudam a fechar lacunas de autoridade, prova, público e diferenciação.',
-      cta_label: 'Ir para cards',
-      target: 'cards',
-    };
-  }
-
-  if (!agentUnlocked) {
-    return {
-      title: 'Continuar alimentando o contexto',
-      description: 'Mais arquivos e mais respostas aumentam a prontidão da base e aproximam a liberação do agente.',
-      cta_label: 'Adicionar ao contexto',
-      target: 'upload',
-    };
-  }
-
-  if (!hasActiveToken) {
-    return {
-      title: 'Ativar o agente',
-      description: 'A base já atingiu contexto suficiente. O próximo passo é gerar o token para usar o agente no GPT.',
-      cta_label: 'Gerar token',
-      target: 'agent',
     };
   }
 

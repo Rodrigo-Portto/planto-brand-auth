@@ -1,7 +1,5 @@
 import { createHash, randomBytes } from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { AGENT_READINESS_THRESHOLD, calcAgentReadiness } from '../../lib/domain/agentReadiness';
-import { buildPipelineMonitor } from '../../lib/server/dashboardData';
 import type { GptToken, TokenCreatePayload, TokenListPayload } from '../../types/dashboard';
 import { extractErrorMessage, getAuthenticatedUser, supabaseRest } from '../../lib/supabase/api';
 
@@ -41,14 +39,6 @@ export default async function handler(
     if (req.method === 'POST') {
       const label = String(req.body?.label || 'Token GPT').trim() || 'Token GPT';
       const expiresAt = req.body?.expires_at || null;
-      const pipelineMonitor = await buildPipelineMonitor(userId);
-      const readiness = calcAgentReadiness(pipelineMonitor.summary);
-
-      if (readiness < AGENT_READINESS_THRESHOLD) {
-        return res.status(403).json({
-          error: `A base ainda não tem contexto suficiente para gerar o token. Faltam ${AGENT_READINESS_THRESHOLD - readiness}% de prontidão.`,
-        });
-      }
 
       const { response: existingResponse, data: existingData } = await supabaseRest(
         `/rest/v1/gpt_access_tokens?user_id=eq.${encodeURIComponent(userId)}&status=eq.active&token_value=not.is.null&select=id,token_value,token_prefix,status,created_at,last_used_at,expires_at,revoked_at,label&limit=1`
@@ -60,7 +50,10 @@ export default async function handler(
 
       const existingToken = Array.isArray(existingData) && existingData.length ? (existingData[0] as GptToken) : null;
       if (existingToken?.token_value) {
-        return res.status(409).json({ error: 'Já existe um token ativo para esta conta. Use o token atual.' });
+        return res.status(200).json({
+          token: existingToken.token_value,
+          token_meta: existingToken,
+        });
       }
 
       const plainToken = `planto_${userId.slice(0, 8)}_${randomBytes(24).toString('hex')}`;
