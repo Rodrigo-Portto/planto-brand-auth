@@ -367,9 +367,10 @@ Deno.serve(async (req) => {
   try { body = await req.json(); }
   catch { return json({ error: "Body JSON invalido" }, 400); }
 
-  const userId             = typeof body?.user_id === "string" ? body.user_id.trim() : "";
-  const force              = body?.force === true;
-  const sourceAttachmentId = typeof body?.source_attachment_id === "string" ? body.source_attachment_id.trim() : null;
+  const userId              = typeof body?.user_id === "string" ? body.user_id.trim() : "";
+  const force               = body?.force === true;
+  const sourceAttachmentId  = typeof body?.source_attachment_id === "string" ? body.source_attachment_id.trim() : null;
+  const sourceMemoryNoteId  = typeof body?.source_memory_note_id === "string" ? body.source_memory_note_id.trim() : null;
   if (!userId) return json({ error: "user_id e obrigatorio" }, 400);
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -445,6 +446,7 @@ Deno.serve(async (req) => {
         generated_at:          new Date().toISOString(),
         knowledge_snapshot_at: ctx.knowledge_snapshot_at ?? new Date().toISOString(),
         source_attachment_id:  sourceAttachmentId,
+        source_memory_note_id: sourceMemoryNoteId,
       })
       .select()
       .single();

@@ -83,7 +83,7 @@ async function safeRows<T>(query: PromiseLike<{ data: T[] | null; error: any }>)
   return data ?? [];
 }
 
-function normalizeItem(userId: string, item: any, sourceAttachmentId?: string | null) {
+function normalizeItem(userId: string, item: any, sourceAttachmentId?: string | null, sourceMemoryNoteId?: string | null) {
   const itemKey = String(item?.item_key || "").trim();
   const itemGroup = String(item?.item_group || "").trim();
   const itemKind = String(item?.item_kind || "").trim();
@@ -113,6 +113,7 @@ function normalizeItem(userId: string, item: any, sourceAttachmentId?: string | 
     source_table: sourceTable,
     source_id: sourceId,
     source_attachment_id: sourceAttachmentId ?? null,
+    source_memory_note_id: sourceMemoryNoteId ?? null,
   };
 }
 
@@ -196,7 +197,7 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const entries: { source_table: string; id: string; text: string; source_attachment_id?: string | null }[] = [];
+      const entries: { source_table: string; id: string; text: string; source_attachment_id?: string | null; source_memory_note_id?: string | null }[] = [];
 
       const notes = await safeRows<{ id: string; note_content: string | null; context_type: string | null; source_attachment_id: string | null }>(
         supabase
@@ -208,7 +209,14 @@ Deno.serve(async (req: Request) => {
           .limit(BATCH_SIZE),
       );
       for (const note of notes) {
-        if (note.note_content?.trim()) entries.push({ source_table: "memory_notes", id: note.id, text: note.note_content, source_attachment_id: note.source_attachment_id ?? null });
+        if (note.note_content?.trim()) entries.push({
+          source_table: "memory_notes",
+          id: note.id,
+          text: note.note_content,
+          source_attachment_id: note.source_attachment_id ?? null,
+          // Nota é sua própria fonte — source_memory_note_id = o próprio id
+          source_memory_note_id: note.id,
+        });
       }
 
       const attachments = await safeRows<{ id: string; content_text: string | null }>(
@@ -296,15 +304,20 @@ Deno.serve(async (req: Request) => {
         const outputText = aiData.choices?.[0]?.message?.content || "{\"items\":[]}";
         const parsed = JSON.parse(outputText);
         const rawItems = Array.isArray(parsed?.items) ? parsed.items : [];
-        // Construir mapa de source_attachment_id por entry para propagar ao knowledge
+        // Construir mapas de rastreabilidade por entry para propagar ao knowledge
         const attachmentIdByEntry = new Map<string, string | null>();
+        const memoryNoteIdByEntry = new Map<string, string | null>();
         for (const entry of entries) {
-          attachmentIdByEntry.set(`${entry.source_table}:${entry.id}`, entry.source_attachment_id ?? null);
+          const key = `${entry.source_table}:${entry.id}`;
+          attachmentIdByEntry.set(key, entry.source_attachment_id ?? null);
+          memoryNoteIdByEntry.set(key, entry.source_memory_note_id ?? null);
         }
 
         const validItems = rawItems.map((item: any) => {
-          const attachId = attachmentIdByEntry.get(`${item.source_table}:${item.source_id}`) ?? null;
-          return normalizeItem(userId, item, attachId);
+          const key = `${item.source_table}:${item.source_id}`;
+          const attachId = attachmentIdByEntry.get(key) ?? null;
+          const noteId   = memoryNoteIdByEntry.get(key) ?? null;
+          return normalizeItem(userId, item, attachId, noteId);
         }).filter(Boolean);
 
         const itemsByKey = new Map<string, any>();
