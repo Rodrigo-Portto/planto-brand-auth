@@ -30,7 +30,7 @@ const styles: Record<string, CSSProperties> = {
     display: 'grid',
     gap: '12px',
     padding: '24px',
-    borderRadius: '12px',
+    borderRadius: 'var(--planto-radius-panel)',
     border: '1px solid var(--planto-light-border)',
     background: 'var(--planto-light-surface)',
   },

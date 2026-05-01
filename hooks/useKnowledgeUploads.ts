@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { deleteKnowledgeFile, uploadKnowledgeFile } from '../lib/api/dashboard';
+import { deleteKnowledgeFile, uploadKnowledgeFileWithProgress } from '../lib/api/dashboard';
 import { MAX_ATTACHMENTS, toBase64 } from '../lib/domain/dashboardUtils';
 import type { Attachment } from '../types/dashboard';
 
@@ -16,7 +16,10 @@ export function useKnowledgeUploads({
 }: UseKnowledgeUploadsOptions) {
   const [attachments, setAttachments] = useState<Attachment[]>(initialAttachments);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [reading, setReading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [registering, setRegistering] = useState(false);
   const [deletingAttachmentId, setDeletingAttachmentId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,17 +37,32 @@ export function useKnowledgeUploads({
       return;
     }
 
-    setUploading(true);
+    setReading(true);
+    setUploading(false);
+    setRegistering(false);
+    setUploadProgress(0);
 
     try {
       const buffer = await selectedFile.arrayBuffer();
-      const data = await uploadKnowledgeFile({
-        filename: selectedFile.name,
-        mime_type: selectedFile.type || 'application/octet-stream',
-        file_size: selectedFile.size,
-        source_kind: 'dashboard-upload',
-        base64: toBase64(buffer),
-      });
+      setReading(false);
+      setUploading(true);
+
+      const data = await uploadKnowledgeFileWithProgress(
+        {
+          filename: selectedFile.name,
+          mime_type: selectedFile.type || 'application/octet-stream',
+          file_size: selectedFile.size,
+          source_kind: 'dashboard-upload',
+          base64: toBase64(buffer),
+        },
+        (progress) => {
+          setUploadProgress(progress);
+          if (progress >= 100) {
+            setUploading(false);
+            setRegistering(true);
+          }
+        }
+      );
 
       if (data.attachment) {
         setAttachments((current) => [data.attachment as Attachment, ...current].slice(0, MAX_ATTACHMENTS));
@@ -56,7 +74,10 @@ export function useKnowledgeUploads({
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Erro ao enviar arquivo.');
     } finally {
+      setReading(false);
       setUploading(false);
+      setRegistering(false);
+      setUploadProgress(0);
     }
   }
 
@@ -88,7 +109,10 @@ export function useKnowledgeUploads({
     setAttachments,
     selectedFile,
     setSelectedFile,
+    reading,
     uploading,
+    uploadProgress,
+    registering,
     deletingAttachmentId,
     uploadKnowledgeFile: upload,
     deleteAttachment,

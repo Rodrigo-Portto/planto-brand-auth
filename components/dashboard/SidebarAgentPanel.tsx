@@ -69,7 +69,7 @@ function factorTone(percent: number, theme: DashboardThemeColors) {
 
 function agentPanelSurface(theme: DashboardThemeColors) {
   return {
-    borderRadius: '22px',
+    borderRadius: 'var(--planto-radius-panel)',
     border: `1px solid ${theme.border}`,
     background: theme.surfaceSoft,
     padding: '18px',
@@ -136,7 +136,7 @@ export function SidebarAgentPanel({
               style={{
                 width: '64px',
                 height: '64px',
-                borderRadius: '999px',
+                borderRadius: 'var(--planto-radius-pill)',
                 display: 'grid',
                 placeItems: 'center',
                 background: theme.statusMutedSoft,
@@ -162,13 +162,13 @@ export function SidebarAgentPanel({
                 {agentReadiness}/{AGENT_READINESS_THRESHOLD}%
               </span>
             </div>
-            <div style={{ height: '7px', borderRadius: '999px', background: theme.progressTrack, overflow: 'hidden' }}>
+            <div style={{ height: '7px', borderRadius: 'var(--planto-radius-pill)', background: theme.progressTrack, overflow: 'hidden' }}>
               <div
                 style={{
                   height: '100%',
                   width: `${agentReadiness}%`,
                   background: theme.progressFill,
-                  borderRadius: '999px',
+                  borderRadius: 'var(--planto-radius-pill)',
                   boxShadow: `0 0 0 3px ${theme.accentSoft}`,
                 }}
               />
@@ -187,13 +187,13 @@ export function SidebarAgentPanel({
                       {factor.current}/{factor.total}
                     </span>
                   </div>
-                  <div style={{ height: '5px', borderRadius: '999px', background: theme.progressTrack, overflow: 'hidden' }}>
+                  <div style={{ height: '5px', borderRadius: 'var(--planto-radius-pill)', background: theme.progressTrack, overflow: 'hidden' }}>
                     <div
                       style={{
                         height: '100%',
                         width: `${percent}%`,
                         background: tone.color,
-                        borderRadius: '999px',
+                        borderRadius: 'var(--planto-radius-pill)',
                       }}
                     />
                   </div>
@@ -226,7 +226,7 @@ export function SidebarAgentPanel({
               style={{
                 width: '48px',
                 height: '48px',
-                borderRadius: '14px',
+                borderRadius: 'var(--planto-radius-surface)',
                 display: 'grid',
                 placeItems: 'center',
                 background: agentUnlocked ? alpha(theme.statusActive, 0.14) : theme.statusMutedSoft,
@@ -250,7 +250,7 @@ export function SidebarAgentPanel({
 
           <div
             style={{
-              borderRadius: '18px',
+              borderRadius: 'var(--planto-radius-panel)',
               border: `1px solid ${theme.border}`,
               background: theme.surfaceStrong,
               padding: '16px',

@@ -86,6 +86,51 @@ export async function uploadKnowledgeFile(
   });
 }
 
+export function uploadKnowledgeFileWithProgress(
+  payload: {
+    filename: string;
+    mime_type: string;
+    file_size: number;
+    source_kind: string;
+    base64: string;
+  },
+  onProgress?: (progress: number) => void
+): Promise<{ attachment?: DashboardPayload['attachments'][number] }> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.open('POST', '/api/upload');
+    xhr.setRequestHeader('Content-Type', 'application/json');
+
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable) return;
+      onProgress?.(Math.round((event.loaded / event.total) * 100));
+    };
+
+    xhr.onerror = () => reject(new Error('Erro ao enviar arquivo.'));
+    xhr.onload = () => {
+      const rawText = xhr.responseText || '';
+      let data: { error?: string; attachment?: DashboardPayload['attachments'][number] } = {};
+
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
+
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(new Error(data.error || `Erro na requisicao (${xhr.status}).`));
+        return;
+      }
+
+      onProgress?.(100);
+      resolve(data);
+    };
+
+    xhr.send(JSON.stringify(payload));
+  });
+}
+
 export async function deleteKnowledgeFile(id: string): Promise<{ success: boolean }> {
   return requestJson<{ success: boolean }>('/api/upload', {
     method: 'DELETE',

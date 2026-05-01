@@ -49,14 +49,14 @@ export type PipelineStageStatus = 'pending' | 'processing' | 'done' | 'error' | 
 export type PipelineOverallStatus = 'pending' | 'processing' | 'done' | 'error';
 
 export interface PipelineMonitorStage {
-  key: 'uploaded' | 'extracted' | 'embedded' | 'briefing' | 'promoted' | 'knowledge';
+  key: 'context' | 'knowledge' | 'mapped' | 'connected' | 'active';
   label: string;
   status: PipelineStageStatus;
 }
 
 export interface PipelineMonitorItem {
   id: string;
-  source_type: 'attachment' | 'brand_document';
+  source_type: 'attachment';
   title: string;
   created_at?: string | null;
   updated_at?: string | null;

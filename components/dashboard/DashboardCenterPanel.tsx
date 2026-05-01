@@ -68,12 +68,6 @@ function sectionSurface(theme: DashboardThemeColors, elevated = false) {
   return elevated ? theme.surfaceRaised : theme.surfaceBase;
 }
 
-function sectionShadow(theme: DashboardThemeColors) {
-  return theme.name === 'light'
-    ? '0 22px 40px rgba(13, 35, 24, 0.08)'
-    : '0 22px 40px rgba(0, 0, 0, 0.28)';
-}
-
 function progressTrack(theme: DashboardThemeColors) {
   return theme.progressTrack;
 }
@@ -103,13 +97,12 @@ function DashboardSection({
   return (
     <section
       style={{
-        borderRadius: '24px',
+        borderRadius: 'var(--planto-radius-panel)',
         border: `1px solid ${theme.border}`,
         background: sectionSurface(theme),
         padding: '18px',
         display: 'grid',
         gap: '14px',
-        boxShadow: sectionShadow(theme),
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
@@ -120,7 +113,7 @@ function DashboardSection({
               fontSize: '0.72rem',
               fontWeight: 800,
               padding: '4px 10px',
-              borderRadius: '999px',
+              borderRadius: 'var(--planto-radius-pill)',
               background: theme.accentSoft,
               color: theme.accentMuted,
               letterSpacing: '0.06em',
@@ -337,59 +330,6 @@ export function DashboardCenterPanel({
   const totalDomainCount = domainCoverage.reduce((sum, domain) => sum + domain.count, 0);
   const ringMax = Math.max(...domainCoverage.map((domain) => domain.count), 1);
 
-  const handleNextAction = () => {
-    if (nextAction.target === 'upload') {
-      onJumpToUpload();
-      return;
-    }
-
-    if (nextAction.target === 'cards') {
-      onJumpToCards();
-      return;
-    }
-
-    onJumpToAgent();
-  };
-
-  if (stage === 'welcome' || stage === 'processing') {
-    const isWelcome = stage === 'welcome';
-
-    return (
-      <section style={styles.singleDashboardWideCard}>
-        <div style={{ display: 'grid', gap: '10px' }}>
-          <p style={{ ...styles.smallText, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            {isWelcome ? 'Contexto inicial' : 'Processando contexto'}
-          </p>
-          <h2 style={{ ...styles.panelTitle, fontSize: '1.62rem', lineHeight: 1.16 }}>
-            {isWelcome
-              ? 'Adicione materiais para alimentar os próximos painéis do dashboard.'
-              : 'O Planntô já está organizando a base para revelar os primeiros sinais da marca.'}
-          </h2>
-          <p style={{ ...styles.smallText, fontSize: '0.96rem', lineHeight: 1.75 }}>
-            {isWelcome
-              ? 'O restante do dashboard aparece depois que o primeiro contexto for enviado.'
-              : 'Extração, vetorização e promoção ao conhecimento acontecem aqui. Assim que o contexto amadurece, o painel analítico assume a frente.'}
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={styles.countBadge}>{monitor.summary.total_items} arquivos recebidos</span>
-          <span style={styles.countBadge}>{monitor.summary.processing_items} em processamento</span>
-          <span style={styles.countBadge}>{overview.embedding_completed}/{overview.embedding_total} vetorizados</span>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button type="button" style={styles.primaryButton} onClick={handleNextAction}>
-            {nextAction.cta_label}
-          </button>
-          <button type="button" style={styles.secondaryButton} onClick={onJumpToUpload}>
-            {isWelcome ? 'Adicionar contexto' : 'Adicionar mais contexto'}
-          </button>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <div style={{ display: 'grid', gap: '16px' }}>
       <DashboardSection title="Pipeline de contexto" badge={`${monitor.summary.total_items} arquivos`} theme={theme}>
@@ -447,13 +387,13 @@ export function DashboardCenterPanel({
                       {dimension.score}
                     </span>
                   </div>
-                  <div style={{ height: '4px', background: progressTrack(theme), borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ height: '4px', background: progressTrack(theme), borderRadius: 'var(--planto-radius-pill)', overflow: 'hidden' }}>
                     <div
                       style={{
                         height: '100%',
                         width: `${dimension.score}%`,
                         background: alpha(theme.accent, 0.55 + opacity * 0.45),
-                        borderRadius: '999px',
+                        borderRadius: 'var(--planto-radius-pill)',
                       }}
                     />
                   </div>
@@ -490,13 +430,13 @@ export function DashboardCenterPanel({
                       {relation.count}
                     </span>
                   </div>
-                  <div style={{ flex: 1, height: '4px', background: progressTrack(theme), borderRadius: '999px' }}>
+                  <div style={{ flex: 1, height: '4px', background: progressTrack(theme), borderRadius: 'var(--planto-radius-pill)' }}>
                     <div
                       style={{
                         height: '100%',
                         width: `${width}%`,
                         background: alpha(theme.accent, opacity),
-                        borderRadius: '999px',
+                        borderRadius: 'var(--planto-radius-pill)',
                       }}
                     />
                   </div>
@@ -525,7 +465,7 @@ export function DashboardCenterPanel({
               marginTop: '2px',
               background: theme.statusActiveSoft,
               border: `1px solid ${theme.borderAccent}`,
-              borderRadius: '12px',
+              borderRadius: 'var(--planto-radius-surface)',
               padding: '10px 14px',
               display: 'flex',
               alignItems: 'center',
@@ -565,7 +505,7 @@ export function DashboardCenterPanel({
               style={{
                 background: sectionSurface(theme, true),
                 border: `1px solid ${theme.border}`,
-                borderRadius: '12px',
+                borderRadius: 'var(--planto-radius-surface)',
                 padding: '12px 14px',
               }}
             >
@@ -588,7 +528,7 @@ export function DashboardCenterPanel({
             style={{
               background: theme.statusActiveSoft,
               border: `1px solid ${theme.borderAccent}`,
-              borderRadius: '12px',
+              borderRadius: 'var(--planto-radius-surface)',
               padding: '12px 14px',
               fontSize: '0.82rem',
               color: theme.text,
@@ -602,7 +542,7 @@ export function DashboardCenterPanel({
           style={{
             background: sectionSurface(theme, true),
             border: `1px solid ${theme.borderAccent}`,
-            borderRadius: '12px',
+            borderRadius: 'var(--planto-radius-surface)',
             padding: '12px 14px',
           }}
         >
@@ -629,7 +569,7 @@ export function DashboardCenterPanel({
               style={{
                 background: pillar.active ? theme.statusActiveSoft : sectionSurface(theme, true),
                 border: `1px solid ${pillar.active ? theme.borderAccent : theme.border}`,
-                borderRadius: '14px',
+              borderRadius: 'var(--planto-radius-surface)',
                 padding: '12px',
                 display: 'flex',
                 gap: '10px',
@@ -640,7 +580,7 @@ export function DashboardCenterPanel({
                 style={{
                   width: '32px',
                   height: '32px',
-                  borderRadius: '10px',
+                  borderRadius: 'var(--planto-radius-control)',
                   background: pillar.active ? alpha(theme.accent, 0.18) : theme.surfaceStrong,
                   display: 'grid',
                   placeItems: 'center',
@@ -674,7 +614,7 @@ export function DashboardCenterPanel({
         {overview.platform_next_unlocks.length > 0 ? (
           <div
             style={{
-              borderRadius: '12px',
+              borderRadius: 'var(--planto-radius-surface)',
               padding: '12px 14px',
               display: 'grid',
               gap: '4px',

@@ -1,20 +1,31 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GetServerSidePropsContext } from 'next';
 import { useRouter } from 'next/router';
-import { DashboardCenterPanel } from '../components/dashboard/DashboardCenterPanel';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { DashboardShell } from '../components/dashboard/DashboardShell';
-import { FlashcardPanel } from '../components/dashboard/FlashcardPanel';
-import { KnowledgePanel } from '../components/dashboard/KnowledgePanel';
-import { SidebarAgentPanel } from '../components/dashboard/SidebarAgentPanel';
+import { TokenPanel } from '../components/dashboard/TokenPanel';
+import { UploadPipelinePanel } from '../components/dashboard/UploadPipelinePanel';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useDashboardSession } from '../hooks/useDashboardSession';
 import { useGptToken } from '../hooks/useGptToken';
 import { useKnowledgeUploads } from '../hooks/useKnowledgeUploads';
 import { useThemeMode } from '../hooks/useThemeMode';
-import { getServerAuthenticatedUser } from '../lib/supabase/server';
 import { createDashboardStyles, themeTokens } from '../lib/domain/dashboardTheme';
 import { isSessionTokenInvalidMessage } from '../lib/domain/session';
+import { getSupabaseBrowserClient } from '../lib/supabase/browser';
+import { getServerAuthenticatedUser } from '../lib/supabase/server';
+
+const REALTIME_TABLES = [
+  'user_attachments',
+  'brand_context_responses',
+  'brand_knowledge',
+  'plataforma_marca',
+  'strategic_assessments',
+  'strategic_diagnostics',
+  'strategic_issues',
+  'strategic_evidence_links',
+  'gpt_access_tokens',
+];
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -24,12 +35,7 @@ export default function DashboardPage() {
   const [notice, setNotice] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [viewportWidth, setViewportWidth] = useState(1440);
-  const [isUnlockingDashboard, setIsUnlockingDashboard] = useState(false);
-
-  const uploadSectionRef = useRef<HTMLDivElement | null>(null);
-  const cardsSectionRef = useRef<HTMLDivElement | null>(null);
-  const agentSectionRef = useRef<HTMLDivElement | null>(null);
-  const unlockTimerRef = useRef<number | null>(null);
+  const realtimeRefreshTimerRef = useRef<number | null>(null);
 
   const theme = themeTokens[themeMode];
   const styles = useMemo(() => createDashboardStyles(theme, viewportWidth), [theme, viewportWidth]);
@@ -67,14 +73,6 @@ export default function DashboardPage() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
-  useEffect(() => {
-    return () => {
-      if (unlockTimerRef.current) {
-        window.clearTimeout(unlockTimerRef.current);
-      }
-    };
-  }, []);
-
   const handleTokenInvalid = useCallback(() => {
     resetSession();
     void router.replace('/');
@@ -83,6 +81,18 @@ export default function DashboardPage() {
   const dashboardData = useDashboardData({
     onTokenInvalid: handleTokenInvalid,
   });
+  const refreshDashboardData = dashboardData.refresh;
+
+  const scheduleSilentRefresh = useCallback(() => {
+    if (realtimeRefreshTimerRef.current) {
+      window.clearTimeout(realtimeRefreshTimerRef.current);
+    }
+
+    realtimeRefreshTimerRef.current = window.setTimeout(() => {
+      realtimeRefreshTimerRef.current = null;
+      void refreshDashboardData({ silent: true });
+    }, 450);
+  }, [refreshDashboardData]);
 
   useEffect(() => {
     if (dashboardData.error) {
@@ -90,32 +100,58 @@ export default function DashboardPage() {
     }
   }, [dashboardData.error]);
 
-  const isInitialContextMode =
-    !dashboardData.profile?.dashboard_onboarded_at &&
-    dashboardData.attachments.length === 0 &&
-    dashboardData.dashboardStage === 'welcome';
+  useEffect(() => {
+    const userId = dashboardData.user?.id;
+    if (!sessionReady || !userId) return undefined;
+
+    let realtimeChannel: ReturnType<ReturnType<typeof getSupabaseBrowserClient>['channel']> | null = null;
+    let pollingTimer: number | null = null;
+
+    try {
+      const supabase = getSupabaseBrowserClient();
+      realtimeChannel = supabase.channel(`dashboard-pipeline:${userId}`);
+
+      REALTIME_TABLES.forEach((table) => {
+        realtimeChannel = realtimeChannel?.on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table,
+            filter: `user_id=eq.${userId}`,
+          },
+          scheduleSilentRefresh
+        ) || null;
+      });
+
+      void realtimeChannel?.subscribe();
+    } catch {
+      realtimeChannel = null;
+    }
+
+    pollingTimer = window.setInterval(() => {
+      void refreshDashboardData({ silent: true });
+    }, 10000);
+
+    return () => {
+      if (realtimeRefreshTimerRef.current) {
+        window.clearTimeout(realtimeRefreshTimerRef.current);
+        realtimeRefreshTimerRef.current = null;
+      }
+      if (pollingTimer) {
+        window.clearInterval(pollingTimer);
+      }
+      if (realtimeChannel) {
+        void getSupabaseBrowserClient().removeChannel(realtimeChannel);
+      }
+    };
+  }, [dashboardData.user?.id, refreshDashboardData, scheduleSilentRefresh, sessionReady]);
 
   const knowledgeUploads = useKnowledgeUploads({
     initialAttachments: dashboardData.attachments,
     onSaved: (message) => {
-      const isFirstUpload = isInitialContextMode && !message;
-      if (isFirstUpload) {
-        setIsUnlockingDashboard(true);
-      }
-
       showSavedNotice(message || 'Contexto atualizado');
-      void dashboardData.refresh({ silent: true }).finally(() => {
-        if (!isFirstUpload) return;
-
-        if (unlockTimerRef.current) {
-          window.clearTimeout(unlockTimerRef.current);
-        }
-
-        unlockTimerRef.current = window.setTimeout(() => {
-          setIsUnlockingDashboard(false);
-          unlockTimerRef.current = null;
-        }, 900);
-      });
+      void dashboardData.refresh({ silent: true });
     },
     onError: handleDashboardError,
   });
@@ -136,76 +172,13 @@ export default function DashboardPage() {
     return 'por aqui';
   }, [dashboardData.profile?.name, dashboardData.profile?.surname, dashboardData.user?.email]);
 
-  const scrollToRef = useCallback((ref: RefObject<HTMLDivElement | null>) => {
-    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, []);
-
-  const focusUpload = useCallback(() => {
-    scrollToRef(uploadSectionRef);
-  }, [scrollToRef]);
-
-  const focusCards = useCallback(() => {
-    scrollToRef(cardsSectionRef);
-  }, [scrollToRef]);
-
-  const focusAgent = useCallback(() => {
-    scrollToRef(agentSectionRef);
-  }, [scrollToRef]);
-
-  function renderCard(title: string, body: ReactNode, actions?: ReactNode, wide = false) {
-    return (
-      <section style={wide ? styles.singleDashboardWideCard : styles.panelCard}>
-        <div style={styles.panelCardHeader}>
-          <h2 style={styles.panelTitle}>{title}</h2>
-          {actions ? <div style={styles.panelCardHeaderGroup}>{actions}</div> : null}
-        </div>
-        {body}
-      </section>
-    );
-  }
-
-  function renderUploadPanel(variant: 'sidebar' | 'onboarding' = 'sidebar', className?: string) {
-    const isOnboarding = variant === 'onboarding';
-
-    return (
-      <section
-        className={className}
-        style={isOnboarding ? { ...styles.singleDashboardWideCard, maxWidth: '760px', width: '100%' } : styles.panelCard}
-      >
-        {!isOnboarding ? (
-          <div style={styles.panelCardHeader}>
-            <h2 style={styles.panelTitle}>Adicionar ao contexto</h2>
-          </div>
-        ) : null}
-        <KnowledgePanel
-          styles={styles}
-          showTitle={isOnboarding}
-          variant={variant}
-          attachments={knowledgeUploads.attachments}
-          selectedFile={knowledgeUploads.selectedFile}
-          uploading={knowledgeUploads.uploading}
-          deletingAttachmentId={knowledgeUploads.deletingAttachmentId}
-          onSelectedFileChange={knowledgeUploads.setSelectedFile}
-          onUpload={knowledgeUploads.uploadKnowledgeFile}
-          onDeleteAttachment={knowledgeUploads.deleteAttachment}
-        />
-      </section>
-    );
-  }
-
-  function renderSkeletonCard(label?: string, tall = false) {
-    return (
-      <section className="planto-skeleton-card" style={{ ...styles.panelCard, minHeight: tall ? '280px' : '148px' }}>
-        <div className="planto-skeleton-line planto-skeleton-line--short" />
-        <div className="planto-skeleton-line" />
-        <div className="planto-skeleton-line" />
-        {label ? <span style={{ ...styles.smallText, marginTop: 'auto' }}>{label}</span> : null}
-      </section>
-    );
-  }
-
   const isLoading = !sessionReady || dashboardData.loading;
-  const showInitialUploadOnly = isInitialContextMode && !isUnlockingDashboard;
+  const panelGridStyle = {
+    display: 'grid',
+    gap: viewportWidth >= 1120 ? '16px' : '12px',
+    gridTemplateColumns: viewportWidth >= 1120 ? 'minmax(280px, 360px) minmax(0, 1fr)' : 'minmax(0, 1fr)',
+    alignItems: 'start',
+  } as const;
 
   return (
     <DashboardShell
@@ -224,83 +197,41 @@ export default function DashboardPage() {
       errorMessage={errorMessage}
       loading={isLoading}
     >
-      {showInitialUploadOnly ? (
-        <section className="planto-initial-context">
-          {renderUploadPanel('onboarding', 'planto-initial-context-card')}
-        </section>
-      ) : isUnlockingDashboard ? (
-        <section className="planto-dashboard-unlocking" style={styles.singleDashboardGrid}>
-          <div className="planto-dashboard-fadein" style={styles.singleDashboardMain}>
-            {renderSkeletonCard('Carregando pipeline de contexto', true)}
-            {renderSkeletonCard('Preparando conhecimento de marca', true)}
+      <section className="planto-dashboard-fadein" style={panelGridStyle}>
+        <section style={styles.panelCard}>
+          <div style={styles.panelCardHeader}>
+            <h2 style={styles.panelTitle}>Token do usuario</h2>
           </div>
-
-          <aside style={styles.singleDashboardSide}>
-            <div ref={uploadSectionRef}>
-              {renderUploadPanel('sidebar', 'planto-upload-card-settling')}
-            </div>
-            <div className="planto-dashboard-fadein">
-              {renderSkeletonCard('Carregando perguntas')}
-            </div>
-            <div className="planto-dashboard-fadein">
-              {renderSkeletonCard('Carregando agente')}
-            </div>
-          </aside>
-        </section>
-      ) : (
-      <section className="planto-dashboard-fadein" style={styles.singleDashboardGrid}>
-        <div style={styles.singleDashboardMain}>
-          <DashboardCenterPanel
-              stage={dashboardData.dashboardStage}
-              nextAction={dashboardData.nextAction}
-              overview={dashboardData.overview}
-              monitor={dashboardData.pipelineMonitor}
-              styles={styles}
-              theme={theme}
-              onJumpToUpload={focusUpload}
-              onJumpToCards={focusCards}
-              onJumpToAgent={focusAgent}
+          <TokenPanel
+            styles={styles}
+            theme={theme}
+            showTitle={false}
+            createdToken={gptToken.createdToken}
+            tokenCopied={gptToken.tokenCopied}
+            copyingDisabled={!gptToken.createdToken}
+            savingToken={gptToken.savingToken}
+            canGenerateToken={gptToken.canGenerateToken}
+            onCreateToken={gptToken.createToken}
+            onCopyToken={gptToken.copyCurrentToken}
           />
-        </div>
+        </section>
 
-        <aside style={styles.singleDashboardSide}>
-          <div ref={uploadSectionRef}>
-            {renderUploadPanel('sidebar')}
-          </div>
-
-          <div ref={cardsSectionRef}>
-            <FlashcardPanel
-              styles={styles}
-              colors={theme}
-              questions={dashboardData.strategicQuestions}
-              onAnswered={() => void dashboardData.refresh({ silent: true })}
-            />
-          </div>
-
-          <div ref={agentSectionRef}>
-            {renderCard(
-              'Agente',
-              <SidebarAgentPanel
-                styles={styles}
-                theme={theme}
-                summary={dashboardData.pipelineMonitor.summary}
-                strategicQuestionCount={dashboardData.strategicQuestionCount}
-                agentReadiness={dashboardData.agentReadiness}
-                agentUnlocked={dashboardData.agentUnlocked}
-                createdToken={gptToken.createdToken}
-                tokenCopied={gptToken.tokenCopied}
-                savingToken={gptToken.savingToken}
-                canGenerateToken={gptToken.canGenerateToken}
-                onCreateToken={gptToken.createToken}
-                onCopyToken={gptToken.copyCurrentToken}
-                onJumpToCards={focusCards}
-                onJumpToUpload={focusUpload}
-              />
-            )}
-          </div>
-        </aside>
+        <UploadPipelinePanel
+          styles={styles}
+          theme={theme}
+          attachments={knowledgeUploads.attachments}
+          monitor={dashboardData.pipelineMonitor}
+          selectedFile={knowledgeUploads.selectedFile}
+          reading={knowledgeUploads.reading}
+          uploading={knowledgeUploads.uploading}
+          uploadProgress={knowledgeUploads.uploadProgress}
+          registering={knowledgeUploads.registering}
+          deletingAttachmentId={knowledgeUploads.deletingAttachmentId}
+          onSelectedFileChange={knowledgeUploads.setSelectedFile}
+          onUpload={knowledgeUploads.uploadKnowledgeFile}
+          onDeleteAttachment={knowledgeUploads.deleteAttachment}
+        />
       </section>
-      )}
     </DashboardShell>
   );
 }

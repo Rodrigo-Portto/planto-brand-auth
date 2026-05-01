@@ -16,13 +16,14 @@ interface PipelineMonitorPanelProps {
   showStrategicQuestionCount?: boolean;
 }
 
-type TimelineStageKey = Extract<PipelineMonitorStage['key'], 'extracted' | 'briefing' | 'embedded' | 'promoted'>;
+type TimelineStageKey = Extract<PipelineMonitorStage['key'], 'context' | 'knowledge' | 'mapped' | 'connected' | 'active'>;
 
 const timelineStages: Array<{ key: TimelineStageKey; label: string }> = [
-  { key: 'extracted', label: 'Extraido' },
-  { key: 'briefing', label: 'Briefing' },
-  { key: 'embedded', label: 'Vetorizado' },
-  { key: 'promoted', label: 'Promovido' },
+  { key: 'context', label: 'Contexto' },
+  { key: 'knowledge', label: 'Conhecimento' },
+  { key: 'mapped', label: 'Mapeado' },
+  { key: 'connected', label: 'Conectado' },
+  { key: 'active', label: 'Ativo' },
 ];
 
 function indicatorColors(status: PipelineStageStatus, theme: DashboardThemeColors) {
@@ -116,7 +117,7 @@ export function PipelineMonitorPanel({
             display: 'grid',
             gap: '10px',
             border: `1px solid ${isUnlocked ? theme.borderAccent : theme.border}`,
-            borderRadius: '18px',
+            borderRadius: 'var(--planto-radius-panel)',
             padding: '14px',
             background: isUnlocked ? theme.statusActiveSoft : theme.statusWarningSoft,
           }}
@@ -142,7 +143,7 @@ export function PipelineMonitorPanel({
           <div
             style={{
               height: '6px',
-              borderRadius: '999px',
+              borderRadius: 'var(--planto-radius-pill)',
               background: theme.progressTrack,
               overflow: 'hidden',
             }}
@@ -151,7 +152,7 @@ export function PipelineMonitorPanel({
               style={{
                 height: '100%',
                 width: `${readiness}%`,
-                borderRadius: '999px',
+                borderRadius: 'var(--planto-radius-pill)',
                 background: theme.progressFill,
               }}
             />
@@ -183,7 +184,7 @@ export function PipelineMonitorPanel({
                 key={card.label}
                 style={{
                   border: `1px solid ${card.featured ? theme.borderAccent : theme.border}`,
-                  borderRadius: '16px',
+                  borderRadius: 'var(--planto-radius-surface)',
                   background,
                   padding: '10px',
                   minWidth: 0,
@@ -202,7 +203,7 @@ export function PipelineMonitorPanel({
         <div
           style={{
             border: `1px solid ${theme.borderAccent}`,
-            borderRadius: '16px',
+            borderRadius: 'var(--planto-radius-surface)',
             background: theme.accentSoft,
             padding: '10px 12px',
           }}
@@ -215,12 +216,12 @@ export function PipelineMonitorPanel({
               {summary.briefing_answered}/{summary.briefing_total} ({briefingPct}%)
             </p>
           </div>
-          <div style={{ height: '5px', borderRadius: '5px', background: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
+          <div style={{ height: '5px', borderRadius: 'var(--planto-radius-xs)', background: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
             <div
               style={{
                 height: '100%',
                 width: `${briefingPct}%`,
-                borderRadius: '5px',
+                borderRadius: 'var(--planto-radius-xs)',
                 background: theme.accent,
                 transition: 'width 0.6s ease',
               }}
@@ -249,7 +250,7 @@ export function PipelineMonitorPanel({
                 key={`${item.source_type}:${item.id}`}
                 style={{
                   border: `1px solid ${theme.border}`,
-                  borderRadius: '18px',
+                  borderRadius: 'var(--planto-radius-panel)',
                   background: theme.surfaceRaised,
                   padding: '12px 14px',
                   display: 'flex',
@@ -271,10 +272,10 @@ export function PipelineMonitorPanel({
                   aria-label={`Regua de processamento de ${item.title}`}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(4, minmax(68px, 1fr))',
+                    gridTemplateColumns: 'repeat(5, minmax(70px, 1fr))',
                     gap: '12px',
                     alignItems: 'center',
-                    flex: '0 1 408px',
+                    flex: '0 1 520px',
                     minWidth: '280px',
                   }}
                 >
@@ -297,7 +298,7 @@ export function PipelineMonitorPanel({
                           style={{
                             width: '12px',
                             height: '12px',
-                            borderRadius: '999px',
+                            borderRadius: 'var(--planto-radius-pill)',
                             background: light.fill,
                             border: `1px solid ${light.border}`,
                             boxShadow: light.shadow,

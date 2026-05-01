@@ -19,10 +19,21 @@ import type {
 
 type AttachmentPipelineStatus =
   | 'uploaded'
+  | 'uploading'
   | 'extracting'
   | 'extracted'
+  | 'contexto'
+  | 'context'
   | 'briefing'
   | 'briefed'
+  | 'conhecimento'
+  | 'knowledge'
+  | 'mapeado'
+  | 'mapped'
+  | 'conectado'
+  | 'connected'
+  | 'ativo'
+  | 'active'
   | 'done'
   | 'error';
 
@@ -50,7 +61,10 @@ type AssessmentStatus = 'active' | 'stale' | 'archived' | 'error';
 
 type AssessmentRow = {
   id?: string;
+  source_attachment_id?: string | null;
   overall_score: number | null;
+  pipeline_phase?: string | null;
+  embedding?: unknown;
   reasoning_json?: {
     main_risks?: unknown;
   } | null;
@@ -62,6 +76,8 @@ type AssessmentRow = {
 };
 
 type DiagnosticRow = {
+  id?: string;
+  assessment_id?: string;
   dimension_key: string;
   dimension_label: string | null;
   score: number | null;
@@ -69,15 +85,19 @@ type DiagnosticRow = {
   diagnosis: string | null;
   recommendation: string | null;
   confidence: number | null;
+  embedding?: unknown;
 };
 
-// Mapeado para a tabela real `strategic_issues` (strategic_gaps não existe no banco)
-type StrategicGapRow = {
-  dimension_key: string | null;
+type StrategicIssueRow = {
+  id?: string;
+  assessment_id?: string;
+  dimension_key?: string | null;
   title: string;
   severity: DashboardStrategicGap['severity'];
   description: string | null;
   suggested_action: string | null;
+  resolution_hint?: string | null;
+  embedding?: unknown;
 };
 
 type KnowledgeRow = {
@@ -87,6 +107,17 @@ type KnowledgeRow = {
   status: string;
   is_canonical: boolean | null;
   readable_label?: string | null;
+  source_attachment_id?: string | null;
+  embedding?: unknown;
+};
+
+type StrategicEvidenceLinkRow = {
+  id: string;
+  assessment_id: string | null;
+  target_id?: string | null;
+  target_table?: string | null;
+  evidence_id?: string | null;
+  evidence_table?: string | null;
 };
 
 type KnowledgeLinkRow = {
@@ -286,51 +317,102 @@ function normalizeStageStatus(
   return 'pending';
 }
 
+function hasEmbeddingValue(value: unknown) {
+  if (value == null) return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'string') return value.trim() !== '';
+  return true;
+}
+
+function isDoneStatus(status?: AttachmentPipelineStatus | null) {
+  return status === 'done' || status === 'ativo' || status === 'active';
+}
+
 function attachmentStageStatus(
   attachment: AttachmentRow,
-  summary: AttachmentResponseSummary
+  summary: AttachmentResponseSummary,
+  relatedKnowledge: KnowledgeRow[],
+  relatedAssessments: AssessmentRow[],
+  diagnosticsByAssessment: Map<string, DiagnosticRow[]>,
+  issuesByAssessment: Map<string, StrategicIssueRow[]>,
+  evidenceByAssessment: Map<string, StrategicEvidenceLinkRow[]>
 ): PipelineMonitorStage[] {
   const status = attachment.pipeline_status;
   const hasContent = typeof attachment.content_text === 'string' && attachment.content_text.trim() !== '';
   const hasBriefing = summary.total > 0 || attachment.briefing_done_at != null;
-  const hasEmbedding = summary.embedded > 0;
-  const hasPromotion = attachment.promoted_at != null || summary.promoted > 0 || status === 'done';
+  const hasContext = hasContent && hasBriefing;
+  const hasKnowledge = relatedKnowledge.some((row) => row.status === 'active') || status === 'conhecimento' || status === 'knowledge';
+  const completeAssessments = relatedAssessments.filter((assessment) => {
+    const assessmentId = assessment.id || '';
+    const hasDiagnostics = (diagnosticsByAssessment.get(assessmentId) || []).some((row) => row.score != null || row.diagnosis);
+    const hasIssues = (issuesByAssessment.get(assessmentId) || []).length > 0;
+    const hasEvidence = (evidenceByAssessment.get(assessmentId) || []).length > 0;
+    return assessmentId && assessment.status === 'active' && hasDiagnostics && hasIssues && hasEvidence;
+  });
+  const hasMapped = completeAssessments.length > 0 || status === 'mapeado' || status === 'mapped';
+  const embeddableAssets = [
+    ...Array.from({ length: summary.total }, (_, index) => ({
+      id: `briefing:${index}`,
+      embedded: index < summary.embedded,
+    })),
+    ...relatedKnowledge.map((row) => ({ id: row.id, embedded: hasEmbeddingValue(row.embedding) })),
+    ...relatedAssessments.map((row) => ({ id: row.id || '', embedded: hasEmbeddingValue(row.embedding) })),
+    ...relatedAssessments.flatMap((assessment) => diagnosticsByAssessment.get(assessment.id || '') || [])
+      .map((row) => ({ id: row.id || '', embedded: hasEmbeddingValue(row.embedding) })),
+    ...relatedAssessments.flatMap((assessment) => issuesByAssessment.get(assessment.id || '') || [])
+      .map((row) => ({ id: row.id || '', embedded: hasEmbeddingValue(row.embedding) })),
+  ].filter((asset) => asset.id);
+  const hasConnected =
+    embeddableAssets.length > 0 &&
+    embeddableAssets.every((asset) => asset.embedded) &&
+    (status === 'conectado' || status === 'connected' || hasMapped);
   const isError = status === 'error';
+  const isDone = isDoneStatus(status);
+  const hasActive = hasContext && hasKnowledge && hasMapped && hasConnected && !isError;
 
   return [
     {
-      key: 'extracted',
-      label: 'Extraido',
+      key: 'context',
+      label: 'Contexto',
       status: normalizeStageStatus(
-        hasContent || status === 'extracted' || status === 'briefing' || status === 'briefed' || status === 'done',
-        status === 'extracting',
+        hasContext || status === 'contexto' || status === 'context' || isDone,
+        status === 'extracting' || status === 'briefing' || (hasContent && !hasBriefing),
         isError
       ),
     },
     {
-      key: 'briefing',
-      label: 'Briefing',
+      key: 'knowledge',
+      label: 'Conhecimento',
       status: normalizeStageStatus(
-        hasBriefing || status === 'briefed' || status === 'done',
-        status === 'briefing',
+        hasKnowledge || isDone,
+        hasContext && !hasKnowledge,
         isError
       ),
     },
     {
-      key: 'embedded',
-      label: 'Vetorizado',
+      key: 'mapped',
+      label: 'Mapeado',
       status: normalizeStageStatus(
-        hasEmbedding || (status === 'done' && hasBriefing),
-        (status === 'briefed' || status === 'done') && !hasEmbedding,
+        hasMapped || isDone,
+        hasKnowledge && !hasMapped,
         isError
       ),
     },
     {
-      key: 'promoted',
-      label: 'Promovido',
+      key: 'connected',
+      label: 'Conectado',
       status: normalizeStageStatus(
-        hasPromotion,
-        (status === 'briefed' || status === 'done') && !hasPromotion,
+        hasConnected || isDone,
+        hasMapped && !hasConnected,
+        isError
+      ),
+    },
+    {
+      key: 'active',
+      label: 'Ativo',
+      status: normalizeStageStatus(
+        hasActive || isDone,
+        hasConnected && !hasActive,
         isError
       ),
     },
@@ -408,16 +490,39 @@ function inferAssessmentScore(dimensions: DashboardMaturityDimension[]) {
 export async function buildPipelineMonitor(userId: string): Promise<PipelineMonitor> {
   const encoded = encodeURIComponent(userId);
 
-  const [briefingRes, knowledgeRes, attachmentsRes, docsRes] = await Promise.all([
+  const [
+    briefingRes,
+    knowledgeRes,
+    attachmentsRes,
+    docsRes,
+    assessmentsRes,
+    diagnosticsRes,
+    issuesRes,
+    evidenceRes,
+  ] = await Promise.all([
     supabaseRest(
       `/rest/v1/brand_context_responses?user_id=eq.${encoded}&answer_type=eq.briefing&response_status=eq.active&select=id,source_attachment_id,embedding,promoted_at,response_status`
     ),
-    supabaseRest(`/rest/v1/brand_knowledge?user_id=eq.${encoded}&select=id,status`),
+    supabaseRest(
+      `/rest/v1/brand_knowledge?user_id=eq.${encoded}&select=id,item_key,item_group,status,is_canonical,readable_label,source_attachment_id,embedding`
+    ),
     supabaseRest(
       `/rest/v1/user_attachments?user_id=eq.${encoded}&select=id,filename,created_at,updated_at,content_text,promoted_at,pipeline_status,pipeline_error,briefing_done_at&order=created_at.desc`
     ),
     supabaseRest(
       `/rest/v1/plataforma_marca?user_id=eq.${encoded}&status=eq.active&output_json=not.is.null&select=model_key`
+    ),
+    supabaseRest(
+      `/rest/v1/strategic_assessments?user_id=eq.${encoded}&select=id,source_attachment_id,status,pipeline_phase,embedding,error_msg`
+    ),
+    supabaseRest(
+      `/rest/v1/strategic_diagnostics?user_id=eq.${encoded}&status=eq.active&select=id,assessment_id,dimension_key,dimension_label,score,maturity_level,diagnosis,recommendation,confidence,embedding&limit=1000`
+    ),
+    supabaseRest(
+      `/rest/v1/strategic_issues?user_id=eq.${encoded}&status=eq.active&select=id,assessment_id,dimension_key,title,severity,description,suggested_action,resolution_hint,embedding&limit=1000`
+    ),
+    supabaseRest(
+      `/rest/v1/strategic_evidence_links?user_id=eq.${encoded}&select=id,assessment_id,target_id,target_table,evidence_id,evidence_table&limit=1000`
     ),
   ]);
 
@@ -433,14 +538,30 @@ export async function buildPipelineMonitor(userId: string): Promise<PipelineMoni
   if (!docsRes.response.ok) {
     throw new Error(extractErrorMessage(docsRes.data, 'Falha ao carregar plataforma de marca.'));
   }
+  if (!assessmentsRes.response.ok) {
+    throw new Error(extractErrorMessage(assessmentsRes.data, 'Falha ao carregar avaliacoes estrategicas.'));
+  }
+  if (!diagnosticsRes.response.ok) {
+    throw new Error(extractErrorMessage(diagnosticsRes.data, 'Falha ao carregar diagnosticos estrategicos.'));
+  }
+  if (!issuesRes.response.ok) {
+    throw new Error(extractErrorMessage(issuesRes.data, 'Falha ao carregar questoes estrategicas.'));
+  }
+  if (!evidenceRes.response.ok) {
+    throw new Error(extractErrorMessage(evidenceRes.data, 'Falha ao carregar evidencias estrategicas.'));
+  }
 
   const activeBriefingResponses = (Array.isArray(briefingRes.data) ? briefingRes.data : []) as BriefingResponseRow[];
   const briefingAnswered = activeBriefingResponses.length;
   const briefingPending = Math.max(0, BRIEFING_TOTAL - briefingAnswered);
-  const knowledgeRows = (Array.isArray(knowledgeRes.data) ? knowledgeRes.data : []) as Array<{ status: string }>;
+  const knowledgeRows = (Array.isArray(knowledgeRes.data) ? knowledgeRes.data : []) as KnowledgeRow[];
   const knowledgeActive = knowledgeRows.filter((row) => row.status === 'active').length;
   const knowledgeTotal = knowledgeRows.length;
   const brandingFilled = Array.isArray(docsRes.data) ? docsRes.data.length : 0;
+  const assessmentRows = (Array.isArray(assessmentsRes.data) ? assessmentsRes.data : []) as AssessmentRow[];
+  const diagnosticRows = (Array.isArray(diagnosticsRes.data) ? diagnosticsRes.data : []) as DiagnosticRow[];
+  const issueRows = (Array.isArray(issuesRes.data) ? issuesRes.data : []) as StrategicIssueRow[];
+  const evidenceRows = (Array.isArray(evidenceRes.data) ? evidenceRes.data : []) as StrategicEvidenceLinkRow[];
 
   const responseSummaryByAttachment = new Map<string, AttachmentResponseSummary>();
   activeBriefingResponses.forEach((row) => {
@@ -456,6 +577,46 @@ export async function buildPipelineMonitor(userId: string): Promise<PipelineMoni
     responseSummaryByAttachment.set(row.source_attachment_id, current);
   });
 
+  const knowledgeByAttachment = new Map<string, KnowledgeRow[]>();
+  knowledgeRows.forEach((row) => {
+    if (!row.source_attachment_id) return;
+    const current = knowledgeByAttachment.get(row.source_attachment_id) || [];
+    current.push(row);
+    knowledgeByAttachment.set(row.source_attachment_id, current);
+  });
+
+  const assessmentsByAttachment = new Map<string, AssessmentRow[]>();
+  assessmentRows.forEach((row) => {
+    if (!row.source_attachment_id) return;
+    const current = assessmentsByAttachment.get(row.source_attachment_id) || [];
+    current.push(row);
+    assessmentsByAttachment.set(row.source_attachment_id, current);
+  });
+
+  const diagnosticsByAssessment = new Map<string, DiagnosticRow[]>();
+  diagnosticRows.forEach((row) => {
+    if (!row.assessment_id) return;
+    const current = diagnosticsByAssessment.get(row.assessment_id) || [];
+    current.push(row);
+    diagnosticsByAssessment.set(row.assessment_id, current);
+  });
+
+  const issuesByAssessment = new Map<string, StrategicIssueRow[]>();
+  issueRows.forEach((row) => {
+    if (!row.assessment_id) return;
+    const current = issuesByAssessment.get(row.assessment_id) || [];
+    current.push(row);
+    issuesByAssessment.set(row.assessment_id, current);
+  });
+
+  const evidenceByAssessment = new Map<string, StrategicEvidenceLinkRow[]>();
+  evidenceRows.forEach((row) => {
+    if (!row.assessment_id) return;
+    const current = evidenceByAssessment.get(row.assessment_id) || [];
+    current.push(row);
+    evidenceByAssessment.set(row.assessment_id, current);
+  });
+
   const attachmentRows = (Array.isArray(attachmentsRes.data) ? attachmentsRes.data : []) as AttachmentRow[];
   const items: PipelineMonitorItem[] = attachmentRows.map((attachment) => {
     const responseSummary = responseSummaryByAttachment.get(attachment.id) || {
@@ -463,7 +624,17 @@ export async function buildPipelineMonitor(userId: string): Promise<PipelineMoni
       embedded: 0,
       promoted: 0,
     };
-    const stages = attachmentStageStatus(attachment, responseSummary);
+    const relatedKnowledge = knowledgeByAttachment.get(attachment.id) || [];
+    const relatedAssessments = assessmentsByAttachment.get(attachment.id) || [];
+    const stages = attachmentStageStatus(
+      attachment,
+      responseSummary,
+      relatedKnowledge,
+      relatedAssessments,
+      diagnosticsByAssessment,
+      issuesByAssessment,
+      evidenceByAssessment
+    );
     const isError = attachment.pipeline_status === 'error' || Boolean(attachment.pipeline_error);
     const allDone = stages.every((stage) => stage.status === 'done');
     const overallStatus: PipelineMonitorItem['overall_status'] = isError
@@ -474,7 +645,7 @@ export async function buildPipelineMonitor(userId: string): Promise<PipelineMoni
 
     if (
       attachment.pipeline_status === 'done' &&
-      stages.some((stage) => stage.key === 'embedded' && stage.status !== 'done')
+      stages.some((stage) => stage.key === 'connected' && stage.status !== 'done')
     ) {
       logDashboardDebug('pipeline_status_divergence', {
         userId,
@@ -492,7 +663,7 @@ export async function buildPipelineMonitor(userId: string): Promise<PipelineMoni
       created_at: attachment.created_at,
       updated_at: attachment.updated_at,
       overall_status: overallStatus,
-      knowledge_count: responseSummary.promoted,
+      knowledge_count: relatedKnowledge.filter((row) => row.status === 'active').length,
       last_error: attachment.pipeline_error,
       stages,
     };
@@ -583,29 +754,29 @@ export async function buildDashboardOverview(
   }
 
   let diagnosticsRows: DiagnosticRow[] = [];
-  let dbGapsRows: StrategicGapRow[] = [];
+  let dbIssueRows: StrategicIssueRow[] = [];
 
   if (selectedAssessment?.id) {
     const selectedAssessmentId = encodeURIComponent(selectedAssessment.id);
-    const [diagnosticsRes, dbGapsRes] = await Promise.all([
+    const [diagnosticsRes, dbIssuesRes] = await Promise.all([
       supabaseRest(
         `/rest/v1/strategic_diagnostics?assessment_id=eq.${selectedAssessmentId}&status=eq.active&select=dimension_key,dimension_label,score,maturity_level,diagnosis,recommendation,confidence&order=score.asc.nullslast&limit=100`
       ),
       supabaseRest(
         // Corrigido: tabela real é `strategic_issues` (strategic_gaps não existe no banco)
-        `/rest/v1/strategic_issues?assessment_id=eq.${selectedAssessmentId}&status=eq.active&select=dimension_key,title,severity,description,suggested_action&limit=100`
+        `/rest/v1/strategic_issues?assessment_id=eq.${selectedAssessmentId}&status=eq.active&select=id,assessment_id,dimension_key,title,severity,description,suggested_action,resolution_hint&limit=100`
       ),
     ]);
 
     if (!diagnosticsRes.response.ok) {
       throw new Error(extractErrorMessage(diagnosticsRes.data, 'Falha ao carregar diagnosticos estrategicos.'));
     }
-    if (!dbGapsRes.response.ok) {
-      throw new Error(extractErrorMessage(dbGapsRes.data, 'Falha ao carregar lacunas estrategicas.'));
+    if (!dbIssuesRes.response.ok) {
+      throw new Error(extractErrorMessage(dbIssuesRes.data, 'Falha ao carregar lacunas estrategicas.'));
     }
 
     diagnosticsRows = (Array.isArray(diagnosticsRes.data) ? diagnosticsRes.data : []) as DiagnosticRow[];
-    dbGapsRows = (Array.isArray(dbGapsRes.data) ? dbGapsRes.data : []) as StrategicGapRow[];
+    dbIssueRows = (Array.isArray(dbIssuesRes.data) ? dbIssuesRes.data : []) as StrategicIssueRow[];
   }
 
   if (diagnosticsRows.length === 0) {
@@ -616,7 +787,7 @@ export async function buildDashboardOverview(
     });
   }
 
-  if (dbGapsRows.length === 0) {
+  if (dbIssueRows.length === 0) {
     logDashboardDebug('missing_active_gaps', {
       userId,
       assessment_id: selectedAssessment?.id || null,
@@ -708,14 +879,13 @@ export async function buildDashboardOverview(
 
   const heuristicGaps = heuristicStrategicGaps(heuristicDimensions, selectedAssessment);
   const strategicGaps: DashboardStrategicGap[] =
-    dbGapsRows.length > 0
-      ? dbGapsRows.map((issue) => ({
-          // Mapeado de strategic_issues: dimension_key→key, title→label, description→description
-          key: issue.dimension_key || 'geral',
-          label: issue.title,
-          severity: normalizeGapSeverity(issue.severity),
-          description: issue.description || issue.title,
-          suggested_action: issue.suggested_action,
+    dbIssueRows.length > 0
+      ? dbIssueRows.map((gap) => ({
+          key: gap.dimension_key || gap.id || gap.title,
+          label: gap.title,
+          severity: normalizeGapSeverity(gap.severity),
+          description: gap.description || gap.title,
+          suggested_action: gap.suggested_action || gap.resolution_hint || null,
         }))
       : heuristicGaps;
 
@@ -739,7 +909,7 @@ export async function buildDashboardOverview(
   const memoryNotes = Array.isArray(memoryNotesRes.data) ? memoryNotesRes.data : [];
   const contextResponses = Array.isArray(contextRes.data) ? contextRes.data : [];
   const embeddedCompleted = monitor.items.filter((item) =>
-    item.stages.some((stage) => stage.key === 'embedded' && stage.status === 'done')
+    item.stages.some((stage) => stage.key === 'connected' && stage.status === 'done')
   ).length;
 
   const assessmentScore =
@@ -753,7 +923,7 @@ export async function buildDashboardOverview(
     assessment_generated_at: selectedAssessment?.generated_at || selectedAssessment?.updated_at || null,
     assessment_is_fallback: selectedAssessment?.status !== 'active',
     diagnostics_source: diagnosticsRows.length > 0 ? 'db' : 'heuristic',
-    gaps_source: dbGapsRows.length > 0 ? 'db' : 'heuristic',
+    gaps_source: dbIssueRows.length > 0 ? 'db' : 'heuristic',
     maturity_dimensions: maturityDimensions,
     knowledge_nodes: knowledgeNodes,
     knowledge_edges: knowledgeEdges,

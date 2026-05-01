@@ -44,7 +44,7 @@ export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCar
         <div
           style={{
             height: '4px',
-            borderRadius: '4px',
+            borderRadius: 'var(--planto-radius-xs)',
             background: 'rgba(255,255,255,0.07)',
             overflow: 'hidden',
           }}
@@ -53,7 +53,7 @@ export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCar
             style={{
               height: '100%',
               width: `${score}%`,
-              borderRadius: '4px',
+              borderRadius: 'var(--planto-radius-xs)',
               background: isUnlocked
                 ? 'var(--planto-accent)'
                 : 'linear-gradient(90deg, #3b82f6, #f59e0b)',
@@ -83,7 +83,6 @@ export function GptAssistantCard({ styles, iconColor, summary }: GptAssistantCar
             border: '1px solid rgba(17, 32, 25, 0.08)',
             justifyContent: 'center',
             textAlign: 'center',
-            boxShadow: '0 10px 24px rgba(67, 201, 137, 0.22)',
           }}
         >
           Acessar assistente

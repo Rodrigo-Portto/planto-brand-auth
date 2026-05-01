@@ -167,7 +167,7 @@ export function FlashcardPanel({ styles, colors, questions, onAnswered, embedded
             style={{
               flex: 1,
               height: '3px',
-              borderRadius: '3px',
+              borderRadius: 'var(--planto-radius-xs)',
               background: answered.has(question.id)
                 ? colors.statusActive
                 : question.id === current?.id
@@ -184,7 +184,7 @@ export function FlashcardPanel({ styles, colors, questions, onAnswered, embedded
           style={{
             width: '28px',
             height: '28px',
-            borderRadius: '8px',
+            borderRadius: 'var(--planto-radius-control)',
             background: alpha(colors.accent, 0.12),
             border: `1px solid ${colors.borderAccent}`,
             display: 'flex',
@@ -210,7 +210,7 @@ export function FlashcardPanel({ styles, colors, questions, onAnswered, embedded
               fontSize: '0.68rem',
               fontWeight: 700,
               padding: '2px 6px',
-              borderRadius: '10px',
+              borderRadius: 'var(--planto-radius-surface)',
               background: colors.statusDangerSoft,
               color: colors.statusDangerText,
             }}
@@ -226,7 +226,7 @@ export function FlashcardPanel({ styles, colors, questions, onAnswered, embedded
             padding: '20px',
             textAlign: 'center',
             background: colors.statusActiveSoft,
-            borderRadius: '12px',
+            borderRadius: 'var(--planto-radius-surface)',
             marginBottom: '10px',
             border: `1px solid ${colors.borderAccent}`,
           }}
@@ -245,7 +245,7 @@ export function FlashcardPanel({ styles, colors, questions, onAnswered, embedded
               style={{
                 background: colors.statusMutedSoft,
                 border: `1px dashed ${colors.borderAccent}`,
-                borderRadius: '8px',
+                borderRadius: 'var(--planto-radius-control)',
                 padding: '7px 10px',
                 marginBottom: '10px',
                 fontSize: '0.75rem',
@@ -272,7 +272,7 @@ export function FlashcardPanel({ styles, colors, questions, onAnswered, embedded
           />
 
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={handleSkip} style={{ ...styles.secondaryButton, padding: '9px 14px', borderRadius: '9px' }}>
+            <button onClick={handleSkip} style={{ ...styles.secondaryButton, padding: '9px 14px', borderRadius: 'var(--planto-radius-control)' }}>
               Pular
             </button>
             <button
@@ -282,7 +282,7 @@ export function FlashcardPanel({ styles, colors, questions, onAnswered, embedded
                 ...styles.primaryButton,
                 flex: 1,
                 padding: '9px 14px',
-                borderRadius: '9px',
+                borderRadius: 'var(--planto-radius-control)',
                 background: text.trim() ? colors.accent : colors.statusMutedSoft,
                 color: text.trim() ? colors.accentText : colors.textMuted,
                 cursor: text.trim() ? 'pointer' : 'default',
@@ -307,7 +307,7 @@ export function FlashcardPanel({ styles, colors, questions, onAnswered, embedded
               style={{
                 width: index === idx % pending.length ? '16px' : '5px',
                 height: '5px',
-                borderRadius: '4px',
+                borderRadius: 'var(--planto-radius-xs)',
                 background: index === idx % pending.length ? accentColor : colors.progressTrack,
                 cursor: 'pointer',
                 transition: 'all 0.25s',
