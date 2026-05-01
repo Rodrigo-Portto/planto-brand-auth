@@ -205,25 +205,12 @@ export interface GptToken {
   revoked_at?: string | null;
 }
 
-export interface LegacyDocument {
-  id: string;
-  user_id: string;
-  title: string;
-  content: string;
-  doc_kind: string;
-  content_format: string;
-  source: string;
-  metadata_json?: Record<string, unknown> | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
-
 export interface DashboardPayload {
   user: UserSummary | null;
   profile: Profile;
   attachments: Attachment[];
   gpt_tokens: GptToken[];
-  legacy_documents: LegacyDocument[];
+  legacy_documents: never[];
   pipeline_monitor: PipelineMonitor;
   strategic_questions: StrategicQuestion[];
   strategic_question_count: number;

@@ -15,7 +15,6 @@ import type {
   DashboardPayload,
   DashboardStage,
   GptToken,
-  LegacyDocument,
   PipelineMonitor,
   Profile,
   StrategicQuestion,
@@ -81,7 +80,6 @@ export function useDashboardData({ onTokenInvalid }: UseDashboardDataOptions) {
   const [profile, setProfile] = useState<Profile>({});
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [tokens, setTokens] = useState<GptToken[]>([]);
-  const [legacyDocuments, setLegacyDocuments] = useState<LegacyDocument[]>([]);
   const [pipelineMonitor, setPipelineMonitor] = useState<PipelineMonitor>(EMPTY_PIPELINE_MONITOR);
   const [strategicQuestions, setStrategicQuestions] = useState<StrategicQuestion[]>([]);
   const [strategicQuestionCount, setStrategicQuestionCount] = useState(0);
@@ -139,7 +137,6 @@ export function useDashboardData({ onTokenInvalid }: UseDashboardDataOptions) {
       setProfile(data.profile || {});
       setAttachments(nextAttachments);
       setTokens(nextTokens);
-      setLegacyDocuments(data.legacy_documents || []);
       setPipelineMonitor(nextPipelineMonitor);
       setStrategicQuestions(nextStrategicQuestions);
       setStrategicQuestionCount(nextStrategicQuestionCount);
@@ -171,7 +168,6 @@ export function useDashboardData({ onTokenInvalid }: UseDashboardDataOptions) {
     profile,
     attachments,
     tokens,
-    legacyDocuments,
     pipelineMonitor,
     strategicQuestions,
     strategicQuestionCount,
@@ -186,6 +182,5 @@ export function useDashboardData({ onTokenInvalid }: UseDashboardDataOptions) {
     setProfile,
     setAttachments,
     setTokens,
-    setLegacyDocuments,
   };
 }

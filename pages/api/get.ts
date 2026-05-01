@@ -36,15 +36,12 @@ export default async function handler(
   const encoded = encodeURIComponent(userId);
 
   try {
-    const [profileRes, attachmentsRes, tokensRes, docsRes, strategicQuestionsRes, pipelineMonitor] =
+    const [profileRes, attachmentsRes, tokensRes, strategicQuestionsRes, pipelineMonitor] =
       await Promise.all([
         supabaseRest(`/rest/v1/user_profiles?id=eq.${encoded}&select=*&limit=1`),
         supabaseRest(`/rest/v1/user_attachments?user_id=eq.${encoded}&select=*&order=created_at.desc`),
         supabaseRest(
           `/rest/v1/gpt_access_tokens?user_id=eq.${encoded}&select=id,label,token_prefix,token_value,status,created_at,last_used_at,expires_at,revoked_at&order=created_at.desc`
-        ),
-        supabaseRest(
-          `/rest/v1/brand_documents?user_id=eq.${encoded}&status=eq.active&select=id,user_id,title,content,doc_kind,content_format,source,metadata_json,created_at,updated_at&order=updated_at.desc`
         ),
         supabaseRest(
           `/rest/v1/strategic_next_questions?user_id=eq.${encoded}&status=eq.active&select=id,question_text,question_goal,dimension_key,priority,expected_unlock&order=priority.asc&limit=10`
@@ -61,9 +58,6 @@ export default async function handler(
     if (!tokensRes.response.ok) {
       throw new Error(extractErrorMessage(tokensRes.data, 'Falha ao carregar tokens.'));
     }
-    if (!docsRes.response.ok) {
-      throw new Error(extractErrorMessage(docsRes.data, 'Falha ao carregar documentos GPT.'));
-    }
     if (!strategicQuestionsRes.response.ok) {
       throw new Error(
         extractErrorMessage(strategicQuestionsRes.data, 'Falha ao carregar perguntas estratégicas.')
@@ -73,7 +67,6 @@ export default async function handler(
     const profile = (Array.isArray(profileRes.data) && profileRes.data[0]) || {};
     const attachments = Array.isArray(attachmentsRes.data) ? attachmentsRes.data : [];
     const gptTokens = Array.isArray(tokensRes.data) ? tokensRes.data : [];
-    const legacyDocuments = Array.isArray(docsRes.data) ? docsRes.data : [];
     const strategicQuestions: StrategicQuestion[] = Array.isArray(strategicQuestionsRes.data)
       ? strategicQuestionsRes.data.map((question) => ({
           id: String(question.id),
@@ -108,7 +101,7 @@ export default async function handler(
       profile,
       attachments,
       gpt_tokens: gptTokens,
-      legacy_documents: legacyDocuments,
+      legacy_documents: [],
       pipeline_monitor: pipelineMonitor,
       strategic_questions: strategicQuestions,
       strategic_question_count: strategicQuestions.length,
