@@ -393,8 +393,7 @@ async function getStrategyContext(userId: string) {
     briefing_coverage: briefingCoverage,
     strategic_assessments: strategic?.assessment ? [strategic.assessment] : [],
     strategic_diagnostics: Array.isArray(strategic?.diagnostics) ? strategic.diagnostics : [],
-    strategic_conflicts: Array.isArray(strategic?.conflicts) ? strategic.conflicts : [],
-    strategic_gaps: Array.isArray(strategic?.gaps) ? strategic.gaps : [],
+    strategic_issues: Array.isArray(strategic?.issues) ? strategic.issues : [],
     // next_questions já inclui briefing_question_order e briefing_field_key quando vinculadas ao briefing
     strategic_next_questions: Array.isArray(strategic?.next_questions) ? strategic.next_questions : [],
     strategic_evidence_links: Array.isArray(strategic?.evidence_links) ? strategic.evidence_links : [],
@@ -761,11 +760,11 @@ async function answerStrategicQuestion(userId: string, body: any) {
   });
   if (!updatedQuestion.response.ok) return json({ error: updatedQuestion.data?.message || updatedQuestion.data?.error || "Falha ao atualizar strategic_next_questions." }, 500);
 
-  // Se for pergunta de briefing, dispara process-brand-briefing para promover ao brand_knowledge
+  // Se for pergunta de briefing, dispara promote-knowledge para promover ao brand_knowledge
   // Se for pergunta estratégica pura, usa a RPC existente
   if (isBriefingQuestion) {
-    // Fire-and-forget: process-brand-briefing reprocessa todos os brand_context_responses ativos
-    fetch(`${SUPABASE_URL}/functions/v1/process-brand-briefing`, {
+    // Fire-and-forget: promote-knowledge processa respostas ativas ainda nao promovidas
+    fetch(`${SUPABASE_URL}/functions/v1/promote-knowledge`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

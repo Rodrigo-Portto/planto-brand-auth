@@ -68,6 +68,20 @@ export default function HomePage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    const modeParam = Array.isArray(router.query.mode) ? router.query.mode[0] : router.query.mode;
+    if (modeParam === 'signup' || modeParam === 'cadastro') {
+      setAuthMode('signup');
+      return;
+    }
+
+    if (modeParam === 'login' || modeParam === 'entrar') {
+      setAuthMode('login');
+    }
+  }, [router.isReady, router.query.mode]);
+
   function persistRememberedEmail() {
     if (rememberAccess) {
       window.localStorage.setItem(
@@ -239,6 +253,7 @@ export default function HomePage() {
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     autoComplete="given-name"
+                    required={!isLoginMode}
                     style={styles.input}
                   />
                 </label>
@@ -250,6 +265,7 @@ export default function HomePage() {
                     value={surname}
                     onChange={(event) => setSurname(event.target.value)}
                     autoComplete="family-name"
+                    required={!isLoginMode}
                     style={styles.input}
                   />
                 </label>

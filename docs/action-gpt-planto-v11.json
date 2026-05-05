@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Plantto Brand OS Action API",
-    "version": "11.1.0",
+    "version": "11.2.0",
     "description": "Action publica do GPT para operar o Brand OS do Plantto em tres camadas: conhecimento, estrategia e execucao. Use Authorization: envie gpt_token no body. Depois de validado, reutilize o mesmo gpt_token na sessao. A semantic_search busca em 9 fontes vetorizadas em paralelo: 5 de conhecimento (brand_knowledge, brand_context_responses, memory_notes, plataforma_marca, user_attachments) e 4 de estrategia (strategic_diagnostics, strategic_issues, strategic_next_questions, strategic_assessments)."
   },
   "servers": [
@@ -24,21 +24,32 @@
       ],
       "session_authorization": "Depois que o GPT validar um gpt_token ativo, deve reutilizar esse token durante a mesma conversa e executar operacoes permitidas sem solicitar nova autorizacao/acesso ao usuario.",
       "internal_backend_functions": [
-        "extract-content",
-        "process-embeddings",
+        "documents-handler",
         "briefing-from-attachments",
-        "process-brand-briefing",
         "promote-knowledge",
-        "generate-plataforma-marca",
-        "link-knowledge",
+        "generate-branding-model",
         "evaluate-strategy",
-        "strategy-phase1-diagnostics"
+        "strategy-phase1-diagnostics",
+        "process-embeddings",
+        "generate-editorial-entries"
       ],
       "internal_tables": [
+        "user_attachments",
         "brand_context_responses",
+        "brand_knowledge",
+        "memory_notes",
+        "user_profiles",
+        "plataforma_marca",
+        "strategic_assessments",
+        "strategic_diagnostics",
+        "strategic_issues",
+        "strategic_next_questions",
+        "strategic_evidence_links",
         "gpt_access_tokens",
         "knowledge_links",
-        "embedding_queue"
+        "embedding_queue",
+        "editorial_system",
+        "editorial_generation_jobs"
       ],
       "why_internal": "Essas funcoes e tabelas internas usam service_role, processamento em lote ou user_id direto. O GPT nao deve chamalas fora das actions publicas segmentadas por camada."
     },
@@ -60,9 +71,9 @@
       "strategy": {
         "reads": [
           "strategic_assessments",
-          "strategic_conflicts",
           "strategic_diagnostics",
           "strategic_dimension_map",
+          "strategic_issues",
           "strategic_evidence_links",
           "strategic_next_questions"
         ],

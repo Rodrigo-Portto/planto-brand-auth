@@ -91,7 +91,7 @@ export default function ConvitePage() {
               </div>
 
               <div style={styles.heroActions}>
-                <Link href="https://plantto.vercel.app/" style={styles.primaryButton}>
+                <Link href="/?mode=signup" style={styles.primaryButton}>
                   Entrar no beta
                 </Link>
                 <a href="#como-acessar" style={styles.secondaryButton}>
@@ -242,7 +242,7 @@ export default function ConvitePage() {
                 </p>
               </div>
               <div style={styles.closingActions}>
-                <Link href="https://plantto.vercel.app/" style={styles.primaryButton}>
+                <Link href="/?mode=signup" style={styles.primaryButton}>
                   Entrar no beta
                 </Link>
               </div>

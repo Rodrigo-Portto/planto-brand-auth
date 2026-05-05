@@ -79,7 +79,7 @@ function formatAssessmentBadge(overview: DashboardOverview) {
   return 'Diagnostico';
 }
 
-function gapSeverityLabel(severity: DashboardOverview['strategic_gaps'][number]['severity']) {
+function issueSeverityLabel(severity: DashboardOverview['strategic_issues'][number]['severity']) {
   return severity.toUpperCase();
 }
 
@@ -489,19 +489,19 @@ export function DashboardCenterPanel({
       <DashboardSection
         title="Lacunas Estrategicas"
         badge={
-          overview.strategic_gap_count > 0
-            ? `${overview.gaps_source === 'db' ? 'Banco' : 'Heuristica'} - ${overview.strategic_gap_count} ativas`
+          overview.strategic_issue_count > 0
+            ? `${overview.issues_source === 'db' ? 'Banco' : 'Heuristica'} - ${overview.strategic_issue_count} ativas`
             : undefined
         }
         theme={theme}
       >
         <div style={{ fontSize: '0.84rem', color: theme.textMuted, lineHeight: 1.6 }}>
-          Com {overview.strategic_gap_pending_briefings} briefings pendentes, o sistema ja sabe onde faltam sinais para fechar a base.
+          Com {overview.strategic_issue_pending_briefings} briefings pendentes, o sistema ja sabe onde faltam sinais para fechar a base.
         </div>
-        {overview.strategic_gaps.length > 0 ? (
-          overview.strategic_gaps.map((gap) => (
+        {overview.strategic_issues.length > 0 ? (
+          overview.strategic_issues.map((issue) => (
             <div
-              key={gap.key}
+              key={issue.key}
               style={{
                 background: sectionSurface(theme, true),
                 border: `1px solid ${theme.border}`,
@@ -510,15 +510,15 @@ export function DashboardCenterPanel({
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '0.84rem', fontWeight: 700, color: theme.textStrong }}>{gap.label}</span>
+                <span style={{ fontSize: '0.84rem', fontWeight: 700, color: theme.textStrong }}>{issue.label}</span>
                 <span style={{ fontSize: '0.78rem', fontWeight: 800, color: theme.accent }}>
-                  {gapSeverityLabel(gap.severity)}
+                  {issueSeverityLabel(issue.severity)}
                 </span>
               </div>
-              <div style={{ fontSize: '0.76rem', color: theme.textMuted, lineHeight: 1.5 }}>{gap.description}</div>
-              {gap.suggested_action ? (
+              <div style={{ fontSize: '0.76rem', color: theme.textMuted, lineHeight: 1.5 }}>{issue.description}</div>
+              {issue.suggested_action ? (
                 <div style={{ fontSize: '0.72rem', color: theme.text, marginTop: '6px', lineHeight: 1.45 }}>
-                  Proxima acao: {gap.suggested_action}
+                  Proxima acao: {issue.suggested_action}
                 </div>
               ) : null}
             </div>

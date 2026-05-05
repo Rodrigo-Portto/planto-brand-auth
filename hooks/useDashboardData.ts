@@ -55,7 +55,7 @@ const EMPTY_OVERVIEW: DashboardOverview = {
   assessment_generated_at: null,
   assessment_is_fallback: true,
   diagnostics_source: 'heuristic',
-  gaps_source: 'heuristic',
+  issues_source: 'heuristic',
   maturity_dimensions: [],
   knowledge_nodes: [],
   knowledge_edges: [],
@@ -69,9 +69,9 @@ const EMPTY_OVERVIEW: DashboardOverview = {
   pipeline_evidence_count: 0,
   embedding_completed: 0,
   embedding_total: 0,
-  strategic_gap_count: 0,
-  strategic_gap_pending_briefings: BRIEFING_TOTAL,
-  strategic_gaps: [],
+  strategic_issue_count: 0,
+  strategic_issue_pending_briefings: BRIEFING_TOTAL,
+  strategic_issues: [],
   tension_count: 0,
 };
 

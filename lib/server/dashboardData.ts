@@ -9,7 +9,7 @@ import type {
   DashboardMaturityLevel,
   DashboardOverview,
   DashboardPlatformPillar,
-  DashboardStrategicGap,
+  DashboardStrategicIssue,
   PipelineMonitor,
   PipelineMonitorItem,
   PipelineMonitorStage,
@@ -93,7 +93,7 @@ type StrategicIssueRow = {
   assessment_id?: string;
   dimension_key?: string | null;
   title: string;
-  severity: DashboardStrategicGap['severity'];
+  severity: DashboardStrategicIssue['severity'];
   description: string | null;
   suggested_action: string | null;
   resolution_hint?: string | null;
@@ -299,7 +299,7 @@ function normalizeAssessmentStatus(status?: string | null): DashboardOverview['a
   return null;
 }
 
-function normalizeGapSeverity(value?: string | null): DashboardStrategicGap['severity'] {
+function normalizeIssueSeverity(value?: string | null): DashboardStrategicIssue['severity'] {
   if (value === 'critical' || value === 'high' || value === 'medium' || value === 'low') {
     return value;
   }
@@ -346,8 +346,7 @@ function attachmentStageStatus(
     const assessmentId = assessment.id || '';
     const hasDiagnostics = (diagnosticsByAssessment.get(assessmentId) || []).some((row) => row.score != null || row.diagnosis);
     const hasIssues = (issuesByAssessment.get(assessmentId) || []).length > 0;
-    const hasEvidence = (evidenceByAssessment.get(assessmentId) || []).length > 0;
-    return assessmentId && assessment.status === 'active' && hasDiagnostics && hasIssues && hasEvidence;
+    return assessmentId && assessment.status === 'active' && hasDiagnostics && hasIssues;
   });
   const hasMapped = completeAssessments.length > 0 || status === 'mapeado' || status === 'mapped';
   const embeddableAssets = [
@@ -462,10 +461,10 @@ function heuristicMaturityDimensions(
   });
 }
 
-function heuristicStrategicGaps(
+function heuristicStrategicIssues(
   maturityDimensions: DashboardMaturityDimension[],
   latestAssessment: AssessmentRow | null
-): DashboardStrategicGap[] {
+): DashboardStrategicIssue[] {
   const risks = collectMainRisks(latestAssessment);
   return maturityDimensions
     .filter((dimension) => dimension.score < 78)
@@ -763,7 +762,6 @@ export async function buildDashboardOverview(
         `/rest/v1/strategic_diagnostics?assessment_id=eq.${selectedAssessmentId}&status=eq.active&select=dimension_key,dimension_label,score,maturity_level,diagnosis,recommendation,confidence&order=score.asc.nullslast&limit=100`
       ),
       supabaseRest(
-        // Corrigido: tabela real é `strategic_issues` (strategic_gaps não existe no banco)
         `/rest/v1/strategic_issues?assessment_id=eq.${selectedAssessmentId}&status=eq.active&select=id,assessment_id,dimension_key,title,severity,description,suggested_action,resolution_hint&limit=100`
       ),
     ]);
@@ -877,17 +875,17 @@ export async function buildDashboardOverview(
           }))
       : heuristicDimensions;
 
-  const heuristicGaps = heuristicStrategicGaps(heuristicDimensions, selectedAssessment);
-  const strategicGaps: DashboardStrategicGap[] =
+  const heuristicIssues = heuristicStrategicIssues(heuristicDimensions, selectedAssessment);
+  const strategicIssues: DashboardStrategicIssue[] =
     dbIssueRows.length > 0
-      ? dbIssueRows.map((gap) => ({
-          key: gap.dimension_key || gap.id || gap.title,
-          label: gap.title,
-          severity: normalizeGapSeverity(gap.severity),
-          description: gap.description || gap.title,
-          suggested_action: gap.suggested_action || gap.resolution_hint || null,
+      ? dbIssueRows.map((issue) => ({
+          key: issue.dimension_key || issue.id || issue.title,
+          label: issue.title,
+          severity: normalizeIssueSeverity(issue.severity),
+          description: issue.description || issue.title,
+          suggested_action: issue.suggested_action || issue.resolution_hint || null,
         }))
-      : heuristicGaps;
+      : heuristicIssues;
 
   const activeNodeRows = canonicalActiveKnowledge.slice(0, 15);
   const activeNodeIds = new Set(activeNodeRows.map((row) => row.id));
@@ -923,7 +921,7 @@ export async function buildDashboardOverview(
     assessment_generated_at: selectedAssessment?.generated_at || selectedAssessment?.updated_at || null,
     assessment_is_fallback: selectedAssessment?.status !== 'active',
     diagnostics_source: diagnosticsRows.length > 0 ? 'db' : 'heuristic',
-    gaps_source: dbIssueRows.length > 0 ? 'db' : 'heuristic',
+    issues_source: dbIssueRows.length > 0 ? 'db' : 'heuristic',
     maturity_dimensions: maturityDimensions,
     knowledge_nodes: knowledgeNodes,
     knowledge_edges: knowledgeEdges,
@@ -948,9 +946,9 @@ export async function buildDashboardOverview(
       monitor.summary.branding_models_filled,
     embedding_completed: embeddedCompleted,
     embedding_total: monitor.items.length,
-    strategic_gap_count: strategicGaps.length,
-    strategic_gap_pending_briefings: monitor.summary.briefing_pending,
-    strategic_gaps: strategicGaps,
+    strategic_issue_count: strategicIssues.length,
+    strategic_issue_pending_briefings: monitor.summary.briefing_pending,
+    strategic_issues: strategicIssues,
     tension_count: relationCountMap.get('tensiona') || 0,
   };
 }

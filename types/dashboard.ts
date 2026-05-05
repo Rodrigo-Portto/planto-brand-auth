@@ -148,7 +148,7 @@ export interface DashboardPipelineStep {
   value: number;
 }
 
-export interface DashboardStrategicGap {
+export interface DashboardStrategicIssue {
   key: string;
   label: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
@@ -162,7 +162,7 @@ export interface DashboardOverview {
   assessment_generated_at: string | null;
   assessment_is_fallback: boolean;
   diagnostics_source: 'db' | 'heuristic';
-  gaps_source: 'db' | 'heuristic';
+  issues_source: 'db' | 'heuristic';
   maturity_dimensions: DashboardMaturityDimension[];
   knowledge_nodes: DashboardKnowledgeNode[];
   knowledge_edges: DashboardKnowledgeEdge[];
@@ -176,9 +176,9 @@ export interface DashboardOverview {
   pipeline_evidence_count: number;
   embedding_completed: number;
   embedding_total: number;
-  strategic_gap_count: number;
-  strategic_gap_pending_briefings: number;
-  strategic_gaps: DashboardStrategicGap[];
+  strategic_issue_count: number;
+  strategic_issue_pending_briefings: number;
+  strategic_issues: DashboardStrategicIssue[];
   tension_count: number;
 }
 

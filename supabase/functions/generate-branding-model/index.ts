@@ -359,30 +359,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Disparar link-knowledge
-    let linkKnowledgeResult = null;
-    let linkKnowledgeError = null;
-    try {
-      const linkResponse = await fetch(`${supabaseUrl}/functions/v1/link-knowledge`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: authHeader || `Bearer ${supabaseServiceKey}`,
-          apikey: supabaseServiceKey,
-        },
-        body: JSON.stringify({ user_id }),
-      });
-      const linkText = await linkResponse.text();
-      try { linkKnowledgeResult = linkText ? JSON.parse(linkText) : null; }
-      catch { linkKnowledgeResult = linkText; }
-      if (!linkResponse.ok) linkKnowledgeError = linkKnowledgeResult;
-    } catch (err) {
-      linkKnowledgeError = err instanceof Error ? err.message : "Erro ao chamar link-knowledge";
-    }
-
     // Se modelo base foi gerado, verificar se todos os 4 estão completos
-    // e disparar evaluate-strategy com force=true para re-avaliar com plataforma atualizada
-    let evaluateStrategyTriggered = false;
+    // e disparar a fase 1 do pipeline estratégico com force=true.
+    let strategyPipelineTriggered = false;
     if (BASE_MODELS.includes(typedKey)) {
       try {
         const { data: activeModels } = await supabase
@@ -396,19 +375,19 @@ Deno.serve(async (req) => {
         const allBaseComplete = BASE_MODELS.every(k => completedBaseModels.includes(k));
 
         if (allBaseComplete) {
-          fetch(`${supabaseUrl}/functions/v1/evaluate-strategy`, {
+          fetch(`${supabaseUrl}/functions/v1/strategy-phase1-diagnostics`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${supabaseServiceKey}`,
+              Authorization: authHeader || `Bearer ${supabaseServiceKey}`,
               apikey: supabaseServiceKey,
             },
             body: JSON.stringify({ user_id, force: true }),
           }).catch(() => {});
-          evaluateStrategyTriggered = true;
+          strategyPipelineTriggered = true;
         }
       } catch (evalErr) {
-        console.error("evaluate-strategy trigger failed", evalErr);
+        console.error("strategy pipeline trigger failed", evalErr);
       }
     }
 
@@ -416,9 +395,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         model: inserted,
-        link_knowledge: linkKnowledgeResult,
-        link_knowledge_error: linkKnowledgeError,
-        evaluate_strategy_triggered: evaluateStrategyTriggered,
+        strategy_pipeline_triggered: strategyPipelineTriggered,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
