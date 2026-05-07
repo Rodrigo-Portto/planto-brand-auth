@@ -1,4 +1,4 @@
-import type { PropsWithChildren, ReactNode } from 'react';
+import type { CSSProperties, PropsWithChildren, ReactNode } from 'react';
 import type { DashboardStyles } from '../../types/dashboard';
 
 interface DashboardShellProps extends PropsWithChildren {
@@ -7,6 +7,7 @@ interface DashboardShellProps extends PropsWithChildren {
   notice?: string;
   errorMessage?: string;
   loading: boolean;
+  shellStyle?: CSSProperties;
 }
 
 export function DashboardShell({
@@ -15,11 +16,12 @@ export function DashboardShell({
   notice,
   errorMessage,
   loading,
+  shellStyle,
   children,
 }: DashboardShellProps) {
   return (
     <main style={styles.page}>
-      <div style={styles.pageShell}>
+      <div style={{ ...styles.pageShell, ...shellStyle }}>
         {header || null}
         {loading ? <p style={styles.loader}>Carregando...</p> : children}
       </div>

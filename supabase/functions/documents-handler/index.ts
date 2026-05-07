@@ -2,6 +2,13 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SUPABASE_REST_ADMIN_KEY =
+  (Deno.env.get("SUPABASE_SECRET_KEYS") ?? "")
+    .split(",")
+    .map((key) => key.trim())
+    .find(Boolean) ||
+  Deno.env.get("SUPABASE_SECRET_KEY")?.trim() ||
+  SUPABASE_SERVICE_ROLE_KEY;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 
 
@@ -144,8 +151,8 @@ async function sha256Hex(value: string) {
 function authHeaders() {
   return {
     "Content-Type": "application/json",
-    apikey: SUPABASE_SERVICE_ROLE_KEY,
-    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    apikey: SUPABASE_REST_ADMIN_KEY,
+    Authorization: `Bearer ${SUPABASE_REST_ADMIN_KEY}`,
   };
 }
 
@@ -819,7 +826,7 @@ function unsupported(layer: string, supportedActions: readonly string[]) {
 }
 
 Deno.serve(async (req) => {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return json({ error: "Ambiente nao configurado." }, 500);
+  if (!SUPABASE_URL || !SUPABASE_REST_ADMIN_KEY || !SUPABASE_SERVICE_ROLE_KEY) return json({ error: "Ambiente nao configurado." }, 500);
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: jsonHeaders });
   if (req.method !== "POST") return json({ error: "Metodo nao permitido." }, 405);
 

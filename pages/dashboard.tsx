@@ -3,7 +3,6 @@ import type { GetServerSidePropsContext } from 'next';
 import { useRouter } from 'next/router';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { DashboardShell } from '../components/dashboard/DashboardShell';
-import { TokenPanel } from '../components/dashboard/TokenPanel';
 import { UploadPipelinePanel } from '../components/dashboard/UploadPipelinePanel';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useDashboardSession } from '../hooks/useDashboardSession';
@@ -175,9 +174,10 @@ export default function DashboardPage() {
   const isLoading = !sessionReady || dashboardData.loading;
   const panelGridStyle = {
     display: 'grid',
-    gap: viewportWidth >= 1120 ? '16px' : '12px',
-    gridTemplateColumns: viewportWidth >= 1120 ? 'minmax(280px, 360px) minmax(0, 1fr)' : 'minmax(0, 1fr)',
+    gap: '14px',
+    gridTemplateColumns: 'minmax(0, 1fr)',
     alignItems: 'start',
+    width: '100%',
   } as const;
 
   return (
@@ -196,26 +196,9 @@ export default function DashboardPage() {
       notice={notice}
       errorMessage={errorMessage}
       loading={isLoading}
+      shellStyle={{ maxWidth: '960px', padding: viewportWidth < 980 ? '12px' : '18px' }}
     >
       <section className="planto-dashboard-fadein" style={panelGridStyle}>
-        <section style={styles.panelCard}>
-          <div style={styles.panelCardHeader}>
-            <h2 style={styles.panelTitle}>Token do usuario</h2>
-          </div>
-          <TokenPanel
-            styles={styles}
-            theme={theme}
-            showTitle={false}
-            createdToken={gptToken.createdToken}
-            tokenCopied={gptToken.tokenCopied}
-            copyingDisabled={!gptToken.createdToken}
-            savingToken={gptToken.savingToken}
-            canGenerateToken={gptToken.canGenerateToken}
-            onCreateToken={gptToken.createToken}
-            onCopyToken={gptToken.copyCurrentToken}
-          />
-        </section>
-
         <UploadPipelinePanel
           styles={styles}
           theme={theme}
@@ -227,9 +210,16 @@ export default function DashboardPage() {
           uploadProgress={knowledgeUploads.uploadProgress}
           registering={knowledgeUploads.registering}
           deletingAttachmentId={knowledgeUploads.deletingAttachmentId}
+          createdToken={gptToken.createdToken}
+          tokenCopied={gptToken.tokenCopied}
+          copyingDisabled={!gptToken.createdToken}
+          savingToken={gptToken.savingToken}
+          canGenerateToken={gptToken.canGenerateToken}
           onSelectedFileChange={knowledgeUploads.setSelectedFile}
           onUpload={knowledgeUploads.uploadKnowledgeFile}
           onDeleteAttachment={knowledgeUploads.deleteAttachment}
+          onCreateToken={gptToken.createToken}
+          onCopyToken={gptToken.copyCurrentToken}
         />
       </section>
     </DashboardShell>
